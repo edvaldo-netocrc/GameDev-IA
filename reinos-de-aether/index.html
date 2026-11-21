@@ -31,6 +31,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 #tframe{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:260px;padding:8px 12px;text-align:center}
 #tName{font-family:Cinzel,serif;font-weight:800;color:#ff9a7a;font-size:14px}
 #mini{position:fixed;right:12px;top:12px;border-radius:50%;border:2px solid #6b5630;box-shadow:0 4px 16px rgba(0,0,0,.6);background:#1b2a16}
+#bar .slot.locked b{filter:grayscale(1);opacity:.45}
+#wmap{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;padding:10px}
+#wmapC{display:block;width:min(78vh,86vw);height:min(78vh,86vw);border-radius:10px;border:2px solid #6b5630;background:#0d0f14}
+#wmapLeg{margin-top:6px;font-size:11px;color:#cdbf9f;text-align:center}
 #quest{position:fixed;right:12px;top:232px;width:190px;padding:8px 10px;background:rgba(14,11,6,.72);border:1px solid #6b5630;border-radius:8px;font-size:12px;color:#e8dcc0;text-shadow:0 1px 2px #000;pointer-events:none}
 #quest b{display:block;font-family:Cinzel,serif;color:#f2d38a;font-size:12px;margin-bottom:3px}#quest .qb{height:5px;background:#2a2216;border-radius:3px;margin-top:5px;overflow:hidden}#quest .qb i{display:block;height:100%;background:linear-gradient(90deg,#c9962e,#f2d38a)}#quest.done b{color:#7dff9a}
 #zone{position:fixed;right:12px;top:190px;width:174px;text-align:center;font-family:Cinzel,serif;font-size:12px;color:#f2d38a;text-shadow:0 1px 2px #000}
@@ -140,7 +144,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
     <div class="bar hp"><i id="hpB"></i><span id="hpT"></span></div>
     <div class="bar mp"><i id="mpB"></i><span id="mpT"></span></div>
     <div class="bar xp"><i id="xpB"></i><span id="xpT"></span></div>
-    <div class="gold">🪙 <span id="gold">0</span> · 🧪 <span id="pots">0</span> · ⚔️ <span id="atkV">0</span> · 🛡️ <span id="defV">0</span></div>
+    <div class="gold">🪙 <span id="gold">0</span> · 🧪 <span id="pots">0</span> · 📜 <span id="scrolls">0</span> · ⚔️ <span id="atkV">0</span> · 🛡️ <span id="defV">0</span></div>
   </div>
   <div id="tframe" class="panel hidden"><div id="tName"></div><div class="bar hp"><i id="thpB"></i><span id="thpT"></span></div></div>
   <canvas id="mini" width="170" height="170"></canvas>
@@ -150,14 +154,19 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
   <div id="bar" class="panel">
     <div class="slot" data-a="atk"><kbd>1</kbd><b id="icoAtk">⚔️</b><small>Atacar</small><div class="cd" id="cdAtk"></div></div>
     <div class="slot" data-a="skill"><kbd>2</kbd><b id="icoSkill">🌀</b><small id="skName">Habilidade</small><div class="cd" id="cdSkill"></div></div>
+    <div class="slot" data-a="ult" id="slotUlt"><kbd>3</kbd><b id="icoUlt">🔥</b><small id="ultName">Suprema</small><div class="cd" id="cdUlt"></div></div>
     <div class="slot" data-a="pot"><kbd>Q</kbd><b>🧪</b><small>Poção</small><div class="cd" id="cdPot"></div></div>
     <div class="slot" data-a="talk"><kbd>E</kbd><b>💬</b><small>Interagir</small></div>
+    <div class="slot" data-a="recall"><kbd>R</kbd><b>📜</b><small>Retorno</small><div class="cd" id="cdRecall"></div></div>
     <div class="slot" data-a="inv"><kbd>I</kbd><b>🎒</b><small>Mochila</small></div>
+    <div class="slot" data-a="map"><kbd>M</kbd><b>🗺️</b><small>Mapa</small></div>
     <div class="slot tog" data-a="auto" id="slotAuto"><kbd>H</kbd><b>🤖</b><small>Auto-caça</small></div>
     <div class="slot tog" data-a="loot" id="slotLoot"><kbd>L</kbd><b>🧲</b><small>Auto-loot</small></div>
     <div class="slot" data-a="opts"><kbd>O</kbd><b>⚙️</b><small>Opções</small></div>
   </div>
-  <div id="help" class="panel"><b>WASD</b> mover · <b>arrastar</b> gira a câmera · <b>roda</b> zoom<br><b>Clique</b> no monstro para atacar · <b>clique no chão</b> para andar<br><b>1</b> ataque · <b>2</b> habilidade · <b>Q</b> poção · <b>E</b> interagir · <b>I</b> mochila · <b>Tab</b> próximo alvo · <b>Enter</b> chat · <b>H</b> auto-caça · <b>L</b> auto-loot · <b>O</b> opções · <b>M</b> som</div>
+  <div id="help" class="panel"><b>WASD</b> mover · <b>arrastar</b> gira a câmera · <b>roda</b> zoom<br><b>Clique</b> no monstro para atacar · <b>clique no chão</b> para andar<br><b>1</b> ataque · <b>2</b> habilidade · <b>3</b> suprema (Nv 10) · <b>Q</b> poção · <b>R</b> retorno · <b>E</b> interagir · <b>I</b> mochila · <b>M</b> mapa · <b>Tab</b> próximo alvo · <b>Enter</b> chat · <b>H</b> auto-caça · <b>L</b> auto-loot · <b>O</b> opções · <b>N</b> som</div>
+  <div id="wmap" class="panel hidden"><div class="ph">🗺️ Mapa de Aether <span class="x" data-close="wmap">✕</span></div><canvas id="wmapC" width="640" height="640"></canvas>
+    <div id="wmapLeg">🔷 você · 🟢 outros jogadores · 🟣 NPCs · 👑 chefes · 🕳️ masmorra · ✨ alvo da missão · M ou Esc fecha</div></div>
   <div id="joy"><div id="knob"></div></div>
 
   <div id="inv" class="panel hidden">
@@ -179,7 +188,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
     <div class="arow">Tomar poção com vida abaixo de <select id="optPot"><option value="0">nunca</option><option value="30">30%</option><option value="45">45%</option><option value="60">60%</option></select></div>
     <div class="arow"><label><input type="checkbox" id="optSkill"> Usar habilidade automaticamente</label></div>
     <div class="arow"><label><input type="checkbox" id="optStrong"> Atacar monstros bem mais fortes</label></div>
-    <div class="arow">🔊 Som <em>(M liga/desliga)</em> <select id="optVol"><option value="0">desligado</option><option value="0.3">baixo</option><option value="0.6">médio</option><option value="1">alto</option></select></div>
+    <div class="arow">🔊 Som <em>(N liga/desliga)</em> <select id="optVol"><option value="0">desligado</option><option value="0.3">baixo</option><option value="0.6">médio</option><option value="1">alto</option></select></div>
     <div class="hint">A auto-caça ataca monstros perto de onde foi ligada e para se você andar manualmente. Itens abaixo da raridade escolhida são deixados no chão.</div>
   </div>
   <div id="shop" class="panel hidden">
@@ -894,12 +903,13 @@ const CLS={
 };
 const BAG_MAX=25;
 const SPAWN={x:-3,z:9.6,yaw:-0.3}; // vão entre as casas, câmera olhando para a praça
-const P={name:'Herói',cls:'guerreiro',lvl:1,xp:0,gold:0,pots:5,hp:1,mp:1,maxHp:1,maxMp:1,atk:1,def:0,crit:8,inv:[],eq:{weapon:null,armor:null,helm:null,ring:null},
+const P={name:'Herói',cls:'guerreiro',lvl:1,xp:0,gold:0,pots:5,scrolls:1,ultCd:0,furyT:0,recallT:0,hp:1,mp:1,maxHp:1,maxMp:1,atk:1,def:0,crit:8,inv:[],eq:{weapon:null,armor:null,helm:null,ring:null},
   pos:new THREE.Vector3(SPAWN.x,0,SPAWN.z),rot:SPAWN.yaw+Math.PI,mesh:null,lbl:null,target:null,auto:false,moveTo:null,cd:0,skCd:0,potCd:0,lastHurt:-99,dead:false,walk:0,atkAnim:0,deadT:0,spin:0};
 function need(l){return Math.floor(45*Math.pow(l,1.65))}
 function recalc(){
   const C=CLS[P.cls],l=P.lvl-1;let atk=C.atk+C.atkL*l,hp=C.hp+C.hpL*l,mp=C.mp+C.mpL*l,def=l,crit=8;
   for(const s in P.eq){const it=P.eq[s];if(!it)continue;atk+=it.st.atk||0;def+=it.st.def||0;hp+=it.st.hp||0;mp+=it.st.mp||0;crit+=it.st.crit||0}
+  if(P.furyT>0)atk*=1.5;
   P.atk=Math.round(atk);P.def=Math.round(def);P.maxHp=Math.round(hp);P.maxMp=Math.round(mp);P.crit=crit;
   P.hp=Math.min(P.hp,P.maxHp);P.mp=Math.min(P.mp,P.maxMp);
 }
@@ -920,7 +930,7 @@ function applyLook(u,cls,ar,hr,wr){
 }
 const rarOf=it=>it?it.rar:-1;
 function refreshLook(){if(P.mesh)applyLook(P.mesh.userData,P.cls,rarOf(P.eq.armor),rarOf(P.eq.helm),rarOf(P.eq.weapon))}
-function save(){try{localStorage.setItem('aether_save',JSON.stringify({v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq,q:{i:Q.i,n:Q.n,on:Q.on,rep:Q.rep}}))}catch(e){}}
+function save(){try{localStorage.setItem('aether_save',JSON.stringify({v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq,scrolls:P.scrolls,q:{i:Q.i,n:Q.n,on:Q.on,rep:Q.rep}}))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem('aether_save')||'null')}catch(e){return null}}
 
 /* ============ UI ============ */
@@ -942,11 +952,13 @@ function updHUD(){
   $('hpB').style.width=(P.hp/P.maxHp*100)+'%';$('hpT').textContent=`${Math.ceil(P.hp)} / ${P.maxHp}`;
   $('mpB').style.width=(P.mp/P.maxMp*100)+'%';$('mpT').textContent=`${Math.floor(P.mp)} / ${P.maxMp}`;
   const n=need(P.lvl);$('xpB').style.width=(P.xp/n*100)+'%';$('xpT').textContent=`XP ${P.xp} / ${n}`;
-  $('gold').textContent=P.gold;$('pots').textContent=P.pots;$('atkV').textContent=P.atk;$('defV').textContent=P.def;
+  $('gold').textContent=P.gold;$('pots').textContent=P.pots;$('scrolls').textContent=P.scrolls;$('atkV').textContent=P.atk;$('defV').textContent=P.def;
   const t=P.target;
   if(t){$('tName').textContent=`${t.T.name} — Nv ${t.T.lvl}`;$('thpB').style.width=(Math.max(0,t.hp)/t.max*100)+'%';$('thpT').textContent=`${Math.max(0,Math.ceil(t.hp))} / ${t.max}`}
   const C=CLS[P.cls];
   $('cdAtk').style.height=(P.cd/C.cd*100)+'%';$('cdSkill').style.height=(P.skCd/C.skCd*100)+'%';$('cdPot').style.height=(P.potCd/3*100)+'%';
+  const U=ULT[P.cls],lk=P.lvl<10;$('slotUlt').classList.toggle('locked',lk);$('cdUlt').style.height=lk?'100%':(P.ultCd/U.cd*100)+'%';
+  $('cdRecall').style.height=P.recallT>0?(P.recallT/3*100)+'%':'0%';
 }
 
 /* --- mochila --- */
@@ -1000,7 +1012,7 @@ $('inv').addEventListener('click',e=>{
   const c=e.target.closest('[data-bag],[data-eq]');if(c){if(c.dataset.bag!==undefined)showDetail(P.inv[+c.dataset.bag],'bag');else showDetail(P.eq[c.dataset.eq],'eq');return}
 });
 $('sellCommon').addEventListener('click',()=>{const c=P.inv.filter(i=>i.rar===0);if(!c.length){log('Nenhum item Comum na mochila.','sys');return}let g=0;for(const it of c)g+=it.val;P.inv=P.inv.filter(i=>i.rar!==0);P.gold+=g;log(`Você vendeu ${c.length} itens Comuns por ${g} ouro.`,'loot');hideDetail();renderInv();save()});
-document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>{const id=x.dataset.close;$(id).classList.add('hidden');if(id==='shop'||id==='inv'){shopOpen=false;$('shop').classList.add('hidden')}hideDetail();renderInv()}));
+document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>{const id=x.dataset.close;$(id).classList.add('hidden');if(id==='wmap'){mapOpen=false;return}if(id==='shop'||id==='inv'){shopOpen=false;$('shop').classList.add('hidden')}hideDetail();renderInv()}));
 function toggleInv(force){const el=$('inv');const show=force!==undefined?force:el.classList.contains('hidden');el.classList.toggle('hidden',!show);if(!show){hideDetail();if(shopOpen){shopOpen=false;$('shop').classList.add('hidden')}}renderInv()}
 
 /* --- loja --- */
@@ -1009,13 +1021,17 @@ function genShop(){shopLvl=P.lvl;shopStock=['weapon','armor','helm','ring'].map(
 function renderShop(){
   if(!shopOpen)return;
   let h=`<div class="srow"><div class="cell">🧪</div><div class="nm">Poção de Vida<small>Cura 50% da vida</small></div><button class="mini" data-buy="p1" ${P.gold<20?'disabled':''}>20 🪙</button></div>
-  <div class="srow"><div class="cell">🧪</div><div class="nm">Pacote com 5 poções<small>Economize 10 ouro</small></div><button class="mini" data-buy="p5" ${P.gold<90?'disabled':''}>90 🪙</button></div>`;
+  <div class="srow"><div class="cell">🧪</div><div class="nm">Pacote com 5 poções<small>Economize 10 ouro</small></div><button class="mini" data-buy="p5" ${P.gold<90?'disabled':''}>90 🪙</button></div>
+  <div class="srow"><div class="cell">🧪</div><div class="nm">Barril com 15 poções<small>Economize 50 ouro</small></div><button class="mini" data-buy="p15" ${P.gold<250?'disabled':''}>250 🪙</button></div>
+  <div class="srow"><div class="cell">📜</div><div class="nm">Pergaminho de Retorno<small>Tecla R: volta à vila em 3 s</small></div><button class="mini" data-buy="s1" ${P.gold<40?'disabled':''}>40 🪙</button></div>
+  <div class="srow"><div class="cell">📜</div><div class="nm">3 Pergaminhos de Retorno<small>Economize 20 ouro</small></div><button class="mini" data-buy="s3" ${P.gold<100?'disabled':''}>100 🪙</button></div>`;
   shopStock.forEach((it,i)=>{h+=`<div class="srow">${it?cellHTML(it,`data-shop="${i}"`):'<div class="cell empty">✖</div>'}<div class="nm" ${it?`data-shop="${i}" style="cursor:pointer;color:${RAR[it.rar].c}"`:''}>${it?esc(it.name):'Esgotado'}<small>${it?`${SLOTN[it.slot]} · Nv ${it.lvl}`:'Volte depois de subir de nível'}</small></div>${it?`<button class="mini" data-shop="${i}">${it.val*3} 🪙</button>`:''}</div>`});
   $('shopList').innerHTML=h;
 }
 $('shopList').addEventListener('click',e=>{
   const b=e.target.closest('[data-buy]');
-  if(b){const n=b.dataset.buy==='p5'?5:1,c=n===5?90:20;if(P.gold<c)return;P.gold-=c;P.pots+=n;log(`Comprou ${n} poç${n>1?'ões':'ão'}.`,'loot');renderShop();renderInv();save();return}
+  if(b){const k=b.dataset.buy,[n,c,scr]={p1:[1,20],p5:[5,90],p15:[15,250],s1:[1,40,1],s3:[3,100,1]}[k]||[0,1e9];if(P.gold<c)return;P.gold-=c;SFX.play('coin');
+    if(scr){P.scrolls+=n;log(`Comprou ${n} pergaminho${n>1?'s':''} de retorno.`,'loot')}else{P.pots+=n;log(`Comprou ${n} poç${n>1?'ões':'ão'}.`,'loot')}renderShop();renderInv();save();return}
   const s=e.target.closest('[data-shop]');if(s){const it=shopStock[+s.dataset.shop];if(it)showDetail(it,'shop')}
 });
 function buyItem(it){const c=it.val*3;if(P.gold<c){log('Ouro insuficiente.','bad');return}if(P.inv.length>=BAG_MAX){log('Mochila cheia.','bad');return}
@@ -1196,6 +1212,8 @@ function gainXp(x){
 function hurtPlayer(d){
   if(P.dead)return;
   d=Math.max(1,Math.round(d*100/(100+P.def*2)));
+  if(P.furyT>0)d=Math.max(1,Math.round(d*0.65));
+  if(P.recallT>0){P.recallT=0;log('Pergaminho interrompido pelo ataque!','bad')}
   P.hp-=d;P.lastHurt=now;SFX.play('hurt',null,0.2);
   floatText(P.pos.clone().setY(P.pos.y+2.6),'-'+d,'hurt');
   emit(P.pos.clone().setY(P.pos.y+1.3),0xff3030,6,3,1,0.4,6);
@@ -1229,6 +1247,16 @@ function actSkill(){
     for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,c)<6.5){const cr=crit();damageMon(m,Math.round(P.atk*2.4*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}
   }
 }
+function actRecall(){
+  if(P.dead)return;if(P.recallT>0){log('Você já está lendo o pergaminho…','sys');return}
+  if(zoneOf(P.pos.x,P.pos.z).safe){log('Você já está na vila.','sys');return}
+  if(P.scrolls<=0){log('Você não tem Pergaminhos de Retorno. Compre com o Ferreiro Borin.','bad');return}
+  P.recallT=3;P.recallFrom=P.pos.clone();P.auto=false;P.moveTo=null;SFX.play('portal',null,0.4);log('📜 Lendo o Pergaminho de Retorno… fique parado por 3 segundos.','sys');
+}
+function updRecall(dt){if(P.recallT<=0)return;
+  if(P.dead||d2(P.pos,P.recallFrom)>0.6){P.recallT=0;log('Pergaminho interrompido (você se moveu).','bad');return}
+  if(rnd()<0.6)emit(P.pos.clone().setY(P.pos.y+0.2+rnd()*2),0xb36bff,1,1.2,1.5,0.8,-1,1.4);
+  P.recallT-=dt;if(P.recallT<=0){P.recallT=0;P.scrolls--;if(AUTO.on)setAuto(false,'Auto-caça desligada: você voltou à vila.');teleport(0,4,'Vila de Aether','O pergaminho trouxe você para casa');save()}}
 function actPotion(){
   if(P.dead||P.potCd>0)return;
   if(P.pots<=0){log('Você não tem poções. Compre com o Ferreiro Borin ou derrote monstros.','bad');return}
@@ -1236,6 +1264,63 @@ function actPotion(){
   P.pots--;P.potCd=3;SFX.play('potion');const h=Math.round(P.maxHp*0.5);P.hp=Math.min(P.maxHp,P.hp+h);
   floatText(P.pos.clone().setY(P.pos.y+2.6),'+'+h,'heal');ringFx(P.pos,3,0x5dff7a);emit(P.pos.clone().setY(P.pos.y+0.5),0x5dff7a,30,1.5,4,1,0,1.2);
 }
+const ULT={guerreiro:{name:'Fúria',ico:'🔥',cost:30,cd:40,dur:10},mago:{name:'Meteoros',ico:'☄️',cost:55,cd:25}};
+function actUlt(){
+  if(P.dead)return;const U=ULT[P.cls];
+  if(P.lvl<10){log(`🔒 ${U.name} é liberada no nível 10.`,'sys');return}
+  if(P.ultCd>0)return;if(P.mp<U.cost){log('Mana insuficiente.','bad');return}
+  if(zoneOf(P.pos.x,P.pos.z).safe){log('Não é possível usar habilidades na vila.','sys');return}
+  if(P.cls==='guerreiro'){
+    P.mp-=U.cost;P.ultCd=U.cd;P.furyT=U.dur;recalc();P.trig='skill';P.atkAnim=1;SFX.play('crit');
+    pillarFx(P.pos,0xff5a2a);ringFx(P.pos,6,0xff5a2a);floatText(P.pos.clone().setY(P.pos.y+3),'FÚRIA!','xp');
+    log('🔥 Fúria! +50% de ataque e −35% de dano recebido por 10 segundos.','xp');netEmit('ufx',{k:'f',x:+P.pos.x.toFixed(1),z:+P.pos.z.toFixed(1)});
+  }else{
+    let t=P.target;if(!t||t.dead)t=nearestMon(22);
+    if(!t||d2(t.g.position,P.pos)>22){log('Escolha um alvo a até 22 m.','sys');return}
+    setTarget(t);P.mp-=U.cost;P.ultCd=U.cd;P.trig='skill';P.atkAnim=1;
+    const c=t.g.position.clone();meteorRain(c.x,c.z,true);
+    netEmit('ufx',{k:'m',x:+c.x.toFixed(1),z:+c.z.toFixed(1)});log('☄️ Chuva de Meteoros!','xp');
+  }
+}
+const meteors=[];
+function meteorRain(x0,z0,mine){ringFx(new THREE.Vector3(x0,H(x0,z0),z0),7,0xff7a2a);
+  for(let i=0;i<6;i++){const a=rnd()*6.28,r=i?1.5+rnd()*4:0;meteors.push({x:x0+Math.cos(a)*r,z:z0+Math.sin(a)*r,t:0.35+i*0.28,mine})}}
+function updMeteors(dt){for(let i=meteors.length-1;i>=0;i--){const M=meteors[i];M.t-=dt;
+  if(M.t>0){if(!M.m&&M.t<0.45){M.m=new THREE.Mesh(new THREE.SphereGeometry(0.7,8,6),new THREE.MeshBasicMaterial({color:0xffa040}));M.m.add(glowSprite(0xff6a20,5,0.9));scene.add(M.m)}
+    if(M.m){const k=Math.max(0,M.t/0.45);M.m.position.set(M.x+k*6,H(M.x,M.z)+k*20,M.z-k*4);if(rnd()<0.8)emit(M.m.position.clone(),0xff7a2a,1,1,0.6,0.5,0,1.5)}continue}
+  if(M.m){scene.remove(M.m);M.m.geometry.dispose()}meteors.splice(i,1);
+  const c=new THREE.Vector3(M.x,H(M.x,M.z),M.z);burstFx(c,0xff6a20);ringFx(c,4,0xff7a2a);SFX.play('boom',c,0.12);
+  if(M.mine)for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,c)<3.6+m.T.size*0.3){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*1.7*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}}}
+/* ============ mapa-múndi ============ */
+let mapOpen=false,mapBg=null,mapT=0;
+const MAPR=205,ZCOL={'Vila de Aether':'#c9b48a','Campos Verdes':'#6fa64a','Floresta dos Lobos':'#2f6b34','Terras de Pedra':'#8a8378','Desfiladeiro dos Orcs':'#8a4a32'};
+function buildMapBg(){const N=160,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),img=x.createImageData(N,N);
+  for(let j=0;j<N;j++)for(let i=0;i<N;i++){const wx=(i/N*2-1)*MAPR,wz=(j/N*2-1)*MAPR,k=(j*N+i)*4,d=Math.hypot(wx,wz);let col;
+    if(d>WORLD_R)col=[22,24,30];else if(lakeMask(wx,wz)>0.5)col=[58,120,180];else{const h=ZCOL[zoneOf(wx,wz).n]||'#555';col=[1,3,5].map(o=>parseInt(h.substr(o,2),16));
+      const sh=Math.max(-18,Math.min(18,(H(wx+1,wz)-H(wx-1,wz))*9));col=col.map(v=>Math.max(0,Math.min(255,v+sh)))}
+    img.data.set([...col,255],k)}
+  x.putImageData(img,0,0);return c}
+function toggleMap(on){mapOpen=on===undefined?!mapOpen:on;$('wmap').classList.toggle('hidden',!mapOpen);if(mapOpen){if(!mapBg)mapBg=buildMapBg();mapT=0;drawMap()}}
+function drawMap(){const cv=$('wmapC'),x=cv.getContext('2d'),W=cv.width,S=W/(2*MAPR),px=(wx)=>W/2+wx*S;
+  x.imageSmoothingEnabled=true;x.drawImage(mapBg,0,0,W,W);
+  x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=1.5;for(const r of [26,68,120]){x.beginPath();x.arc(W/2,W/2,r*S,0,6.29);x.stroke()}
+  x.textAlign='center';x.font='bold 15px Cinzel,serif';x.lineWidth=4;x.strokeStyle='rgba(0,0,0,.75)';
+  const lab=(t,wx,wz,c,f)=>{if(f)x.font=f;const w=x.measureText(t).width/2+6,X=Math.max(w,Math.min(W-w,px(wx)));x.strokeText(t,X,px(wz));x.fillStyle=c||'#f2d38a';x.fillText(t,X,px(wz))};
+  lab('Vila de Aether',0,-30);lab('Campos Verdes',0,52);lab('Floresta dos Lobos',-60,100);lab('Terras de Pedra',150,40);lab('Desfiladeiro',-158,-48);lab('dos Orcs',-158,-36);
+  x.font='bold 11px Inter,sans-serif';lab('Nv 1–3',0,63);lab('Nv 4–7',-60,111);lab('Nv 8+',150,51);lab('Nv 11–15',-158,-24);
+  // NPCs, masmorra, chefes
+  x.font='18px sans-serif';
+  for(const n of [healer,smith,captain]){x.fillStyle='#c9a6ff';x.beginPath();x.arc(px(n.position.x),px(n.position.z),3.5,0,6.29);x.fill()}
+  lab('🕳️',ENT.x,ENT.z+6,'#fff','18px sans-serif');x.font='bold 11px Inter,sans-serif';lab('Masmorra · Lich Morvath',ENT.x,ENT.z+16,'#e0c8ff');
+  for(const m of monsters)if(m.T.boss&&m.type!=='lich'){x.font='18px sans-serif';lab(m.dead?'💀':'👑',m.home?m.home.x:m.g.position.x,(m.home?m.home.z:m.g.position.z)+6,'#fff');x.font='bold 11px Inter,sans-serif';lab(m.T.name+' · Nv '+m.T.lvl,m.home?m.home.x:m.g.position.x,(m.home?m.home.z:m.g.position.z)+16,'#ffb070')}
+  // alvo da missão
+  const q=Q.on&&qCur();if(q&&Q.n<q.n){let b=null,bd=1e9;for(const m of monsters){if(m.dead||!q.t.includes(m.type))continue;const p=inDungeon(m.g.position.x)?ENT:m.g.position,d=d2(p,P.pos);if(d<bd){bd=d;b=p}}
+    if(b){const pulse=6+Math.sin(performance.now()/180)*2.5;x.strokeStyle='#ffd23a';x.lineWidth=2.5;x.beginPath();x.arc(px(b.x),px(b.z),pulse+6,0,6.29);x.stroke();x.font='16px sans-serif';lab('✨',b.x,b.z+3,'#fff')}}
+  // jogadores
+  x.fillStyle='#5dff7a';for(const o of others.values()){const p=o.mesh.position;if(inDungeon(p.x))continue;x.beginPath();x.arc(px(p.x),px(p.z),4,0,6.29);x.fill()}
+  const pp=inDungeon(P.pos.x)?ENT:P.pos,a=P.mesh?P.mesh.rotation.y:0;x.save();x.translate(px(pp.x),px(pp.z));x.rotate(-a+Math.PI);
+  x.fillStyle='#4da6ff';x.strokeStyle='#fff';x.lineWidth=2;x.beginPath();x.moveTo(0,-9);x.lineTo(6.5,7);x.lineTo(0,3.5);x.lineTo(-6.5,7);x.closePath();x.fill();x.stroke();x.restore();
+  if(inDungeon(P.pos.x)){x.font='bold 13px Inter,sans-serif';lab('(você está na masmorra)',ENT.x,ENT.z-10,'#9fd0ff')}}
 const healLines=['Que a luz de Aether te proteja, aventureiro.','Os lobos ficam mais ferozes depois dos campos. Vá preparado!','Dizem que um Golem Ancião desperta nas Terras de Pedra, ao sudeste…','No noroeste há uma masmorra antiga. Só entre depois do nível 10.','Volte sempre que precisar de cura.'];
 function teleport(x,z,title,sub){SFX.play('portal');P.pos.set(x,0,z);AUTO.anchor.set(x,0,z);AUTO.lootDrop=null;P.moveTo=null;P.auto=false;setTarget(null);hideDetail();emit(P.pos.clone().setY(H(x,z)+1),0xb36bff,60,4,3,1,2,1.5);banner(title,sub)}
 function actTalk(){
@@ -1289,6 +1374,8 @@ function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando
     const dt_=d2(t.g.position,P.pos);
     if(P.cls==='guerreiro'?dt_<4.5+t.T.size*0.5:dt_<18)actSkill();
   }
+  if(AUTO.skill&&t&&!t.dead&&P.lvl>=10&&P.ultCd<=0&&P.mp>=ULT[P.cls].cost&&!zoneOf(P.pos.x,P.pos.z).safe){
+    const dt_=d2(t.g.position,P.pos);if(P.cls==='guerreiro'?(dt_<6&&(t.T.boss||t.T.lvl>=P.lvl-2)):dt_<20)actUlt()}
   // travado indo até o alvo? troca de alvo
   if(P.auto&&t&&!t.dead){
     const d=d2(t.g.position,P.pos);
@@ -1334,18 +1421,21 @@ addEventListener('keydown',e=>{
   keys[k]=true;
   if(k==='1'||k===' '){actAttack();e.preventDefault()}
   if(k==='2')actSkill();
+  if(k==='3')actUlt();
+  if(k==='r')actRecall();
   if(k==='q')actPotion();
   if(k==='e')actTalk();
   if(k==='i'||k==='b')toggleInv();
   if(k==='h')setAuto(!AUTO.on);
   if(k==='l')setLoot(!AUTO.loot);
   if(k==='o')$('autoPanel').classList.toggle('hidden');
-  if(k==='m'){const v=SFX.vol?0:(lastVol||0.6);SFX.setVol(v);$('optVol').value=String(v);log(v?'🔊 Som ligado.':'🔇 Som desligado.','sys')}
-  if(k==='escape'){if(!$('autoPanel').classList.contains('hidden'))$('autoPanel').classList.add('hidden');else if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
+  if(k==='m')toggleMap();
+  if(k==='n'){const v=SFX.vol?0:(lastVol||0.6);SFX.setVol(v);$('optVol').value=String(v);log(v?'🔊 Som ligado.':'🔇 Som desligado.','sys')}
+  if(k==='escape'){if(mapOpen){toggleMap(false);return}if(!$('autoPanel').classList.contains('hidden'))$('autoPanel').classList.add('hidden');else if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
-document.querySelectorAll('.slot').forEach(s=>s.addEventListener('click',()=>{const a=s.dataset.a;if(a==='atk')actAttack();if(a==='skill')actSkill();if(a==='pot')actPotion();if(a==='talk')actTalk();if(a==='inv')toggleInv();if(a==='auto')setAuto(!AUTO.on);if(a==='loot')setLoot(!AUTO.loot);if(a==='opts')$('autoPanel').classList.toggle('hidden')}));
+document.querySelectorAll('.slot').forEach(s=>s.addEventListener('click',()=>{const a=s.dataset.a;if(a==='atk')actAttack();if(a==='skill')actSkill();if(a==='ult')actUlt();if(a==='recall')actRecall();if(a==='map')toggleMap();if(a==='pot')actPotion();if(a==='talk')actTalk();if(a==='inv')toggleInv();if(a==='auto')setAuto(!AUTO.on);if(a==='loot')setLoot(!AUTO.loot);if(a==='opts')$('autoPanel').classList.toggle('hidden')}));
 $('optAuto').addEventListener('change',e=>setAuto(e.target.checked));
 $('optLoot').addEventListener('change',e=>setLoot(e.target.checked));
 $('optRadius').addEventListener('change',e=>{AUTO.radius=+e.target.value;if(AUTO.on)AUTO.anchor.copy(P.pos);saveAuto()});
@@ -1402,6 +1492,8 @@ function hostId(){let hid=myId,hj=myJoin;for(const [k,o] of others){if(o.j<hj||(
 const NET={ // mensagens recebidas de outros jogadores (tudo validado: vem da rede)
   hit(d,from){if(!amHost||!others.has(from))return;const m=monsters[d&&d.m];if(!m)return;const dmg=clamp(num(d.d,0),0,5000);m.flash=0.15;applyDamage(m,dmg,from)},
   mh(d){if(!d||d.t!==myId||P.dead)return;const m=monsters[d.m];const dmg=clamp(num(d.d,0),0,2000);if(m&&m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)},
+  ufx(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z)||d2({x,z},P.pos)>90)return;
+    if(d.k==='m')meteorRain(x,z,false);else{const p=new THREE.Vector3(x,H(x,z),z);pillarFx(p,0xff5a2a);ringFx(p,6,0xff5a2a)}},
   tl(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z))return;
     if(d.k==='d'){if(inOrcs(x,z)&&Math.hypot(P.pos.x-x,P.pos.z-z)<60)telegraph(new THREE.Vector3(x,0,z),4,TYPES.dragon.atk*1.2,0xff6a2a);return}
     if(!inDungeon(P.pos.x)||!inDungeon(x))return;telegraph(new THREE.Vector3(x,0,z),4.5,TYPES.lich.atk*1.3,0x7dff9a)},
@@ -1725,7 +1817,9 @@ function animMonster(m,walking,dt){
 function moveP(dx,dz,spd,dt){const ok=moveEnt(P.pos,dx,dz,spd,dt,0.4);P.rot=angLerp(P.rot,Math.atan2(dx,dz),Math.min(1,dt*12));return ok}
 function update(dt){
   now+=dt;const C=CLS[P.cls];
-  P.cd=Math.max(0,P.cd-dt);P.skCd=Math.max(0,P.skCd-dt);P.potCd=Math.max(0,P.potCd-dt);
+  P.cd=Math.max(0,P.cd-dt);P.skCd=Math.max(0,P.skCd-dt);P.potCd=Math.max(0,P.potCd-dt);P.ultCd=Math.max(0,P.ultCd-dt);
+  if(P.furyT>0){P.furyT-=dt;if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xff5a2a,1,0.8,1.2,0.6,-1,1.2);if(P.furyT<=0){P.furyT=0;recalc();log('A Fúria passou.','sys')}}
+  updRecall(dt);updMeteors(dt);if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
   const zone=zoneOf(P.pos.x,P.pos.z),inD=!!zone.dun;
   if(P.dead){
     P.deadT-=dt;
@@ -1984,7 +2078,7 @@ function start(){
   const same=sv&&sv.name===n&&sv.cls===chosen;
   if(sv&&!same&&!overwriteOk){overwriteOk=true;$('err').textContent=`Atenção: isso substitui o personagem salvo ${sv.name} (Nv ${sv.lvl}). Clique de novo para confirmar.`;$('go').textContent='Criar novo personagem';return}
   Object.assign(P,{name:n,cls:chosen});
-  if(same){Object.assign(P,{lvl:sv.lvl,xp:sv.xp,gold:sv.gold,pots:sv.pots});
+  if(same){Object.assign(P,{lvl:sv.lvl,xp:sv.xp,gold:sv.gold,pots:sv.pots,scrolls:Math.max(0,sv.scrolls|0)});
     if(Array.isArray(sv.inv))P.inv=sv.inv.filter(Boolean).slice(0,BAG_MAX);
     if(sv.eq)for(const s of Object.keys(SLOTN))P.eq[s]=sv.eq[s]||null;
     if(sv.q){Q.i=Math.max(0,Math.min(QUESTS.length,sv.q.i|0));Q.n=Math.max(0,sv.q.n|0);Q.on=!!sv.q.on;Q.rep=TYPES[sv.q.rep]?sv.q.rep:null}}
@@ -1994,7 +2088,7 @@ function start(){
   P.mesh=makeHero(P.cls);scene.add(P.mesh);
   recalc();P.hp=P.maxHp;P.mp=P.maxMp;refreshLook();
   P.lbl=document.createElement('div');P.lbl.className='lbl me';P.lbl.textContent=P.name;labelsEl.appendChild(P.lbl);
-  const C=CLS[P.cls];$('skName').textContent=C.skill;$('icoSkill').textContent=C.skIco;$('icoAtk').textContent=C.atkIco;
+  const C=CLS[P.cls];$('skName').textContent=C.skill;$('ultName').textContent=ULT[P.cls].name;$('icoUlt').textContent=ULT[P.cls].ico;$('icoSkill').textContent=C.skIco;$('icoAtk').textContent=C.atkIco;
   $('start').classList.add('hidden');$('hud').classList.remove('hidden');qRender();
   cam.yaw=SPAWN.yaw;myJoin=Date.now();started=true;dayT=0.1;save();
   log(`Bem-vindo(a) a Reinos de Aether, ${P.name}!`,'sys');
