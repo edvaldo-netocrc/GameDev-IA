@@ -11,7 +11,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Habilidade suprema no nível 10 (tecla 3): Fúria do Guerreiro (+50% ataque, −35% dano recebido) e Chuva de Meteoros do Mago.
 - Pergaminho de Retorno (tecla R) volta à vila em 3 s; mapa-múndi na tecla M (som passou para a tecla N).
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
-- Efeitos sonoros e sons de ambiente gerados no navegador (WebAudio), com volume nas opções e tecla M.
+- Sons gravados (Kenney e OpenGameArt, CC0) com sons sintetizados no navegador (WebAudio) como reserva; volume nas opções e tecla N para ligar/desligar.
 - Itens e progresso ficam salvos no navegador de cada jogador.
 
 Para jogar localmente, basta abrir `index.html` num servidor estático.
