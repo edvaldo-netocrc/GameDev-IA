@@ -17,6 +17,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Classes: Guerreiro (Golpe Giratório / Fúria), Mago (Explosão Arcana / Chuva de Meteoros) e Bárbaro (Investida / Sede de Sangue: ataques mais rápidos e roubo de vida).
 - Salvamento na nuvem: o herói é salvo no Supabase (funções `save_char`/`load_char`, protegidas por chave secreta). Em Opções há um código para continuar o mesmo herói em outro aparelho.
 - Recompensa diária: 7 dias seguidos com prêmios crescentes (ouro, poções, pergaminhos, itens raro e épico).
+- Celular (Android/iPhone): layout próprio de toque em pé e deitado (joystick à esquerda, botões de combate à direita, menu de ícones no alto), botão de tela cheia e instalação como app ("Adicionar à tela inicial" abre em tela cheia, deitado).
 - Montaria (tecla V): Lobo Branco, +70% de velocidade; atacar ou levar dano desmonta.
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
 - Sons gravados (Kenney e OpenGameArt, CC0) com sons sintetizados no navegador (WebAudio) como reserva; volume nas opções e tecla N para ligar/desligar.
