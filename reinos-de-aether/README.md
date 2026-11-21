@@ -14,6 +14,9 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Perfil (tecla P): 13 conquistas que liberam títulos exibidos acima do nome (visíveis no multiplayer) e ranking online do servidor (Top 10 por nível e XP, gravado no Supabase pela função `submit_score`).
 - Chefe mundial: Azgaroth, o Senhor Demônio, desperta na Arena (norte das Terras de Pedra) por 12 minutos a cada meia hora (relógio igual para todos); recompensa todos que ajudarem.
 - Grupo (Perfil → Grupo): até 4 jogadores; cada abate dá 60% do XP aos membros a até 70 m e conta para as missões de todos.
+- Classes: Guerreiro (Golpe Giratório / Fúria), Mago (Explosão Arcana / Chuva de Meteoros) e Bárbaro (Investida / Sede de Sangue: ataques mais rápidos e roubo de vida).
+- Salvamento na nuvem: o herói é salvo no Supabase (funções `save_char`/`load_char`, protegidas por chave secreta). Em Opções há um código para continuar o mesmo herói em outro aparelho.
+- Recompensa diária: 7 dias seguidos com prêmios crescentes (ouro, poções, pergaminhos, itens raro e épico).
 - Montaria (tecla V): Lobo Branco, +70% de velocidade; atacar ou levar dano desmonta.
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
 - Sons gravados (Kenney e OpenGameArt, CC0) com sons sintetizados no navegador (WebAudio) como reserva; volume nas opções e tecla N para ligar/desligar.
