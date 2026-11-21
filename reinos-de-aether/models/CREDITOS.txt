@@ -1,0 +1,12 @@
+Modelos 3D dos personagens (com animações reduzidas às usadas pelo jogo):
+
+- knight.glb, mage.glb
+  KayKit : Adventurers Character Pack (1.0) — Kay Lousberg (www.kaylousberg.com)
+  https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+
+- skeleton_warrior.glb, skeleton_rogue.glb, skeleton_mage.glb
+  KayKit : Skeletons Character Pack (1.0) — Kay Lousberg (www.kaylousberg.com)
+  https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0
+
+Licença: Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
+Uso livre em projetos pessoais, educacionais e comerciais. Crédito não obrigatório, mas agradecido.
