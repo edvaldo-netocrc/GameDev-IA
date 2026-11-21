@@ -6,8 +6,8 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Gráficos: céu atmosférico, cores com tone mapping ACES, sombras suaves, grama e folhas com vento, água com reflexo; qualidade Alto/Médio/Baixo na tela inicial
 - Multiplayer em tempo real via Supabase Realtime (presença dos jogadores e chat). A chave usada no código é a chave pública (anon) do projeto, feita para ficar no navegador.
 - Monstros compartilhados: o jogador há mais tempo no mundo é o anfitrião e simula a IA dos monstros; os outros enviam seus golpes a ele. Quem causou dano recebe XP, ouro e loot próprio. Se o anfitrião sair, o próximo assume.
-- Regiões: Vila de Aether (segura), Campos Verdes, Floresta dos Lobos, Terras de Pedra, Desfiladeiro dos Orcs (oeste, Nv 11–15, chefe Ignarok, o Dragão) e Masmorra Esquecida (chefe Lich Morvath).
-- Missões: o Capitão Aldric (o ! dourado na vila) dá uma campanha de 9 missões, das Geleias até o dragão Ignarok, com XP, ouro, poções e itens. Depois dela, caçadas repetíveis.
+- Regiões: Vila de Aether (segura), Campos Verdes, Floresta dos Lobos, Terras de Pedra, Desfiladeiro dos Orcs (oeste, Nv 11–15, chefe Ignarok, o Dragão), Pântano Assombrado (sul, Nv 16–22, chefe Rei Fungorr) e Masmorra Esquecida (chefe Lich Morvath).
+- Missões: o Capitão Aldric (o ! dourado na vila) dá uma campanha de 12 missões, das Geleias até o dragão Ignarok, com XP, ouro, poções e itens. Depois dela, caçadas repetíveis.
 - Habilidade suprema no nível 10 (tecla 3): Fúria do Guerreiro (+50% ataque, −35% dano recebido) e Chuva de Meteoros do Mago.
 - Pergaminho de Retorno (tecla R) volta à vila em 3 s; mapa-múndi na tecla M (som passou para a tecla N).
 - Refinamento no Ferreiro Borin: itens equipados de +1 a +7 (+12% nos atributos por nível; chance cai a cada nível e, de +5 em diante, a falha volta 1 nível).

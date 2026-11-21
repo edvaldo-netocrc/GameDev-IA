@@ -353,6 +353,7 @@ const WB_PERIOD=30*60e3,WB_OPEN=12*60e3,WB_POS={x:6,z:-152};
 const wbSlot=()=>Math.floor(Date.now()/WB_PERIOD),wbActive=()=>Date.now()%WB_PERIOD<WB_OPEN;
 function wbLeft(){const t=Date.now()%WB_PERIOD;return t<WB_OPEN?WB_OPEN-t:WB_PERIOD-t} // ms até fechar (ativo) ou abrir
 const fmtMS=ms=>{const s=Math.ceil(ms/1000);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')};
+const inSwamp=(x,z)=>z>110&&Math.abs(x)<z*0.5&&Math.hypot(x,z)>=118; // Pântano Assombrado (sul)
 const inOrcs=(x,z)=>x<-110&&Math.abs(z)< -x*0.6&&Math.hypot(x,z)>=118; // Desfiladeiro dos Orcs (oeste)
 function zoneOf(x,z){
   if(inDungeon(x))return{n:'Masmorra Esquecida',s:'Nível 10+',dun:true};
@@ -361,6 +362,7 @@ function zoneOf(x,z){
   if(d<68)return{n:'Campos Verdes',s:'Nível 1–3'};
   if(d<120)return{n:'Floresta dos Lobos',s:'Nível 4–7'};
   if(inOrcs(x,z))return{n:'Desfiladeiro dos Orcs',s:'Nível 11–15'};
+  if(inSwamp(x,z))return{n:'Pântano Assombrado',s:'Nível 16–22'};
   return{n:'Terras de Pedra',s:'Nível 8+'};
 }
 
@@ -425,6 +427,7 @@ const tmpOrc=new THREE.Color();
     const g1=new THREE.Color().setHSL(0.26-f*0.03,0.48-f*0.08,0.40+n-f*0.09);
     const g2=new THREE.Color().setHSL(0.09,0.18,0.36+n+(y>9?0.08:0));
     c.copy(g1).lerp(g2,s);
+    {const o=smooth(100,125,z)*smooth(z*0.58,z*0.42,Math.abs(x))*smooth(108,128,d);if(o>0)c.lerp(tmpOrc.setHSL(0.78,0.18,0.17+n*0.7),o*0.85)}
     {const o=smooth(-100,-125,x)*smooth(-x*0.68,-x*0.52,Math.abs(z))*smooth(108,128,d);if(o>0)c.lerp(tmpOrc.setHSL(0.035,0.32,0.27+n),o*0.85)}
     if(d>190)c.lerp(new THREE.Color(0x8a8378),smooth(190,215,d));
     const lm=lakeMask(x,z);
@@ -667,7 +670,7 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
+const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -731,7 +734,7 @@ function driveHero(g,moving,trig,dead,dt){
   }
   u.mixer.update(dt);return true;
 }
-const MON_MODEL={demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
+const MON_MODEL={ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
 const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons'};
 const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw'},lich:{...SK,atk:'Spellcast_Shoot'},
   wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death'},
@@ -739,16 +742,21 @@ const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw
   slime:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death'},
   orc:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death'},
   demon:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death'},
+  ghost:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death'},
+  skullf:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Punch',death:'Death'},
+  mushking:{idle:'Idle',walk:'Walk',run:'Run',atk:'Punch',death:'Death'},
   troll:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.5,atk:'Bite_Front',death:'Death'},
   dragon:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death'}};
 function upgradeMonsterModels(){
   for(const m of monsters){const mm=MON_MODEL[m.type];if(!mm||m.g.userData.model)continue;const r=cloneModel(mm[0],mm[1]);if(!r)continue;
     const g=m.g,tint=g.userData.body&&g.userData.body.material.color.clone();for(const c of [...g.children])g.remove(c);g.add(r.m);
+    if(m.type==='ghost')r.m.traverse(o=>{if(o.isMesh&&/Ghost_Main/.test(o.material.name)){o.material=o.material.clone();o.material.color.copy(lin(new THREE.Color(0xdcefff)));o.material.emissive=lin(new THREE.Color(0x5a8ab8));o.material.emissiveIntensity=0.55;o.material.transparent=true;o.material.opacity=0.82;o.material.depthWrite=false}});
+    if(m.type==='skullf')r.m.traverse(o=>{if(o.isMesh&&/Ghost_Main/.test(o.material.name)){o.material=o.material.clone();o.material.emissive=lin(new THREE.Color(0x6a2ab8));o.material.emissiveIntensity=0.7}});
     if(m.type==='slime'&&tint)r.m.traverse(o=>{if(o.isMesh&&/Pink_Main/.test(o.material.name))o.material.color.copy(tint);if(o.isMesh&&/Pink_Secondary/.test(o.material.name))o.material.color.copy(tint).multiplyScalar(0.6)});
     if(m.type==='skel')attachFrom('knight',['1H_Sword','Round_Shield'],r);
     if(m.type==='lich')attachFrom('mage',['2H_Staff'],r);
     for(const [n,o] of Object.entries(r.parts))if(/Eyes/.test(n)&&o.material){o.material.emissive=lin(new THREE.Color(m.type==='lich'?0x7dff9a:0xff6a2a));o.material.emissiveIntensity=2.5}
-    g.userData={model:true,mixer:r.mixer,actions:r.actions,parts:r.parts,t:0,lock:0,cur:null,curName:null,float:m.type==='lich'||m.type==='dragon',lastAtk:m.atkN,px:g.position.x,pz:g.position.z,spd:0};
+    g.userData={model:true,mixer:r.mixer,actions:r.actions,parts:r.parts,t:0,lock:0,cur:null,curName:null,float:m.type==='lich'||m.type==='dragon'||m.type==='ghost'||m.type==='skullf',lastAtk:m.atkN,px:g.position.x,pz:g.position.z,spd:0};
     playAnim(g.userData,MON_ANIM[m.type].idle);
     g.traverse(o=>{o.userData.mon=m});
   }
@@ -773,6 +781,9 @@ const TYPES={
   boss:{name:'Golem Ancião',lvl:13,hp:1600,atk:42,xp:700,gold:[120,220],spd:3.4,aggro:14,range:5,cd:2.2,respawn:60,size:3.8,lh:9,pc:0xb36bff,dc:1,boss:true,epic:true},
   skel:{name:'Esqueleto Guerreiro',lvl:10,hp:330,atk:27,xp:130,gold:[15,32],spd:4.4,aggro:12,range:2.4,cd:1.3,respawn:25,size:1.2,lh:2.9,pc:0xe8e2cc,dc:0.3},
   archer:{name:'Esqueleto Arqueiro',lvl:10,hp:240,atk:22,xp:120,gold:[15,30],spd:3.6,aggro:16,range:14,cd:2,respawn:25,size:1.2,lh:2.9,pc:0xe8e2cc,dc:0.3,ranged:0xffe08a},
+  ghost:{name:'Fantasma Lamentoso',lvl:16,hp:900,atk:44,xp:420,gold:[40,80],spd:5.2,aggro:13,range:2.6,cd:1.2,respawn:28,size:1.3,lh:4.2,pc:0xbfe8ff,dc:0.3},
+  skullf:{name:'Caveira Flamejante',lvl:18,hp:1100,atk:50,xp:560,gold:[55,100],spd:4.4,aggro:16,range:12,cd:2.0,respawn:30,size:1.3,lh:4.4,pc:0x9a6bff,dc:0.33,ranged:0x9a6bff},
+  mushking:{name:'Rei Fungorr',lvl:22,hp:9000,atk:68,xp:5200,gold:[700,1100],spd:4.0,aggro:20,range:3.8,cd:1.7,respawn:150,size:3.2,lh:7.6,pc:0x7dff6a,dc:1,boss:true,epic:true,spores:true},
   orc:{name:'Orc Saqueador',lvl:11,hp:420,atk:30,xp:160,gold:[18,38],spd:4.8,aggro:12,range:2.6,cd:1.3,respawn:25,size:1.4,lh:3.5,pc:0x7fbf4a,dc:0.32},
   troll:{name:'Troll da Montanha',lvl:13,hp:650,atk:38,xp:230,gold:[25,50],spd:3.8,aggro:10,range:3,cd:1.8,respawn:30,size:1.9,lh:4.4,pc:0xd8e4ff,dc:0.35},
   dragon:{name:'Ignarok, o Dragão',lvl:18,hp:4200,atk:52,xp:2200,gold:[350,550],spd:4.2,aggro:20,range:13,cd:2.2,respawn:120,size:3,lh:7.5,pc:0xff6a2a,dc:1,boss:true,epic:true,ranged:0xff7a2a,dragon:true},
@@ -852,6 +863,15 @@ function makeMonsterMesh(type){
     const arms=[];for(const x of [-0.75,0.75]){const a=new THREE.Group();a.position.set(x,2.15,0);a.add(ell(0.2,0.55,0.2,sk,0,-0.5,0));b.add(a);arms.push(a)}
     const legs=[];for(const x of [-0.28,0.28]){const l=new THREE.Group();l.position.set(x,1.0,0);l.add(ell(0.2,0.5,0.22,cl,0,-0.48,0));b.add(l);legs.push(l)}
     g.userData.arms=arms;g.userData.legs=legs;
+  }else if(type==='ghost'||type==='skullf'){
+    const gm=stdM(type==='ghost'?0xdff4ff:0x3a2a4a,0.5,{transparent:true,opacity:0.85,emissive:type==='ghost'?0x4a6a80:0x5a2aa0,emissiveIntensity:0.6}),b=new THREE.Group();b.position.y=1.6;g.add(b);
+    b.add(ell(0.7,0.75,0.65,gm,0,0.4,0));b.add(new THREE.Mesh(new THREE.ConeGeometry(0.65,1.1,10,1,true),gm));b.children[1].position.y=-0.45;b.children[1].rotation.x=Math.PI;
+    for(const x of [-0.22,0.22])b.add(ell(0.1,0.13,0.05,new THREE.MeshBasicMaterial({color:type==='ghost'?0x102030:0xb36bff}),x,0.55,0.6));g.userData.float=true;
+  }else if(type==='mushking'){
+    const cap=stdM(0xc0392b,0.6),st=stdM(0xf1e2c4,0.8),b=new THREE.Group();b.scale.setScalar(2);g.add(b);
+    b.add(ell(0.55,0.95,0.5,st,0,1.1,0));const c=ell(1.3,0.6,1.3,cap,0,2.3,0);b.add(c);for(let i=0;i<7;i++){const a=i/7*6.28;b.add(ell(0.16,0.08,0.16,st,Math.cos(a)*0.8,2.75,Math.sin(a)*0.8))}
+    for(const x of [-0.2,0.2])b.add(ell(0.08,0.1,0.05,new THREE.MeshBasicMaterial({color:0x101010}),x,1.6,0.47));
+    const arms=[];for(const x of [-0.7,0.7]){const a=new THREE.Group();a.position.set(x,1.5,0);a.add(ell(0.16,0.5,0.16,st,0,-0.45,0));b.add(a);arms.push(a)}g.userData.arms=arms;
   }else if(type==='demon'){
     const sk=stdM(0x8a1e2a,0.7),dk=stdM(0x2a1018,0.8),b=new THREE.Group();b.scale.setScalar(2.2);g.add(b);
     b.add(ell(0.75,0.85,0.55,sk,0,2.0,0));b.add(ell(0.5,0.45,0.45,dk,0,1.15,0));b.add(ell(0.42,0.4,0.4,sk,0,3.05,0.05));
@@ -933,10 +953,31 @@ function ringSpawn(type,n,d0,d1,a0=0,a1=Math.PI*2,ok=()=>true){
 ringSpawn('slime',18,32,64);
 ringSpawn('wolf',12,72,100);
 ringSpawn('spider',8,96,118);
-ringSpawn('golem',11,126,180,0,Math.PI*2,(x,z)=>!inOrcs(x,z));
+ringSpawn('golem',11,126,180,0,Math.PI*2,(x,z)=>!inOrcs(x,z)&&!inSwamp(x,z));
 ringSpawn('orc',10,126,172,Math.PI*0.84,Math.PI*1.16,inOrcs);
 ringSpawn('troll',5,140,178,Math.PI*0.86,Math.PI*1.14,inOrcs);
 spawnMonster('dragon',-176,0);
+ringSpawn('ghost',9,128,175,Math.PI*0.37,Math.PI*0.63,inSwamp);
+ringSpawn('skullf',6,140,180,Math.PI*0.39,Math.PI*0.61,inSwamp);
+spawnMonster('mushking',0,176);
+const swampFx=[];
+{ // pântano: árvores mortas, cogumelos brilhantes e poças escuras
+  const bark=stdM(0x2e2620,0.95),sw=new THREE.Group();scene.add(sw);
+  const rng=(i,k)=>((Math.sin(i*12.9898+k*78.233)*43758.5453)%1+1)%1;
+  for(let i=0;i<26;i++){const a=Math.PI*(0.37+rng(i,1)*0.26),d=124+rng(i,2)*62,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inSwamp(x,z)||Math.hypot(x,z-176)<12)continue;
+    const t=new THREE.Group();t.position.set(x,H(x,z),z);t.rotation.y=rng(i,3)*6.28;const h=4+rng(i,4)*3;
+    const tr=cyl(0.25,0.4,h,bark,0,h/2,0);tr.rotation.z=(rng(i,5)-0.5)*0.25;t.add(tr);
+    for(let k=0;k<3;k++){const br=cyl(0.06,0.14,1.8,bark,0,0,0);br.position.set(0,h*(0.55+k*0.13),0);br.rotation.set(0,k*2.1,1+rng(i,6+k)*0.4);br.translateY(0.8);t.add(br)}
+    t.traverse(o=>{if(o.isMesh)o.castShadow=true});sw.add(t);obstacles.push({x,z,r:0.7})}
+  for(let i=0;i<34;i++){const a=Math.PI*(0.37+rng(i,9)*0.26),d=122+rng(i,10)*66,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inSwamp(x,z))continue;
+    const col=[0x7dff6a,0x6ad8ff,0xc77dff][i%3],sc=0.5+rng(i,11)*0.9,mg=new THREE.Group();mg.position.set(x,H(x,z),z);
+    mg.add(cyl(0.08*sc,0.12*sc,0.6*sc,stdM(0xe8e0d0,0.8),0,0.3*sc,0));const cp=new THREE.Mesh(new THREE.SphereGeometry(0.35*sc,10,6,0,6.29,0,1.5),new THREE.MeshBasicMaterial({color:col}));cp.position.y=0.6*sc;mg.add(cp);
+    if(i%4===0){const gs=glowSprite(col,2.4*sc,0.55);gs.position.y=0.7*sc;mg.add(gs)}sw.add(mg)}
+  for(let i=0;i<9;i++){const a=Math.PI*(0.4+rng(i,13)*0.2),d=130+rng(i,14)*48,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inSwamp(x,z))continue;
+    const pool=new THREE.Mesh(new THREE.CircleGeometry(2.5+rng(i,15)*3,20),new THREE.MeshStandardMaterial({color:0x1c2a24,roughness:0.15,metalness:0.3,transparent:true,opacity:0.85}));
+    pool.rotation.x=-Math.PI/2;pool.position.set(x,H(x,z)+0.06,z);sw.add(pool)}
+  for(let i=0;i<14;i++){const sp=glowSprite(0xb8ff9a,0.8,0.9);sw.add(sp);swampFx.push({sp,a:rng(i,20)*6.28,r:20+rng(i,21)*45,y:1+rng(i,22)*3,s:0.2+rng(i,23)*0.3})}
+}
 spawnMonster('demon',WB_POS.x,WB_POS.z);{const wb=monsters[monsters.length-1];if(!wbActive())wbHide(wb)}
 { // Arena do chefe mundial: anel de pilares e braseiros roxos
   const st=stdM(0x4a4450,0.95,{flatShading:!GFX.lo}),ar=new THREE.Group();scene.add(ar);
@@ -973,8 +1014,11 @@ const QUESTS=[
   {t:['orc'],n:10,title:'Saqueadores do Oeste',txt:'Orcs saqueiam caravanas no Desfiladeiro dos Orcs. Derrote 10.',xp:3200,gold:650,pots:6},
   {t:['troll'],n:5,title:'Gigantes da Montanha',txt:'Trolls protegem o acampamento orc. Derrote 5.',xp:4200,gold:800,pots:6,item:['ring',14,2]},
   {t:['dragon'],n:1,title:'A Fúria de Ignarok',txt:'O dragão Ignarok aterroriza o reino. Derrote-o de uma vez por todas!',xp:9000,gold:1500,pots:10,item:['weapon',18,3]},
+  {t:['ghost'],n:10,title:'Lamentos no Pântano',txt:'Fantasmas assombram o Pântano Assombrado, ao sul. Derrote 10.',xp:14000,gold:1800,pots:10},
+  {t:['skullf'],n:8,title:'Fogo Roxo',txt:'Caveiras Flamejantes protegem o coração do pântano. Derrote 8.',xp:18000,gold:2200,pots:10,item:['armor',20,3]},
+  {t:['mushking'],n:1,title:'O Rei dos Fungos',txt:'Rei Fungorr espalha esporos venenosos pelo pântano. Derrote-o!',xp:30000,gold:4000,pots:15,item:['weapon',22,3]},
 ];
-const QREP=[['slime',1],['wolf',3],['spider',5],['golem',8],['orc',11],['troll',13]]; // caçadas repetíveis após a campanha
+const QREP=[['slime',1],['wolf',3],['spider',5],['golem',8],['orc',11],['troll',13],['ghost',16],['skullf',18]]; // caçadas repetíveis após a campanha
 const Q={i:0,n:0,on:false,rep:null};
 function qCur(){if(Q.i<QUESTS.length)return QUESTS[Q.i];if(!Q.rep)return null;const T=TYPES[Q.rep];
   return{t:[Q.rep],n:10,title:'Caçada: '+T.name,txt:`Derrote 10 ${T.name}.`,xp:Math.round(T.xp*6),gold:Math.round(T.gold[1]*4),pots:3,rep:true}}
@@ -1491,7 +1535,7 @@ function updMeteors(dt){for(let i=meteors.length-1;i>=0;i--){const M=meteors[i];
   if(M.mine)for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,c)<3.6+m.T.size*0.3){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*1.7*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}}}
 /* ============ mapa-múndi ============ */
 let ptyT=0,wbT=0,mapOpen=false,mapBg=null,mapT=0;
-const MAPR=205,ZCOL={'Vila de Aether':'#c9b48a','Campos Verdes':'#6fa64a','Floresta dos Lobos':'#2f6b34','Terras de Pedra':'#8a8378','Desfiladeiro dos Orcs':'#8a4a32'};
+const MAPR=205,ZCOL={'Pântano Assombrado':'#4a3a5a','Vila de Aether':'#c9b48a','Campos Verdes':'#6fa64a','Floresta dos Lobos':'#2f6b34','Terras de Pedra':'#8a8378','Desfiladeiro dos Orcs':'#8a4a32'};
 function buildMapBg(){const N=160,c=document.createElement('canvas');c.width=c.height=N;const x=c.getContext('2d'),img=x.createImageData(N,N);
   for(let j=0;j<N;j++)for(let i=0;i<N;i++){const wx=(i/N*2-1)*MAPR,wz=(j/N*2-1)*MAPR,k=(j*N+i)*4,d=Math.hypot(wx,wz);let col;
     if(d>WORLD_R)col=[22,24,30];else if(lakeMask(wx,wz)>0.5)col=[58,120,180];else{const h=ZCOL[zoneOf(wx,wz).n]||'#555';col=[1,3,5].map(o=>parseInt(h.substr(o,2),16));
@@ -1504,7 +1548,7 @@ function drawMap(){const cv=$('wmapC'),x=cv.getContext('2d'),W=cv.width,S=W/(2*M
   x.strokeStyle='rgba(0,0,0,.35)';x.lineWidth=1.5;for(const r of [26,68,120]){x.beginPath();x.arc(W/2,W/2,r*S,0,6.29);x.stroke()}
   x.textAlign='center';x.font='bold 15px Cinzel,serif';x.lineWidth=4;x.strokeStyle='rgba(0,0,0,.75)';
   const lab=(t,wx,wz,c,f)=>{if(f)x.font=f;const w=x.measureText(t).width/2+6,X=Math.max(w,Math.min(W-w,px(wx)));x.strokeText(t,X,px(wz));x.fillStyle=c||'#f2d38a';x.fillText(t,X,px(wz))};
-  lab('Vila de Aether',0,-30);lab('Campos Verdes',0,52);lab('Floresta dos Lobos',-60,100);lab('Terras de Pedra',150,40);lab('Arena',WB_POS.x,WB_POS.z-24,'#d9a6ff');lab('Desfiladeiro',-158,-48);lab('dos Orcs',-158,-36);
+  lab('Vila de Aether',0,-30);lab('Campos Verdes',0,52);lab('Floresta dos Lobos',-60,100);lab('Terras de Pedra',150,40);lab('Arena',WB_POS.x,WB_POS.z-24,'#d9a6ff');lab('Pântano Assombrado',0,140,'#c9b6ff');x.font='bold 11px Inter,sans-serif';lab('Nv 16–22',0,151,'#c9b6ff');x.font='bold 15px Cinzel,serif';lab('Desfiladeiro',-158,-48);lab('dos Orcs',-158,-36);
   x.font='bold 11px Inter,sans-serif';lab('Nv 1–3',0,63);lab('Nv 4–7',-60,111);lab('Nv 8+',150,51);lab('Nv 11–15',-158,-24);
   // NPCs, masmorra, chefes
   x.font='18px sans-serif';
@@ -1531,6 +1575,7 @@ const ACH=[
   {id:'orc',ico:'👹',t:'Terror dos Orcs',d:'Derrote 50 orcs ou trolls',n:50,v:()=>kc('orc','troll')},
   {id:'anciao',ico:'👑',t:'Domador de Golens',d:'Derrote o Golem Ancião',n:1,v:()=>kc('boss')},
   {id:'lich',ico:'☠️',t:'Algoz de Morvath',d:'Derrote o Lich Morvath',n:1,v:()=>kc('lich')},
+  {id:'fungo',ico:'🍄',t:'Rei dos Fungos',d:'Derrote o Rei Fungorr no Pântano Assombrado',n:1,v:()=>kc('mushking')},
   {id:'dragao',ico:'🐉',t:'Matador de Dragões',d:'Derrote Ignarok, o Dragão',n:1,v:()=>kc('dragon')},
   {id:'demonio',ico:'👹',t:'Flagelo de Azgaroth',d:'Ajude a derrotar o chefe mundial Azgaroth',n:1,v:()=>kc('demon')},
   {id:'mil',ico:'⚔️',t:'Lenda Viva',d:'Derrote 1000 monstros',n:1000,v:()=>Object.values(P.stats.k).reduce((a,b)=>a+b,0)},
@@ -1975,6 +2020,7 @@ const NET={
   ufx(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z)||d2({x,z},P.pos)>90)return;
     if(d.k==='m')meteorRain(x,z,false);else{const p=new THREE.Vector3(x,H(x,z),z),c=d.k==='b'?0xc01020:0xff5a2a;pillarFx(p,c);ringFx(p,6,c)}},
   tl(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z))return;
+    if(d.k==='s'){const r=clamp(num(d.r,4),3,7);if(inSwamp(x,z)&&Math.hypot(P.pos.x-x,P.pos.z-z)<60)telegraph(new THREE.Vector3(x,0,z),r,TYPES.mushking.atk*1.1,0x7dff6a);return}
     if(d.k==='w'){const r=clamp(num(d.r,4.5),3,8);if(Math.hypot(P.pos.x-x,P.pos.z-z)<70)telegraph(new THREE.Vector3(x,0,z),r,TYPES.demon.atk*1.15,0xb040ff);return}
     if(d.k==='d'){if(inOrcs(x,z)&&Math.hypot(P.pos.x-x,P.pos.z-z)<60)telegraph(new THREE.Vector3(x,0,z),4,TYPES.dragon.atk*1.2,0xff6a2a);return}
     if(!inDungeon(P.pos.x)||!inDungeon(x))return;telegraph(new THREE.Vector3(x,0,z),4.5,TYPES.lich.atk*1.3,0x7dff9a)},
@@ -2240,6 +2286,9 @@ function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pula
       if(m.cd<=0){m.cd=T.cd;m.atkAnim=1;m.atkN++;monsterStrike(m,tgt,T.atk*(0.85+rnd()*0.3));
         if(m.type==='boss'&&rnd()<0.3){ringFx(g.position,8,0xff6a3a);emit(g.position.clone().setY(g.position.y+0.5),0xb0a090,40,8,2,0.8,8,4);
           for(const p of plist)if(p.inD===area&&Math.hypot(p.x-g.position.x,p.z-g.position.z)<7)monsterStrike({T:{},id:m.id},p,T.atk*0.6)}}}
+    if(T.spores){m.spT-=dt;if(m.spT<=0){m.spT=6;SFX.play('boom',g.position,0.06);const at=[[g.position.x,g.position.z,7]];
+      for(const p of plist.slice(0,3))if(d2(p,g.position)<26)at.push([p.x+(rnd()-0.5)*3,p.z+(rnd()-0.5)*3,4]);
+      for(const [x,z,r] of at){telegraph(new THREE.Vector3(x,0,z),r,T.atk*1.1,0x7dff6a);netEmit('tl',{x:Math.round(x*10)/10,z:Math.round(z*10)/10,k:'s',r})}}}
     if(T.world){m.spT-=dt;if(m.spT<=0){m.spT=7;m.wsN=(m.wsN||0)+1;SFX.play('boom',g.position,0.06);
       const at=[[g.position.x,g.position.z,8]];if(m.wsN%2===0)for(const p of plist.slice(0,4))if(d2(p.pos||p,g.position)<30)at.push([(p.pos||p).x,(p.pos||p).z,4.5]);
       for(const [x,z,r] of at){telegraph(new THREE.Vector3(x,0,z),r,T.atk*1.15,0xb040ff);netEmit('tl',{x:Math.round(x*10)/10,z:Math.round(z*10)/10,k:'w',r})}}}
@@ -2299,7 +2348,7 @@ function animMonster(m,walking,dt){
     if(m.atkN!==ud.lastAtk){ud.lastAtk=m.atkN;ud.lock=ud.t+playAnim(ud,A.atk,true,1.4)*0.85}
     if(ud.t>=ud.lock){const run=ud.spd>3,base=ud.spd<0.4||m.type==='lich'?A.idle:run?A.run:A.walk;if(ud.curName!==base)playAnim(ud,base,false,run?(A.runSpeed||1):1)}
     if(d2(g.position,P.pos)<90)ud.mixer.update(dt);
-    if(ud.float){if(m.type==='dragon'){if(!m.dead||m.dyingT>0.9){g.position.y+=3.2+Math.sin(m.anim*1.6)*0.5}if(rnd()<0.25)emit(g.position.clone().setY(g.position.y+1.5),0xff8a2a,1,1.2,0.8,1,-1,2.5)}
+    if(ud.float){if(m.type==='ghost'||m.type==='skullf'){g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;if(rnd()<0.2)emit(g.position.clone().setY(g.position.y+1.2),m.T.pc,1,0.8,0.5,0.9,0,1.4)}else if(m.type==='dragon'){if(!m.dead||m.dyingT>0.9){g.position.y+=3.2+Math.sin(m.anim*1.6)*0.5}if(rnd()<0.25)emit(g.position.clone().setY(g.position.y+1.5),0xff8a2a,1,1.2,0.8,1,-1,2.5)}
       else{g.position.y+=0.5+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}}
     if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.4)}else g.scale.setScalar(1);
     return;
@@ -2312,6 +2361,7 @@ function animMonster(m,walking,dt){
   if(ud.arms){ud.arms.forEach((a,i)=>a.rotation.x=m.atkAnim>0?-Math.sin(m.atkAnim*Math.PI)*1.6:(walking?Math.sin(m.anim*5+(i?Math.PI:0))*0.4:0))}
   if(ud.wings)ud.wings.forEach((w,i)=>w.rotation.x=Math.sin(m.anim*6)*0.4*(i?1:-1));
   if(ud.float&&m.type==='dragon')g.position.y+=1+Math.sin(m.anim*1.6)*0.5;
+  else if(ud.float&&(m.type==='ghost'||m.type==='skullf'))g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;
   else if(ud.float){g.position.y+=0.6+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
   if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.6)}else g.scale.setScalar(1);
 }
@@ -2411,6 +2461,7 @@ function update(dt){
     else b.m.position.addScaledVector(d,Math.min(1,b.spd*dt/l));
   }
   // áreas telegrafadas
+  for(const f of swampFx){f.a+=dt*f.s;f.sp.position.set(Math.cos(f.a)*f.r*0.6,0,150+Math.sin(f.a*1.3)*f.r*0.5);f.sp.position.y=H(f.sp.position.x,f.sp.position.z)+f.y+Math.sin(now*2+f.a)*0.4;f.sp.material.opacity=0.5+Math.sin(now*3+f.a*5)*0.4}
   for(const f of orcFires){f.scale.set(1+Math.sin(now*13+f.id)*0.12,1+Math.sin(now*17+f.id)*0.25,1+Math.cos(now*11+f.id)*0.12)}
   for(let i=teles.length-1;i>=0;i--){
     const t=teles[i];t.t-=dt;t.m.material.opacity=0.2+0.35*(1-t.t/1.4)+Math.sin(now*20)*0.05;
@@ -2592,7 +2643,7 @@ function start(){
     if(Array.isArray(sv.ach))P.ach=sv.ach.filter(a=>ACH.some(x=>x.id===a));if(typeof sv.title==='string'&&P.ach.includes(sv.title))P.title=sv.title;
     if(Array.isArray(sv.inv))P.inv=sv.inv.filter(Boolean).slice(0,BAG_MAX);
     if(sv.eq)for(const s of Object.keys(SLOTN))P.eq[s]=sv.eq[s]||null;
-    if(sv.q){Q.i=Math.max(0,Math.min(QUESTS.length,sv.q.i|0));Q.n=Math.max(0,sv.q.n|0);Q.on=!!sv.q.on;Q.rep=TYPES[sv.q.rep]?sv.q.rep:null}}
+    if(sv.q){Q.i=Math.max(0,Math.min(QUESTS.length,sv.q.i|0));Q.n=Math.max(0,sv.q.n|0);Q.on=!!sv.q.on;Q.rep=TYPES[sv.q.rep]?sv.q.rep:null;if(Q.rep&&Q.i<QUESTS.length){Q.rep=null;Q.on=false;Q.n=0}}}
   for(const it of [...P.inv,...Object.values(P.eq)])if(it&&it.id>=uid)uid=it.id+1;
   if(!P.eq.weapon)P.eq.weapon=makeItem('weapon',1,0,P.cls);
   if(!P.eq.armor)P.eq.armor=makeItem('armor',1,0,P.cls);
