@@ -20,6 +20,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Celular (Android/iPhone): layout próprio de toque em pé e deitado (joystick à esquerda, botões de combate à direita, menu de ícones no alto), botão de tela cheia e instalação como app ("Adicionar à tela inicial" abre em tela cheia, deitado).
 - Amigos e sussurros (Perfil → Amigos): lista salva no herói, aviso quando um amigo entra, mensagens privadas com /s Nome mensagem e /r para responder.
 - Emotes (tecla G ou /comemorar, /girar, /magia, /morto, /susto): gestos animados que todos veem. /ajuda lista os comandos.
+- Mascotes (loja do Ferreiro Borin): Geleia Mascote (busca baús, +10% ouro), Filhote de Lobo (+10% XP) e Dragãozinho (voa, busca baús, +10% ouro, +5% ataque; liberado após derrotar Ignarok). Visíveis no multiplayer.
 - Montaria (tecla V): Lobo Branco, +70% de velocidade; atacar ou levar dano desmonta.
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
 - Sons gravados (Kenney e OpenGameArt, CC0) com sons sintetizados no navegador (WebAudio) como reserva; volume nas opções e tecla N para ligar/desligar.

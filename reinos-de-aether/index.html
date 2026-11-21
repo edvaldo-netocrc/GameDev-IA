@@ -109,7 +109,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 #detail .up{color:#5dff7a}#detail .down{color:#ff6a6a}
 #detail .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 #detail .req{color:#ff6a6a;font-size:11px;margin-top:4px}
-#shop{position:fixed;left:12px;top:150px;width:300px}
+#shop{position:fixed;left:12px;top:150px;width:300px;max-height:calc(100vh - 250px);min-height:180px;overflow-y:auto}
 .ph2{font-family:Cinzel,serif;color:#f2d38a;font-size:12px;margin:8px 0 4px;border-bottom:1px solid #6b563066;padding-bottom:3px}
 .srow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #2a2114}
 .srow .cell{width:40px;height:40px;font-size:20px}
@@ -1031,13 +1031,14 @@ const EMOTES={comemorar:{ico:'🎉',t:'Comemorar',a:'Cheer',sp:1},girar:{ico:'�
 const CLSICO={guerreiro:'🛡️',mago:'🧙',barbaro:'🪓'};const okCls=c=>Object.prototype.hasOwnProperty.call(CLS,c)?c:'guerreiro';
 const BAG_MAX=25;
 const SPAWN={x:-3,z:9.6,yaw:-0.3}; // vão entre as casas, câmera olhando para a praça
-const P={name:'Herói',cls:'guerreiro',lvl:1,xp:0,gold:0,pots:5,scrolls:1,ultCd:0,mounted:false,friends:[],daily:{last:'',streak:0},bloodT:0,dash:null,stats:{k:{},deaths:0,refMax:0},ach:[],title:'',furyT:0,recallT:0,hp:1,mp:1,maxHp:1,maxMp:1,atk:1,def:0,crit:8,inv:[],eq:{weapon:null,armor:null,helm:null,ring:null},
+const P={name:'Herói',cls:'guerreiro',lvl:1,xp:0,gold:0,pots:5,scrolls:1,ultCd:0,mounted:false,pets:[],pet:'',friends:[],daily:{last:'',streak:0},bloodT:0,dash:null,stats:{k:{},deaths:0,refMax:0},ach:[],title:'',furyT:0,recallT:0,hp:1,mp:1,maxHp:1,maxMp:1,atk:1,def:0,crit:8,inv:[],eq:{weapon:null,armor:null,helm:null,ring:null},
   pos:new THREE.Vector3(SPAWN.x,0,SPAWN.z),rot:SPAWN.yaw+Math.PI,mesh:null,lbl:null,target:null,auto:false,moveTo:null,cd:0,skCd:0,potCd:0,lastHurt:-99,dead:false,walk:0,atkAnim:0,deadT:0,spin:0};
 function need(l){return Math.floor(45*Math.pow(l,1.65))}
 function recalc(){
   const C=CLS[P.cls],l=P.lvl-1;let atk=C.atk+C.atkL*l,hp=C.hp+C.hpL*l,mp=C.mp+C.mpL*l,def=l,crit=8;
   for(const s in P.eq){const it=P.eq[s];if(!it)continue;const st=stOf(it);atk+=st.atk||0;def+=st.def||0;hp+=st.hp||0;mp+=st.mp||0;crit+=st.crit||0}
   if(P.furyT>0)atk*=1.5;
+  atk*=1+petB('atk');
   P.atk=Math.round(atk);P.def=Math.round(def);P.maxHp=Math.round(hp);P.maxMp=Math.round(mp);P.crit=crit;
   P.hp=Math.min(P.hp,P.maxHp);P.mp=Math.min(P.mp,P.maxMp);
 }
@@ -1058,7 +1059,7 @@ function applyLook(u,cls,ar,hr,wr){
 }
 const rarOf=it=>it?it.rar:-1;
 function refreshLook(){if(P.mesh)applyLook(P.mesh.userData,P.cls,rarOf(P.eq.armor),rarOf(P.eq.helm),rarOf(P.eq.weapon))}
-function save(){try{localStorage.setItem('aether_save',JSON.stringify({daily:P.daily,friends:P.friends,v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq,scrolls:P.scrolls,stats:P.stats,ach:P.ach,title:P.title,q:{i:Q.i,n:Q.n,on:Q.on,rep:Q.rep}}))}catch(e){}if(started)cloudSave()}
+function save(){try{localStorage.setItem('aether_save',JSON.stringify({pets:P.pets,pet:P.pet,daily:P.daily,friends:P.friends,v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq,scrolls:P.scrolls,stats:P.stats,ach:P.ach,title:P.title,q:{i:Q.i,n:Q.n,on:Q.on,rep:Q.rep}}))}catch(e){}if(started)cloudSave()}
 function load(){try{return JSON.parse(localStorage.getItem('aether_save')||'null')}catch(e){return null}}
 
 /* ============ UI ============ */
@@ -1187,6 +1188,10 @@ function renderShop(){
   h+='<div class="ph2">🔨 Refinar equipamento</div>';
   for(const sl of Object.keys(SLOTN)){const it=P.eq[sl];if(!it)continue;const r=it.ref||0,mx=r>=7,c=refCost(it);
     h+=`<div class="srow ref">${cellHTML(it,'')}<div class="nm" style="color:${RAR[it.rar].c}">${esc(itName(it))}<small>${mx?'Refinamento máximo':`Para +${r+1}: <b>${REF_CH[r]}%</b> de chance${r>=4?' · falha volta 1 nível':''}`}</small></div>${mx?'':`<button class="mini" data-ref="${sl}" ${P.gold<c?'disabled':''}>${c} 🪙</button>`}</div>`}
+  h+='<div class="ph2">🐾 Mascotes</div>';
+  for(const [k,D] of Object.entries(PETS)){const own=P.pets.includes(k),act=P.pet===k,lock=D.req&&!P.ach.includes(D.req);
+    h+=`<div class="srow"><div class="cell" style="font-size:24px">${D.ico}</div><div class="nm">${D.n}<small>${D.d}${lock?' · 🔒 derrote Ignarok':''}</small></div>`+
+      (own?`<button class="mini" data-pet="${act?'':k}">${act?'Guardar':'Levar'}</button>`:`<button class="mini" data-bpet="${k}" ${P.gold<D.price||lock?'disabled':''}>${D.price} 🪙</button>`)+'</div>'}
   h+='<div class="ph2">🛒 Itens à venda</div>';
   shopStock.forEach((it,i)=>{h+=`<div class="srow">${it?cellHTML(it,`data-shop="${i}"`):'<div class="cell empty">✖</div>'}<div class="nm" ${it?`data-shop="${i}" style="cursor:pointer;color:${RAR[it.rar].c}"`:''}>${it?esc(it.name):'Esgotado'}<small>${it?`${SLOTN[it.slot]} · Nv ${it.lvl}`:'Volte depois de subir de nível'}</small></div>${it?`<button class="mini" data-shop="${i}">${it.val*3} 🪙</button>`:''}</div>`});
   $('shopList').innerHTML=h;
@@ -1196,6 +1201,8 @@ $('shopList').addEventListener('click',e=>{
   if(b){const k=b.dataset.buy,[n,c,scr]={p1:[1,20],p5:[5,90],p15:[15,250],s1:[1,40,1],s3:[3,100,1]}[k]||[0,1e9];if(P.gold<c)return;P.gold-=c;SFX.play('coin');
     if(scr){P.scrolls+=n;log(`Comprou ${n} pergaminho${n>1?'s':''} de retorno.`,'loot')}else{P.pots+=n;log(`Comprou ${n} poç${n>1?'ões':'ão'}.`,'loot')}renderShop();renderInv();save();return}
   const rf=e.target.closest('[data-ref]');if(rf){refine(rf.dataset.ref);return}
+  const bp=e.target.closest('[data-bpet]');if(bp){buyPet(bp.dataset.bpet);return}
+  const sp=e.target.closest('[data-pet]');if(sp){setPet(sp.dataset.pet);return}
   const s=e.target.closest('[data-shop]');if(s){const it=shopStock[+s.dataset.shop];if(it)showDetail(it,'shop')}
 });
 function buyItem(it){const c=it.val*3;if(P.gold<c){log('Ouro insuficiente.','bad');return}if(P.inv.length>=BAG_MAX){log('Mochila cheia.','bad');return}
@@ -1352,8 +1359,8 @@ function killMon(m,rewarded){
   if(P.target===m){setTarget(null);P.auto=false}
   if(!rewarded)return; // monstro derrotado por outros jogadores
   const lvDiff=P.lvl-m.T.lvl,mult=lvDiff>5?0.2:lvDiff>3?0.5:1;
-  const xp=Math.max(1,Math.round(m.T.xp*mult));
-  const gold=m.T.gold[0]+Math.floor(rnd()*(m.T.gold[1]-m.T.gold[0]+1));
+  const xp=Math.max(1,Math.round(m.T.xp*mult*(1+petB('xp'))));
+  const gold=Math.round((m.T.gold[0]+Math.floor(rnd()*(m.T.gold[1]-m.T.gold[0]+1)))*(1+petB('gold')));
   const at=m.g.position.clone().setY(m.g.position.y+2);
   floatText(at,'+'+xp+' XP','xp');setTimeout(()=>floatText(at,'+'+gold+' 🪙','gold'),180);
   P.gold+=gold;setTimeout(()=>SFX.play('coin'),220);
@@ -1562,6 +1569,37 @@ function dailyCheck(){const today=dayKey(new Date()),y=new Date();y.setDate(y.ge
   $('daily').classList.remove('hidden')}
 function dailyClaim(){if(!dailyNext)return;const d=DAILY[dailyNext-1],got=d.f();P.daily={last:dayKey(new Date()),streak:dailyNext};dailyNext=0;$('daily').classList.add('hidden');
   SFX.play('epic',null,0.5);pillarFx(P.pos,0xffd23a);log(`🎁 Recompensa diária: ${got}!`,'loot');if(typeof renderInv==='function')renderInv();save()}
+/* ============ mascotes ============ */
+const PETS={
+  geleia:{n:'Geleia Mascote',ico:'🟢',m:'slimem',type:'slime',h:0.75,price:400,fetch:true,gold:0.1,d:'Busca baús de itens perto de você · +10% de ouro'},
+  lobo:{n:'Filhote de Lobo',ico:'🐺',m:'wolfm',type:'wolf',h:0.95,price:900,xp:0.1,d:'+10% de XP dos monstros'},
+  dragao:{n:'Dragãozinho',ico:'🐉',m:'dragon',type:'dragon',h:1.3,price:5000,fly:true,fetch:true,gold:0.1,atk:0.05,req:'dragao',d:'Voa, busca baús · +10% de ouro · +5% de ataque'}};
+const petB=k=>(PETS[P.pet]&&PETS[P.pet][k])||0;
+function makePet(k){const D=PETS[k];let g,u=null;
+  if(MODELS[D.m]){const r=cloneModel(D.m,D.h);g=new THREE.Group();g.add(r.m);u={mixer:r.mixer,actions:r.actions,t:0,lock:0,cur:null,curName:null};
+    const tint={geleia:[0x7dff9a,0.55],lobo:[0xd9a85a,0.5]}[k];if(tint)r.m.traverse(o=>{if(o.isMesh&&o.material&&o.material.color){o.material=o.material.clone();o.material.color.lerp(lin(new THREE.Color(tint[0])),tint[1])}})}
+  else{g=makeMonsterMesh(D.type);g.scale.setScalar(D.h/2.2)}
+  scene.add(g);return{k,g,u,x:0,z:0,ry:0,carry:null,fetchT:0,a:0}}
+function updPet(h,key,op,orot,mine,dt){
+  if(h.petObj&&h.petObj.k!==key){scene.remove(h.petObj.g);h.petObj=null}
+  if(!key||!PETS[key])return;const D=PETS[key];
+  if(!h.petObj){h.petObj=makePet(key);h.petObj.x=op.x-1.5;h.petObj.z=op.z-1.5}
+  const pt=h.petObj;pt.a+=dt;let tx=op.x-Math.sin(orot)*1.8+Math.cos(orot)*1.3,tz=op.z-Math.cos(orot)*1.8-Math.sin(orot)*1.3,spd=12;
+  if(mine&&D.fetch&&!P.dead){ // busca baús
+    if(pt.carry&&!drops.includes(pt.carry))pt.carry=null;
+    if(!pt.carry&&(pt.fetchT-=dt)<=0){pt.fetchT=0.5;if(P.inv.length<BAG_MAX){let best=null,bd=14;for(const d of drops){if(AUTO.loot&&!lootOK(d))continue;if(inDungeon(d.g.position.x)!==inDungeon(op.x))continue;const dd=Math.hypot(d.g.position.x-op.x,d.g.position.z-op.z);if(dd<bd){bd=dd;best=d}}pt.carry=best}}
+    if(pt.carry){const c=pt.carry.g.position;tx=c.x;tz=c.z;spd=10;
+      if(Math.hypot(c.x-pt.x,c.z-pt.z)<1.2){const d=pt.carry,i=drops.indexOf(d);pt.carry=null;
+        if(i>=0&&P.inv.length<BAG_MAX){if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);drops.splice(i,1);scene.remove(d.g);d.lbl.remove();
+          log(`${D.ico} ${D.n} trouxe: ${itName(d.it)}`,'loot');SFX.play(d.it.rar>=3?'epic':'loot',null,0.6);emit(c.clone().setY(c.y+1),RAR[d.it.rar].h,18,2,2,0.7,3);renderInv();save()}}}}
+  const dx=tx-pt.x,dz=tz-pt.z,dist=Math.hypot(dx,dz);
+  if(dist>30){pt.x=tx;pt.z=tz}else if(dist>0.3){const st=Math.min(dist,spd*dt*(dist>6?1.6:1));pt.x+=dx/dist*st;pt.z+=dz/dist*st;pt.ry=angLerp(pt.ry,Math.atan2(dx,dz),dt*8)}
+  const moving=dist>0.5;pt.g.position.set(pt.x,H(pt.x,pt.z)+(D.fly?1.8+Math.sin(pt.a*2.2)*0.3:0),pt.z);pt.g.rotation.y=pt.ry;
+  if(pt.u){const A=MON_ANIM[D.type]||{};playAnim(pt.u,moving?(dist>4?(A.run||A.walk):A.walk)||A.idle:A.idle,false,moving&&dist>4?(A.runSpeed||1.3):1);pt.u.mixer.update(dt)}
+  pt.g.visible=!(mine?inDungeon(op.x)!==inDungeon(pt.x):false)}
+function setPet(k){if(k&&!P.pets.includes(k))return;P.pet=k||'';recalc();netForce=true;if(k)log(`${PETS[k].ico} ${PETS[k].n} agora acompanha você!`,'sys');else log('Mascote guardado.','sys');renderShop();renderInv();save()}
+function buyPet(k){const D=PETS[k];if(!D||P.pets.includes(k))return;if(D.req&&!P.ach.includes(D.req)){log('Derrote Ignarok, o Dragão, para liberar o Dragãozinho.','bad');return}
+  if(P.gold<D.price){log('Ouro insuficiente.','bad');return}P.gold-=D.price;P.pets.push(k);SFX.play('epic',null,0.5);pillarFx(P.pos,0x7dff9a);log(`🐾 Você adotou: ${D.n}!`,'loot');setPet(k)}
 /* ============ emotes ============ */
 
 let emoT=0;
@@ -1934,7 +1972,7 @@ setInterval(()=>{if(started&&room&&performance.now()-lastFrameWall>1500){netForc
 const rr=v=>Number.isInteger(v)&&v>=0&&v<=3?v:-1;
 const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
 function myPresence(){
-  return {v:1,j:myJoin,n:P.name,c:P.cls,l:P.lvl,mt:P.mounted?1:0,tt:P.title?titleOf(P.title):'',x:Math.round(P.pos.x*100)/100,z:Math.round(P.pos.z*100)/100,r:Math.round(P.rot*100)/100,
+  return {v:1,j:myJoin,n:P.name,c:P.cls,l:P.lvl,mt:P.mounted?1:0,pt:P.pet||'',tt:P.title?titleOf(P.title):'',x:Math.round(P.pos.x*100)/100,z:Math.round(P.pos.z*100)/100,r:Math.round(P.rot*100)/100,
     hp:Math.round(P.hp/P.maxHp*100),dead:P.dead?1:0,atk:atkN,eq:[rarOf(P.eq.armor),rarOf(P.eq.helm),rarOf(P.eq.weapon)],
     say:sayN?{i:sayN,t:lastSay,ts:lastSayTs}:null};
 }
@@ -1973,7 +2011,7 @@ function upsertPeer(p){
     if(started)log(`👋 ${name} entrou no mundo.`,'sys');
   }
   o.j=num(s.j,Date.now());o.name=name;o.tx=clamp(num(s.x,0),-260,760);o.tz=clamp(num(s.z,0),-260,260);o.tr=num(s.r,0);
-  o.mt=!!s.mt;o.dead=!!s.dead;o.hp=clamp(num(s.hp,100),0,100);o.lvl=clamp(Math.floor(num(s.l,1)),1,999);
+  o.mt=!!s.mt;o.pt=PETS[s.pt]?s.pt:'';o.dead=!!s.dead;o.hp=clamp(num(s.hp,100),0,100);o.lvl=clamp(Math.floor(num(s.l,1)),1,999);
   const tt=typeof s.tt==='string'?s.tt.slice(0,40):'';o.nm.innerHTML=(tt?`<span class="ttl">«${esc(tt)}»</span>`:'')+esc(`${name} · Nv ${o.lvl}`);o.hi.style.width=o.hp+'%';
   if(o.fresh){o.mesh.position.set(o.tx,H(o.tx,o.tz),o.tz);o.mesh.rotation.y=o.tr;o.fresh=false}
   const eq=Array.isArray(s.eq)?s.eq:[];applyLook(o.mesh.userData,cls,rr(eq[0]),rr(eq[1]),rr(eq[2]));
@@ -1982,7 +2020,7 @@ function upsertPeer(p){
   if(sy&&typeof sy.t==='string'&&num(sy.i,0)!==o.say){o.say=num(sy.i,0);const t=sy.t.slice(0,120);
     logChat(name,t);o.bub.textContent=t;o.bubT=5;SFX.play('msg')}
 }
-function removePeer(peer,quiet){const o=others.get(peer);if(!o)return;ptyPeerGone(peer);if(o.mount)scene.remove(o.mount.g);scene.remove(o.mesh);o.lbl.remove();o.bub.remove();others.delete(peer);if(!quiet&&started)log(`${o.name} saiu do mundo.`,'sys')}
+function removePeer(peer,quiet){const o=others.get(peer);if(!o)return;ptyPeerGone(peer);if(o.mount)scene.remove(o.mount.g);if(o.petObj)scene.remove(o.petObj.g);scene.remove(o.mesh);o.lbl.remove();o.bub.remove();others.delete(peer);if(!quiet&&started)log(`${o.name} saiu do mundo.`,'sys')}
 function updateOthers(dt){
   for(const o of others.values()){
     const g=o.mesh,dx=o.tx-g.position.x,dz=o.tz-g.position.z,d=Math.hypot(dx,dz);
@@ -1992,7 +2030,7 @@ function updateOthers(dt){
     g.rotation.y=angLerp(g.rotation.y,o.tr,Math.min(1,dt*12));
     const moving=d>0.08&&d<=25;o.walk=moving?o.walk+dt*11:o.walk*0.85;
     const u=g.userData;o.atkAnim=Math.max(0,o.atkAnim-dt*3.5);
-    updMount(o,g,o.mt&&!o.dead,moving,dt);
+    updMount(o,g,o.mt&&!o.dead,moving,dt);updPet(o,o.dead?'':o.pt,g.position,g.rotation.y,false,dt);
     if(u.model){driveHero(g,moving&&!o.mt,o.atkTrig,o.dead,dt);o.atkTrig=null}
     else{const sw=Math.sin(o.walk)*0.7*(o.walk>0.01?1:0);
       u.legL.rotation.x=sw;u.legR.rotation.x=-sw;u.armL.rotation.x=-sw*0.6;
@@ -2279,6 +2317,7 @@ function update(dt){
   if(P.spin>0){P.spin-=dt;if(!u.model)me.rotation.y+=(0.5-P.spin)*Math.PI*4}
   P.atkAnim=Math.max(0,P.atkAnim-dt*3.5);
   if(P.dead&&P.mounted)setMount(false);updMount(P,me,P.mounted,!P.dead&&P.moving,dt);
+  updPet(P,P.dead?'':P.pet,P.pos,me.rotation.y,true,dt);
   if(u.model){driveHero(me,!P.dead&&P.moving&&!P.mounted,P.trig,P.dead,dt);P.trig=null}
   else{
     const sw=Math.sin(P.walk)*0.7*(P.walk>0.01?1:0);
@@ -2494,6 +2533,7 @@ function start(){
   if(sv&&!same&&!overwriteOk){overwriteOk=true;$('err').textContent=`Atenção: isso substitui o personagem salvo ${sv.name} (Nv ${sv.lvl}). Clique de novo para confirmar.`;$('go').textContent='Criar novo personagem';return}
   Object.assign(P,{name:n,cls:chosen});
   if(same){Object.assign(P,{lvl:sv.lvl,xp:sv.xp,gold:sv.gold,pots:sv.pots,scrolls:Math.max(0,sv.scrolls|0)});
+    if(Array.isArray(sv.pets))P.pets=sv.pets.filter(k=>PETS[k]);if(typeof sv.pet==='string'&&P.pets.includes(sv.pet))P.pet=sv.pet;
     if(Array.isArray(sv.friends))P.friends=sv.friends.filter(f=>typeof f==='string').map(f=>f.slice(0,16)).slice(0,50);
     if(sv.daily&&typeof sv.daily.last==='string')P.daily={last:sv.daily.last.slice(0,10),streak:Math.max(0,Math.min(7,sv.daily.streak|0))};
     if(sv.stats&&typeof sv.stats==='object'){P.stats={k:Object.assign({},sv.stats.k||{}),deaths:sv.stats.deaths|0,refMax:sv.stats.refMax|0}}
