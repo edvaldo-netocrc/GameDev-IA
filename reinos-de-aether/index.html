@@ -88,9 +88,11 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 .srow .nm{flex:1;font-size:12px;line-height:1.3}
 .srow .nm small{display:block;color:#a8987a;font-size:10px}
 .hint{font-size:11px;color:#a8987a;padding:8px 12px}
-@media (max-width:760px){#pframe{width:190px}#tframe{top:auto;bottom:100px;width:200px}#mini{width:110px;height:110px}#zone{top:128px;width:114px;font-size:10px}
+@media (max-width:1240px){#help{display:none}#chat{width:260px}}
+@media (max-width:1000px){#chat{width:200px}#log{height:100px}.slot{width:46px;height:50px}.slot b{font-size:19px}.slot small{font-size:8px}#bar{gap:5px}}
+@media (max-width:760px){#bar{gap:4px;padding:6px}#autoBadge{bottom:76px}#autoPanel{bottom:80px;width:94vw}#pframe{width:190px}#tframe{top:auto;bottom:100px;width:200px}#mini{width:110px;height:110px}#zone{top:128px;width:114px;font-size:10px}
 #chat,body.touch #chat{top:132px;bottom:auto;width:190px;padding:5px 7px;background:rgba(12,10,8,.55)}#log,body.touch #log{height:48px;font-size:10px;line-height:1.35;overflow:hidden;pointer-events:none}#chatIn{margin-top:4px;padding:3px 6px;font-size:16px}#help{display:none}
-.slot{width:48px;height:48px}.slot b{font-size:20px}#joy{bottom:100px}
+.slot{width:40px;height:44px}.slot b{font-size:17px}.slot small{font-size:7px}#joy{bottom:100px}
 #inv{right:50%;transform:translate(50%,-50%);width:96vw;max-width:410px}.invwrap{gap:8px;padding:10px}.eqcol{width:104px}.bag{grid-template-columns:repeat(5,1fr);gap:4px;flex:1}.bag .cell{width:auto;aspect-ratio:1;height:auto;font-size:20px}#detail{right:50%;top:auto;bottom:8px;transform:translateX(50%);z-index:5}#shop{top:auto;bottom:90px;left:50%;transform:translateX(-50%);width:94vw;max-width:300px;z-index:4}}
 #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(30,22,12,.6),rgba(5,5,8,.92));z-index:10}
 .card{width:min(560px,92vw);padding:28px 30px;text-align:center}
@@ -115,6 +117,14 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 .lbl.other{color:#9dff9d}.lbl.other .hb i{background:#3ccf5a}
 .bub{position:absolute;transform:translate(-50%,-100%);max-width:210px;white-space:normal;word-wrap:break-word;background:rgba(255,255,255,.94);color:#1a1a1a;font-size:12px;font-weight:600;line-height:1.3;padding:5px 9px;border-radius:10px;pointer-events:none;text-align:center;box-shadow:0 2px 6px rgba(0,0,0,.4)}
 #log .pl{color:#9dff9d}
+.slot.tog.on{border-color:#5dff7a;box-shadow:0 0 0 1px #5dff7a,0 0 12px rgba(93,255,122,.45);background:radial-gradient(#24402a,#10180f)}
+#autoBadge{position:fixed;left:50%;bottom:92px;transform:translateX(-50%);font-family:Cinzel,serif;font-weight:800;font-size:13px;color:#5dff7a;background:rgba(10,20,12,.75);border:1px solid #3a7a48;border-radius:14px;padding:3px 12px;pointer-events:none;animation:pulse 1.6s ease-in-out infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.55}}
+#autoPanel{position:fixed;left:50%;bottom:96px;transform:translateX(-50%);width:330px;z-index:6;font-size:12px}
+#autoPanel .arow{padding:7px 12px;display:flex;justify-content:space-between;align-items:center;gap:8px;border-bottom:1px solid #2a2114;color:#d8c7a0}
+#autoPanel label{display:flex;gap:7px;align-items:center;cursor:pointer}#autoPanel em{color:#8d806a;font-style:normal}
+#autoPanel select{background:#0c0a08;color:#f2d38a;border:1px solid #6b5630;border-radius:4px;padding:3px 5px;font:inherit;font-size:11px}
+#autoPanel input[type=checkbox]{accent-color:#5dff7a}
 </style>
 </head>
 <body>
@@ -139,8 +149,11 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
     <div class="slot" data-a="pot"><kbd>Q</kbd><b>🧪</b><small>Poção</small><div class="cd" id="cdPot"></div></div>
     <div class="slot" data-a="talk"><kbd>E</kbd><b>💬</b><small>Interagir</small></div>
     <div class="slot" data-a="inv"><kbd>I</kbd><b>🎒</b><small>Mochila</small></div>
+    <div class="slot tog" data-a="auto" id="slotAuto"><kbd>H</kbd><b>🤖</b><small>Auto-caça</small></div>
+    <div class="slot tog" data-a="loot" id="slotLoot"><kbd>L</kbd><b>🧲</b><small>Auto-loot</small></div>
+    <div class="slot" data-a="opts"><kbd>O</kbd><b>⚙️</b><small>Opções</small></div>
   </div>
-  <div id="help" class="panel"><b>WASD</b> mover · <b>arrastar</b> gira a câmera · <b>roda</b> zoom<br><b>Clique</b> no monstro para atacar · <b>clique no chão</b> para andar<br><b>1</b> ataque · <b>2</b> habilidade · <b>Q</b> poção · <b>E</b> interagir · <b>I</b> mochila · <b>Tab</b> próximo alvo · <b>Enter</b> chat com outros jogadores</div>
+  <div id="help" class="panel"><b>WASD</b> mover · <b>arrastar</b> gira a câmera · <b>roda</b> zoom<br><b>Clique</b> no monstro para atacar · <b>clique no chão</b> para andar<br><b>1</b> ataque · <b>2</b> habilidade · <b>Q</b> poção · <b>E</b> interagir · <b>I</b> mochila · <b>Tab</b> próximo alvo · <b>Enter</b> chat · <b>H</b> auto-caça · <b>L</b> auto-loot · <b>O</b> opções</div>
   <div id="joy"><div id="knob"></div></div>
 
   <div id="inv" class="panel hidden">
@@ -152,6 +165,18 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
     <div class="invfoot"><span>🪙 <b id="gold2">0</b> · <span id="bagCount"></span></span><button class="mini hidden" id="sellCommon">Vender todos os Comuns</button></div>
   </div>
   <div id="detail" class="panel hidden"></div>
+  <div id="autoBadge" class="hidden">🤖 AUTO-CAÇA</div>
+  <div id="autoPanel" class="panel hidden">
+    <div class="ph">⚙️ Caça automática <span class="x" data-close="autoPanel">✕</span></div>
+    <div class="arow"><label><input type="checkbox" id="optAuto"> Auto-caça <em>(H)</em></label></div>
+    <div class="arow"><label><input type="checkbox" id="optLoot"> Auto-loot <em>(L)</em></label></div>
+    <div class="arow">Raio de caça <select id="optRadius"><option value="20">20 m</option><option value="35">35 m</option><option value="55">55 m</option></select></div>
+    <div class="arow">Coletar itens a partir de <select id="optRar"><option value="0">Comum</option><option value="1">Incomum</option><option value="2">Raro</option><option value="3">Épico</option></select></div>
+    <div class="arow">Tomar poção com vida abaixo de <select id="optPot"><option value="0">nunca</option><option value="30">30%</option><option value="45">45%</option><option value="60">60%</option></select></div>
+    <div class="arow"><label><input type="checkbox" id="optSkill"> Usar habilidade automaticamente</label></div>
+    <div class="arow"><label><input type="checkbox" id="optStrong"> Atacar monstros bem mais fortes</label></div>
+    <div class="hint">A auto-caça ataca monstros perto de onde foi ligada e para se você andar manualmente. Itens abaixo da raridade escolhida são deixados no chão.</div>
+  </div>
   <div id="shop" class="panel hidden">
     <div class="ph">⚒️ Ferreiro Borin <span class="x" data-close="shop">✕</span></div>
     <div id="shopList"></div>
@@ -969,7 +994,7 @@ function hurtPlayer(d){
   P.hp-=d;P.lastHurt=now;
   floatText(P.pos.clone().setY(P.pos.y+2.6),'-'+d,'hurt');
   emit(P.pos.clone().setY(P.pos.y+1.3),0xff3030,6,3,1,0.4,6);
-  if(P.hp<=0){P.hp=0;P.dead=true;P.deadT=4;P.auto=false;setTarget(null);$('dead').classList.remove('hidden');
+  if(P.hp<=0){P.hp=0;P.dead=true;P.deadT=4;P.auto=false;setTarget(null);if(AUTO.on)setAuto(false,'Auto-caça desligada porque você caiu em batalha.');$('dead').classList.remove('hidden');
     const lost=Math.floor(P.xp*0.1);P.xp-=lost;log(`Você foi derrotado e perdeu ${lost} XP.`,'bad');
     if(amHost)for(const m of monsters)if(m.state==='chase'&&m.tgtId===myKey())m.state='return';}
 }
@@ -1007,7 +1032,7 @@ function actPotion(){
   floatText(P.pos.clone().setY(P.pos.y+2.6),'+'+h,'heal');ringFx(P.pos,3,0x5dff7a);emit(P.pos.clone().setY(P.pos.y+0.5),0x5dff7a,30,1.5,4,1,0,1.2);
 }
 const healLines=['Que a luz de Aether te proteja, aventureiro.','Os lobos ficam mais ferozes depois dos campos. Vá preparado!','Dizem que um Golem Ancião desperta nas Terras de Pedra, ao sudeste…','No noroeste há uma masmorra antiga. Só entre depois do nível 10.','Volte sempre que precisar de cura.'];
-function teleport(x,z,title,sub){P.pos.set(x,0,z);P.moveTo=null;P.auto=false;setTarget(null);hideDetail();emit(P.pos.clone().setY(H(x,z)+1),0xb36bff,60,4,3,1,2,1.5);banner(title,sub)}
+function teleport(x,z,title,sub){P.pos.set(x,0,z);AUTO.anchor.set(x,0,z);AUTO.lootDrop=null;P.moveTo=null;P.auto=false;setTarget(null);hideDetail();emit(P.pos.clone().setY(H(x,z)+1),0xb36bff,60,4,3,1,2,1.5);banner(title,sub)}
 function actTalk(){
   if(P.dead)return;
   const opts=[
@@ -1018,6 +1043,67 @@ function actTalk(){
   ];
   let best=null,bd=1e9;for(const o of opts){const d=Math.hypot(o.o.position.x-P.pos.x,o.o.position.z-P.pos.z);if(d<o.r&&d<bd){bd=d;best=o}}
   if(best)best.f();else log('Não há ninguém por perto. Na vila: Curandeira Lia (cura) e Ferreiro Borin (loja).','sys');
+}
+/* ============ auto-caça e auto-loot ============ */
+const AUTO={on:false,loot:false,radius:35,minRar:0,potPct:45,skill:true,strong:false,anchor:new THREE.Vector3(),tick:0,stuckT:0,lastD:0,ban:new Map(),lootDrop:null,lootT:0,warnT:-99,lowWarn:false};
+(()=>{try{const o=JSON.parse(localStorage.getItem('aether_auto')||'{}');for(const k of ['loot','radius','minRar','potPct','skill','strong'])if(k in o)AUTO[k]=o[k]}catch(e){}})();
+function saveAuto(){try{localStorage.setItem('aether_auto',JSON.stringify({loot:AUTO.loot,radius:AUTO.radius,minRar:AUTO.minRar,potPct:AUTO.potPct,skill:AUTO.skill,strong:AUTO.strong}))}catch(e){}}
+function syncAutoUI(){
+  $('slotAuto').classList.toggle('on',AUTO.on);$('slotLoot').classList.toggle('on',AUTO.loot);$('autoBadge').classList.toggle('hidden',!AUTO.on);
+  $('optAuto').checked=AUTO.on;$('optLoot').checked=AUTO.loot;$('optRadius').value=String(AUTO.radius);$('optRar').value=String(AUTO.minRar);
+  $('optPot').value=String(AUTO.potPct);$('optSkill').checked=AUTO.skill;$('optStrong').checked=AUTO.strong;
+}
+function setAuto(on,why){
+  if(on&&P.dead)return;
+  AUTO.on=on;
+  if(on){AUTO.anchor.copy(P.pos);AUTO.ban.clear();AUTO.lowWarn=false;AUTO.stuckT=0;
+    log(`🤖 Auto-caça ligada (raio de ${AUTO.radius} m). Ande manualmente ou aperte H para parar.`,'sys')}
+  else{P.auto=false;P.moveTo=null;if(why)log(why,'sys')}
+  syncAutoUI();
+}
+function setLoot(on){AUTO.loot=on;saveAuto();syncAutoUI();log(on?`🧲 Auto-loot ligado (a partir de ${RAR[AUTO.minRar].n}).`:'🧲 Auto-loot desligado.','sys')}
+const lootOK=d=>d.it.rar>=AUTO.minRar;
+function goodPrey(m){ // monstro que vale a pena atacar sozinho
+  if(m.dead||inDungeon(m.g.position.x)!==inDungeon(P.pos.x))return false;
+  if(AUTO.ban.has(m)&&AUTO.ban.get(m)>now)return false;
+  if(zoneOf(m.g.position.x,m.g.position.z).safe)return false;
+  if(d2(m.g.position,AUTO.anchor)>AUTO.radius)return false;
+  if(!AUTO.strong&&(m.T.boss?m.T.lvl>P.lvl:m.T.lvl>P.lvl+3))return false;
+  return true;
+}
+function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando manual
+  if(!AUTO.on)return;
+  const C=CLS[P.cls],hpPct=P.hp/P.maxHp*100;
+  // poção e vida baixa
+  if(AUTO.potPct&&hpPct<AUTO.potPct&&P.pots>0&&P.potCd<=0)actPotion();
+  if(hpPct<22&&P.pots<=0&&!zoneOf(P.pos.x,P.pos.z).safe){setAuto(false,'⚠️ Vida baixa e sem poções — auto-caça pausada. Volte à vila para se curar.');return}
+  // habilidade
+  const t=P.target;
+  if(AUTO.skill&&t&&!t.dead&&P.skCd<=0&&P.mp>=C.skCost&&!zoneOf(P.pos.x,P.pos.z).safe){
+    const dt_=d2(t.g.position,P.pos);
+    if(P.cls==='guerreiro'?dt_<4.5+t.T.size*0.5:dt_<18)actSkill();
+  }
+  // travado indo até o alvo? troca de alvo
+  if(P.auto&&t&&!t.dead){
+    const d=d2(t.g.position,P.pos);
+    if(d>C.range+t.T.size*0.6+0.3&&Math.abs(d-AUTO.lastD)<0.02*dt*60){AUTO.stuckT+=dt;if(AUTO.stuckT>2.5){AUTO.ban.set(t,now+15);setTarget(null);P.auto=false;AUTO.stuckT=0}}else AUTO.stuckT=0;
+    AUTO.lastD=d;return;
+  }
+  AUTO.tick-=dt;if(AUTO.tick>0)return;AUTO.tick=0.25;
+  // 1) buscar itens no chão entre as lutas
+  if(AUTO.loot&&P.inv.length<BAG_MAX){
+    if(AUTO.lootDrop&&(!drops.includes(AUTO.lootDrop)||now-AUTO.lootT>8)){if(drops.includes(AUTO.lootDrop))AUTO.ban.set(AUTO.lootDrop,now+30);AUTO.lootDrop=null}
+    if(!AUTO.lootDrop){let best=null,bd=AUTO.radius;
+      for(const d of drops){if(!lootOK(d)||(AUTO.ban.get(d)||0)>now||inDungeon(d.g.position.x)!==inDungeon(P.pos.x))continue;const dd=d2(d.g.position,P.pos);if(dd<bd){bd=dd;best=d}}
+      if(best){AUTO.lootDrop=best;AUTO.lootT=now}}
+    if(AUTO.lootDrop){P.moveTo=AUTO.lootDrop.g.position.clone();P.auto=false;return}
+  }
+  // 2) próximo monstro (prioriza quem está perto de você)
+  let best=null,bs=1e9;
+  for(const m of monsters){if(!goodPrey(m))continue;const sc=d2(m.g.position,P.pos)-(m.T.boss?0:0);if(sc<bs){bs=sc;best=m}}
+  if(best){setTarget(best);P.auto=true;P.moveTo=null;AUTO.lastD=d2(best.g.position,P.pos);return}
+  // 3) nada para caçar: volta ao ponto de partida
+  if(d2(P.pos,AUTO.anchor)>4&&!P.moveTo)P.moveTo=AUTO.anchor.clone();
 }
 function cycleTarget(){
   const list=monsters.filter(m=>!m.dead&&d2(m.g.position,P.pos)<30).sort((a,b)=>d2(a.g.position,P.pos)-d2(b.g.position,P.pos));
@@ -1044,11 +1130,22 @@ addEventListener('keydown',e=>{
   if(k==='q')actPotion();
   if(k==='e')actTalk();
   if(k==='i'||k==='b')toggleInv();
-  if(k==='escape'){if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
+  if(k==='h')setAuto(!AUTO.on);
+  if(k==='l')setLoot(!AUTO.loot);
+  if(k==='o')$('autoPanel').classList.toggle('hidden');
+  if(k==='escape'){if(!$('autoPanel').classList.contains('hidden'))$('autoPanel').classList.add('hidden');else if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
-document.querySelectorAll('.slot').forEach(s=>s.addEventListener('click',()=>{const a=s.dataset.a;if(a==='atk')actAttack();if(a==='skill')actSkill();if(a==='pot')actPotion();if(a==='talk')actTalk();if(a==='inv')toggleInv()}));
+document.querySelectorAll('.slot').forEach(s=>s.addEventListener('click',()=>{const a=s.dataset.a;if(a==='atk')actAttack();if(a==='skill')actSkill();if(a==='pot')actPotion();if(a==='talk')actTalk();if(a==='inv')toggleInv();if(a==='auto')setAuto(!AUTO.on);if(a==='loot')setLoot(!AUTO.loot);if(a==='opts')$('autoPanel').classList.toggle('hidden')}));
+$('optAuto').addEventListener('change',e=>setAuto(e.target.checked));
+$('optLoot').addEventListener('change',e=>setLoot(e.target.checked));
+$('optRadius').addEventListener('change',e=>{AUTO.radius=+e.target.value;if(AUTO.on)AUTO.anchor.copy(P.pos);saveAuto()});
+$('optRar').addEventListener('change',e=>{AUTO.minRar=+e.target.value;saveAuto()});
+$('optPot').addEventListener('change',e=>{AUTO.potPct=+e.target.value;saveAuto()});
+$('optSkill').addEventListener('change',e=>{AUTO.skill=e.target.checked;saveAuto()});
+$('optStrong').addEventListener('change',e=>{AUTO.strong=e.target.checked;saveAuto()});
+syncAutoUI();
 
 const ray=new THREE.Raycaster(),mouse=new THREE.Vector2();
 let drag=null;
@@ -1068,7 +1165,7 @@ cv.addEventListener('pointerup',e=>{
   const dh=ray.intersectObjects(drops.map(d=>d.g),true);
   if(dh.length){const d=drops.find(d=>{let o=dh[0].object;while(o){if(o===d.g)return true;o=o.parent}return false});if(d){P.moveTo=d.g.position.clone();P.auto=false;return}}
   const o=ray.ray.origin,d=ray.ray.direction;let t=0;
-  for(let i=0;i<300;i++){t+=0.8;const x=o.x+d.x*t,y=o.y+d.y*t,z=o.z+d.z*t;if(y<=Math.max(H(x,z),lakeMask(x,z)>0?WATER_Y:-99)){P.moveTo=new THREE.Vector3(x,0,z);P.auto=false;ringFx(new THREE.Vector3(x,H(x,z),z),1.2,0xffffff);break}}
+  for(let i=0;i<300;i++){t+=0.8;const x=o.x+d.x*t,y=o.y+d.y*t,z=o.z+d.z*t;if(y<=Math.max(H(x,z),lakeMask(x,z)>0?WATER_Y:-99)){if(AUTO.on)setAuto(false,'Você assumiu o controle — auto-caça desligada.');P.moveTo=new THREE.Vector3(x,0,z);P.auto=false;ringFx(new THREE.Vector3(x,H(x,z),z),1.2,0xffffff);break}}
 });
 cv.addEventListener('wheel',e=>{cam.dist=clamp(cam.dist+e.deltaY*0.012,5,32);e.preventDefault()},{passive:false});
 
@@ -1236,6 +1333,7 @@ function drawMini(){
     for(const m of monsters){if(m.dead||!inDungeon(m.g.position.x))continue;mctx.fillStyle=m.T.boss?'#ff8b5c':m===P.target?'#ffd76a':'#e04848';mctx.beginPath();mctx.arc(ox+(m.g.position.x-DX)*S,oz+m.g.position.z*S,m.T.boss?4:2.5,0,7);mctx.fill()}
     mctx.fillStyle='#7dd8ff';mctx.fillRect(ox-3,oz+57*S-2,6,4);
     mctx.fillStyle='#5dff7a';for(const o of others.values()){const q=o.mesh.position;if(!inDungeon(q.x))continue;mctx.beginPath();mctx.arc(ox+(q.x-DX)*S,oz+q.z*S,3,0,7);mctx.fill()}
+    if(AUTO.on&&inDungeon(AUTO.anchor.x)){mctx.strokeStyle='rgba(93,255,122,.8)';mctx.setLineDash([4,3]);mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(ox+(AUTO.anchor.x-DX)*S,oz+AUTO.anchor.z*S,AUTO.radius*S,0,7);mctx.stroke();mctx.setLineDash([])}
     mctx.translate(ox+(P.pos.x-DX)*S,oz+P.pos.z*S);
   }else{
     const S=W/2/205;
@@ -1246,6 +1344,7 @@ function drawMini(){
     mctx.fillStyle='#c9a6ff';for(const n of [healer,smith])mctx.fillRect(W/2+n.position.x*S-1.5,W/2+n.position.z*S-1.5,3,3);
     mctx.fillStyle='#b36bff';mctx.beginPath();mctx.arc(W/2+ENT.x*S,W/2+ENT.z*S,4,0,7);mctx.fill();
     mctx.fillStyle='#5dff7a';for(const o of others.values()){const q=o.mesh.position;if(inDungeon(q.x))continue;mctx.beginPath();mctx.arc(W/2+q.x*S,W/2+q.z*S,3,0,7);mctx.fill()}
+    if(AUTO.on&&!inDungeon(AUTO.anchor.x)){mctx.strokeStyle='rgba(93,255,122,.8)';mctx.setLineDash([4,3]);mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(W/2+AUTO.anchor.x*S,W/2+AUTO.anchor.z*S,AUTO.radius*S,0,7);mctx.stroke();mctx.setLineDash([])}
     mctx.translate(W/2+P.pos.x*S,W/2+P.pos.z*S);
   }
   mctx.rotate(-P.rot+Math.PI);mctx.fillStyle='#8fe3ff';mctx.beginPath();mctx.moveTo(0,-6);mctx.lineTo(4,4);mctx.lineTo(-4,4);mctx.closePath();mctx.fill();
@@ -1407,6 +1506,8 @@ function update(dt){
     let moving=false;
     const inWater=lakeMask(P.pos.x,P.pos.z)>0&&H(P.pos.x,P.pos.z)<WATER_Y;
     const spd=(zone.safe?9:8)*(inWater?0.6:1);
+    if(Math.abs(ix)+Math.abs(iz)>0.1&&AUTO.on)setAuto(false,'Você assumiu o controle — auto-caça desligada.');
+    if(Math.abs(ix)+Math.abs(iz)<=0.1)autoTick(dt);
     if(Math.abs(ix)+Math.abs(iz)>0.1){
       const fx=-Math.sin(cam.yaw),fz=-Math.cos(cam.yaw),rx=Math.cos(cam.yaw),rz=-Math.sin(cam.yaw);
       moving=moveP(fx*iz+rx*ix,fz*iz+rz*ix,spd,dt);P.moveTo=null;P.auto=false;
@@ -1416,7 +1517,7 @@ function update(dt){
       else{
         P.rot=angLerp(P.rot,Math.atan2(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z),Math.min(1,dt*12));
         if(P.cd<=0){
-          if(zone.safe){log('Não é possível atacar dentro da vila.','sys');P.auto=false}
+          if(zone.safe){if(AUTO.on)moving=moveP(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z,spd,dt);else{log('Não é possível atacar dentro da vila.','sys');P.auto=false}}
           else{P.cd=C.cd;P.atkAnim=1;P.trig='atk';const cr=rnd()<P.crit/100,dmg=Math.round(P.atk*(0.85+rnd()*0.3)*(cr?1.8:1));
             if(P.cls==='mago')shootBolt(t,dmg,cr);else damageMon(t,dmg,cr)}
         }
@@ -1487,9 +1588,13 @@ function update(dt){
   for(let i=drops.length-1;i>=0;i--){
     const d=drops[i];d.t-=dt;d.g.rotation.y+=dt;d.beam.material.opacity=(0.3+d.it.rar*0.1)*(0.75+Math.sin(now*3)*0.25);
     if(d.t<=0){scene.remove(d.g);d.lbl.remove();drops.splice(i,1);continue}
-    if(!P.dead&&Math.hypot(d.g.position.x-P.pos.x,d.g.position.z-P.pos.z)<2){
-      if(P.inv.length>=BAG_MAX){if(now>fullWarnT){fullWarnT=now+4;log('Mochila cheia! Venda ou descarte itens (tecla I).','bad')}}
-      else{P.inv.push(d.it);logItem('Você pegou',d.it);emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.lbl.remove();drops.splice(i,1);renderInv();save()}
+    const pd=Math.hypot(d.g.position.x-P.pos.x,d.g.position.z-P.pos.z);
+    if(AUTO.loot&&!P.dead&&pd<6&&pd>=1.2&&lootOK(d)&&P.inv.length<BAG_MAX){ // ímã: o baú vem até você
+      d.g.position.x+=(P.pos.x-d.g.position.x)*Math.min(1,dt*6);d.g.position.z+=(P.pos.z-d.g.position.z)*Math.min(1,dt*6);d.g.position.y=H(d.g.position.x,d.g.position.z)}
+    if(AUTO.loot&&!lootOK(d))continue; // abaixo da raridade escolhida: fica no chão
+    if(!P.dead&&pd<2){
+      if(P.inv.length>=BAG_MAX){if(now>fullWarnT){fullWarnT=now+(AUTO.on?20:4);log('Mochila cheia! Venda ou descarte itens (tecla I)'+(AUTO.loot?' — o auto-loot vai ignorar itens até liberar espaço.':'.'),'bad')}}
+      else{if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);logItem('Você pegou',d.it);emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.lbl.remove();drops.splice(i,1);renderInv();save()}
     }
   }
   for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.t+=dt;const k=e.t/e.dur;if(k>=1){scene.remove(e.m);effects.splice(i,1)}else e.upd(e,k)}
