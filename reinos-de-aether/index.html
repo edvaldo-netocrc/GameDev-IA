@@ -170,7 +170,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
     </div>
     <button class="btn" id="go">Entrar no mundo</button>
     <div id="err"></div>
-    <div class="note">Novidades: itens com raridade, mochila, ferreiro, ciclo dia/noite, lago, partículas, aranhas e a Masmorra Esquecida.<br>Multiplayer: quem estiver com o jogo aberto ao mesmo tempo aparece no mundo e no chat. Os monstros ainda são individuais.</div>
+    <div class="note">Novidades: itens com raridade, mochila, ferreiro, ciclo dia/noite, lago, partículas, aranhas e a Masmorra Esquecida.<br>Multiplayer: quem estiver com o jogo aberto ao mesmo tempo aparece no mundo e no chat. Os monstros são compartilhados: cacem juntos!</div>
   </div>
 </div>
 
@@ -184,7 +184,7 @@ if(!window.THREE){$('err').textContent='Não foi possível carregar o motor 3D. 
 
 /* ============ utilidades ============ */
 function mulberry32(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
-const R=mulberry32(1337),rnd=Math.random;
+const R=mulberry32(1337),MR=mulberry32(4242),rnd=Math.random; // MR: monstros iguais para todos os jogadores
 const smooth=(a,b,x)=>{const t=Math.min(1,Math.max(0,(x-a)/(b-a)));return t*t*(3-2*t)};
 const clamp=(v,a,b)=>Math.max(a,Math.min(b,v));
 const pick=a=>a[Math.floor(rnd()*a.length)];
@@ -497,7 +497,7 @@ function makeSkeleton(archer){
 function makeMonsterMesh(type){
   const g=new THREE.Group();
   if(type==='slime'){
-    const c=[0x5cdc5c,0x6ac8ff,0xffa04a][Math.floor(rnd()*3)];
+    const c=[0x5cdc5c,0x6ac8ff,0xffa04a][Math.floor(MR()*3)];
     const b=new THREE.Mesh(new THREE.SphereGeometry(0.8,14,12),new THREE.MeshLambertMaterial({color:c,transparent:true,opacity:0.88}));
     b.scale.y=0.75;b.position.y=0.6;b.castShadow=true;g.add(b);
     g.add(part(0.14,0.2,0.05,0x111111,-0.22,0.8,0.7));g.add(part(0.14,0.2,0.05,0x111111,0.22,0.8,0.7));
@@ -551,16 +551,16 @@ const labelsEl=$('labels');
 const monsters=[];
 function spawnMonster(type,x,z){
   const T=TYPES[type],g=makeMonsterMesh(type);
-  g.position.set(x,H(x,z),z);g.rotation.y=rnd()*6;scene.add(g);
+  g.position.set(x,H(x,z),z);g.rotation.y=MR()*6;scene.add(g);
   const lbl=document.createElement('div');lbl.className='lbl'+(T.boss?' boss':'');
   lbl.innerHTML=`${T.boss?'👑 ':''}${T.name} <span style="opacity:.75">Nv${T.lvl}</span><div class="hb"><i></i></div>`;
   labelsEl.appendChild(lbl);
-  const m={type,T,g,lbl,hpI:lbl.querySelector('i'),hp:T.hp,max:T.hp,home:new THREE.Vector3(x,0,z),state:'idle',wander:null,wait:rnd()*3,cd:0,dead:false,respawnT:0,anim:rnd()*10,flash:0,atkAnim:0,spT:4};
+  const m={id:monsters.length,type,T,g,lbl,hpI:lbl.querySelector('i'),hp:T.hp,max:T.hp,home:new THREE.Vector3(x,0,z),state:'idle',wander:null,wait:MR()*3,cd:0,dead:false,respawnT:0,anim:MR()*10,flash:0,atkAnim:0,atkN:0,spT:4,tgtId:null,contrib:{},net:null};
   g.traverse(o=>{o.userData.mon=m});
   monsters.push(m);return m;
 }
 function ringSpawn(type,n,d0,d1){
-  for(let i=0;i<n;i++){let x,z,t=0;do{const a=rnd()*Math.PI*2,d=d0+rnd()*(d1-d0);x=Math.cos(a)*d;z=Math.sin(a)*d;t++}while(t<30&&(lakeMask(x,z)>0||obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<o.r+1.5)));spawnMonster(type,x,z)}
+  for(let i=0;i<n;i++){let x,z,t=0;do{const a=MR()*Math.PI*2,d=d0+MR()*(d1-d0);x=Math.cos(a)*d;z=Math.sin(a)*d;t++}while(t<30&&(lakeMask(x,z)>0||obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<o.r+1.5)));spawnMonster(type,x,z)}
 }
 ringSpawn('slime',18,32,64);
 ringSpawn('wolf',12,72,100);
@@ -773,18 +773,29 @@ function dropItem(it,pos){
 }
 
 /* ============ combate ============ */
+// O jogador acerta um monstro: mostra o efeito na hora; quem aplica o dano é o anfitrião.
 function damageMon(m,dmg,crit){
   if(m.dead)return;
-  m.hp-=dmg;m.flash=0.15;
+  m.flash=0.15;
   const at=m.g.position.clone().setY(m.g.position.y+1+m.T.size*0.5);
   floatText(at.clone().setY(at.y+1+m.T.size*0.5),dmg,crit?'crit':'dmg');
   emit(at,crit?0xffd040:0xffffff,crit?18:8,5,1.5,0.4,6);
-  if(m.state!=='return')m.state='chase';
-  if(m.hp<=0)killMon(m);
+  if(amHost)applyDamage(m,dmg,myKey());
+  else{m.hp=Math.max(1,m.hp-dmg);netEmit('hit',{m:m.id,d:Math.round(dmg)})} // previsão até o anfitrião confirmar
 }
-function killMon(m){
-  m.dead=true;m.g.visible=false;m.lbl.style.display='none';m.respawnT=m.T.respawn;
+const myKey=()=>myId||'me';
+function applyDamage(m,dmg,by){ // só no anfitrião
+  if(m.dead)return;
+  m.hp-=dmg;m.contrib[by]=1;
+  if(m.state!=='return'){if(m.state!=='chase')m.tgtId=by;m.state='chase'}
+  if(m.hp<=0){const who=Object.keys(m.contrib);m.contrib={};killMon(m,who.includes(myKey()));if(netShared)netEmit('kill',{m:m.id,w:who})}
+}
+function killMon(m,rewarded){
+  m.dead=true;m.g.visible=false;m.lbl.style.display='none';m.respawnT=m.T.respawn;m.state='idle';m.tgtId=null;m.wander=null;
+  if(m.net)m.net.dead=true;
   emit(m.g.position.clone().setY(m.g.position.y+1),m.T.pc,m.T.boss?120:35,m.T.boss?9:5,3,1.1,5,m.T.size);
+  if(P.target===m){setTarget(null);P.auto=false}
+  if(!rewarded)return; // monstro derrotado por outros jogadores
   const lvDiff=P.lvl-m.T.lvl,mult=lvDiff>5?0.2:lvDiff>3?0.5:1;
   const xp=Math.max(1,Math.round(m.T.xp*mult));
   const gold=m.T.gold[0]+Math.floor(rnd()*(m.T.gold[1]-m.T.gold[0]+1));
@@ -797,7 +808,6 @@ function killMon(m){
   const nDrops=m.T.boss?2:1;
   for(let i=0;i<nDrops;i++)if(rnd()<m.T.dc){const lv=m.T.lvl+Math.floor(rnd()*3)-1;dropItem(makeItem(pick(['weapon','armor','helm','ring']),lv,i===0?rollRarity(m.T.epic):rollRarity(false),P.cls),m.g.position)}
   if(m.T.boss){log(`⭐ ${P.name} derrotou ${m.T.name}!`,'sys');banner(`${m.T.name} foi derrotado!`,'Um tesouro épico caiu no chão')}
-  if(P.target===m){setTarget(null);P.auto=false}
   gainXp(xp);
 }
 function gainXp(x){
@@ -817,7 +827,7 @@ function hurtPlayer(d){
   emit(P.pos.clone().setY(P.pos.y+1.3),0xff3030,6,3,1,0.4,6);
   if(P.hp<=0){P.hp=0;P.dead=true;P.deadT=4;P.auto=false;setTarget(null);$('dead').classList.remove('hidden');
     const lost=Math.floor(P.xp*0.1);P.xp-=lost;log(`Você foi derrotado e perdeu ${lost} XP.`,'bad');
-    for(const m of monsters)if(m.state==='chase')m.state='return';}
+    if(amHost)for(const m of monsters)if(m.state==='chase'&&m.tgtId===myKey())m.state='return';}
 }
 const d2=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z); // distância no plano (ignora altura do terreno)
 function nearestMon(maxD){let b=null,bd=maxD;for(const m of monsters){if(m.dead)continue;const d=d2(m.g.position,P.pos);if(d<bd){bd=d;b=m}}return b}
@@ -933,6 +943,28 @@ if('ontouchstart' in window||navigator.maxTouchPoints>0)document.body.classList.
 // Cada jogador publica o próprio estado (presença); os outros são desenhados aqui.
 // Sem a sala (ex.: arquivo aberto fora do Claude) o jogo continua single-player.
 const others=new Map(); // peer -> outro jogador
+let myId=null,netShared=false,amHost=true,netEmitFn=null,lastSnapW=0,lastFullW=0;
+let myJoin=Date.now(); // redefinido quando o jogador entra no mundo
+function netEmit(e,d){if(netEmitFn)netEmitFn(e,d)}
+// anfitrião = quem está há mais tempo no mundo (desempate pelo id); ele simula os monstros
+function hostId(){let hid=myId,hj=myJoin;for(const [k,o] of others){if(o.j<hj||(o.j===hj&&k<hid)){hid=k;hj=o.j}}return hid}
+const NET={ // mensagens recebidas de outros jogadores (tudo validado: vem da rede)
+  hit(d,from){if(!amHost||!others.has(from))return;const m=monsters[d&&d.m];if(!m)return;const dmg=clamp(num(d.d,0),0,5000);m.flash=0.15;applyDamage(m,dmg,from)},
+  mh(d){if(!d||d.t!==myId||P.dead)return;const m=monsters[d.m];const dmg=clamp(num(d.d,0),0,2000);if(m&&m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)},
+  tl(d){if(!d||!inDungeon(P.pos.x))return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!inDungeon(x)||!Number.isFinite(z))return;telegraph(new THREE.Vector3(x,0,z),4.5,TYPES.lich.atk*1.3,0x7dff9a)},
+  kill(d){if(amHost||!d)return;const m=monsters[d.m];if(!m)return;const w=Array.isArray(d.w)?d.w:[];if(m.net)m.net.dead=true;if(!m.dead)killMon(m,w.includes(myId));else if(w.includes(myId))killMon(m,true)},
+  ms(d,from){if(amHost||!Array.isArray(d)||from!==hostId())return;
+    for(const e of d){if(!Array.isArray(e))continue;const m=monsters[e[0]];if(!m)continue;
+      m.net={x:num(e[1],0)/10,z:num(e[2],0)/10,r:num(e[3],0)/100,hp:clamp(num(e[4],m.max),0,m.max),dead:!!e[5],atk:num(e[6],0),fresh:true}}}
+};
+function sendSnapshot(){ // anfitrião: estado dos monstros (só o que mudou; tudo a cada 2 s)
+  if(!netShared||!amHost||!others.size)return;
+  const w=performance.now()/1000;if(w-lastSnapW<0.2)return;lastSnapW=w;
+  const full=w-lastFullW>2;if(full)lastFullW=w;const arr=[];
+  for(const m of monsters){const g=m.g.position,e=[m.id,Math.round(g.x*10),Math.round(g.z*10),Math.round(m.g.rotation.y*100),Math.max(0,Math.ceil(m.hp)),m.dead?1:0,m.atkN];
+    const k=e.join(',');if(full||k!==m.lastKey){arr.push(e);m.lastKey=k}}
+  if(arr.length)netEmit('ms',arr);
+}
 let room=null,netT=0,lastSent='',sayN=0,lastSay='',atkN=0,prevAtk=0,lastChatT=-9,netForce=false,lastBeat=-9,netRate=0.1;
 // Servidor de tempo real (Supabase). A chave abaixo é a chave PÚBLICA do projeto, feita para ficar no navegador.
 const SB_URL='https://pygercquwwoaxidigiai.supabase.co';
@@ -940,17 +972,20 @@ const SB_KEY='eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZ
 function netInitSupabase(){
   if(!window.supabase||typeof window.supabase.createClient!=='function')return false;
   let sb;try{sb=window.supabase.createClient(SB_URL,SB_KEY,{auth:{persistSession:false},realtime:{params:{eventsPerSecond:20}}})}catch(e){return false}
-  const myId=Math.random().toString(36).slice(2,12),seen=new Map();
+  myId=Math.random().toString(36).slice(2,12);const seen=new Map();
   const ch=sb.channel('aether-mundo',{config:{broadcast:{self:false},presence:{key:myId}}});
   ch.on('broadcast',{event:'st'},msg=>{const pl=msg&&msg.payload;if(!pl||typeof pl.id!=='string'||pl.id===myId||pl.id.length>20)return;
       seen.set(pl.id,Date.now());upsertPeer({peer:pl.id,sameTab:false,kind:'viewer',presence:pl.s||{}})})
-    .on('presence',{event:'join'},()=>{netForce=true}) // alguém chegou: reenvia nosso estado
+    .on('broadcast',{event:'ev'},msg=>{const pl=msg&&msg.payload;if(!pl||typeof pl.id!=='string'||pl.id===myId||typeof pl.e!=='string')return;
+      const f=Object.prototype.hasOwnProperty.call(NET,pl.e)?NET[pl.e]:null;if(f)try{f(pl.d,pl.id)}catch(e){}})
+    .on('presence',{event:'join'},()=>{netForce=true;lastFullW=0}) // alguém chegou: reenvia nosso estado e o dos monstros
     .on('presence',{event:'leave'},({key})=>{seen.delete(key);removePeer(key)})
     .subscribe(st=>{
       if(st==='SUBSCRIBED'){ch.track({t:Date.now()}).catch(()=>{});netForce=true;if(started&&!netOk)log('🌐 Conectado ao servidor do mundo.','sys');netOk=true}
       else if(st==='CHANNEL_ERROR'||st==='TIMED_OUT'){if(netOk&&started)log('Conexão com o servidor caiu. Tentando reconectar…','bad');netOk=false}
     });
   room={presence:pr=>ch.send({type:'broadcast',event:'st',payload:{id:myId,s:pr}})};
+  netShared=true;netEmitFn=(e,d)=>{ch.send({type:'broadcast',event:'ev',payload:{id:myId,e,d}}).catch(()=>{})};
   netRate=0.16;
   setInterval(()=>{const t=Date.now();for(const [k,v] of seen)if(t-v>9000){seen.delete(k);removePeer(k)}},3000); // remove quem sumiu sem avisar
   return true;
@@ -962,7 +997,7 @@ setInterval(()=>{if(started&&room&&performance.now()-lastFrameWall>1500){netForc
 const rr=v=>Number.isInteger(v)&&v>=0&&v<=3?v:-1;
 const num=(v,d)=>typeof v==='number'&&Number.isFinite(v)?v:d;
 function myPresence(){
-  return {v:1,n:P.name,c:P.cls,l:P.lvl,x:Math.round(P.pos.x*100)/100,z:Math.round(P.pos.z*100)/100,r:Math.round(P.rot*100)/100,
+  return {v:1,j:myJoin,n:P.name,c:P.cls,l:P.lvl,x:Math.round(P.pos.x*100)/100,z:Math.round(P.pos.z*100)/100,r:Math.round(P.rot*100)/100,
     hp:Math.round(P.hp/P.maxHp*100),dead:P.dead?1:0,atk:atkN,eq:[rarOf(P.eq.armor),rarOf(P.eq.helm),rarOf(P.eq.weapon)],
     say:sayN?{i:sayN,t:lastSay,ts:lastSayTs}:null};
 }
@@ -999,7 +1034,7 @@ function upsertPeer(p){
     others.set(p.peer,o);
     if(started)log(`👋 ${name} entrou no mundo.`,'sys');
   }
-  o.name=name;o.tx=clamp(num(s.x,0),-260,760);o.tz=clamp(num(s.z,0),-260,260);o.tr=num(s.r,0);
+  o.j=num(s.j,Date.now());o.name=name;o.tx=clamp(num(s.x,0),-260,760);o.tz=clamp(num(s.z,0),-260,260);o.tr=num(s.r,0);
   o.dead=!!s.dead;o.hp=clamp(num(s.hp,100),0,100);o.lvl=clamp(Math.floor(num(s.l,1)),1,999);
   o.nm.textContent=`${name} · Nv ${o.lvl}`;o.hi.style.width=o.hp+'%';
   if(o.fresh){o.mesh.position.set(o.tx,H(o.tx,o.tz),o.tz);o.mesh.rotation.y=o.tr;o.fresh=false}
@@ -1127,6 +1162,79 @@ function moveEnt(pos,dx,dz,spd,dt,r){
   else return false;
   return true;
 }
+function nearestPlayer(g,maxD,list,area){let b=null,bd=maxD;for(const p of list){if(p.inD!==area||p.safe)continue;const d=Math.hypot(p.x-g.position.x,p.z-g.position.z);if(d<bd){bd=d;b=p}}return b}
+function monsterStrike(m,tgt,dmg){ // anfitrião: o monstro ataca um jogador (local ou remoto)
+  if(tgt.me){if(m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)}
+  else netEmit('mh',{t:tgt.id,m:m.id,d:Math.round(dmg)});
+}
+function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pular
+  const g=m.g,T=m.T;
+  if(m.dead){m.respawnT-=dt;if(m.respawnT<=0){m.dead=false;m.hp=m.max;m.state='idle';m.contrib={};g.position.set(m.home.x,H(m.home.x,m.home.z),m.home.z);g.visible=true;m.lbl.style.display=''}return null}
+  const area=inDungeon(g.position.x);
+  if(m.state==='idle'&&!m.wander&&!plist.some(p=>p.inD===area))return null; // ninguém por perto
+  m.cd=Math.max(0,m.cd-dt);m.anim+=dt;
+  const dHome=Math.hypot(g.position.x-m.home.x,g.position.z-m.home.z);
+  let tgt=m.state==='chase'?plist.find(p=>p.id===m.tgtId)||null:null;
+  if(m.state==='idle'&&T.aggro){const p=nearestPlayer(g,T.aggro,plist,area);if(p){m.state='chase';m.tgtId=p.id;tgt=p}}
+  if(m.state==='chase'&&(!tgt||tgt.safe||tgt.inD!==area||dHome>45||Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z)>32)){
+    const p=dHome<=45?nearestPlayer(g,Math.max(T.aggro,10),plist,area):null; // troca de alvo ou volta para casa
+    if(p){m.tgtId=p.id;tgt=p}else{m.state='return';tgt=null}
+  }
+  let mvx=0,mvz=0,spd=T.spd;
+  if(m.state==='chase'&&tgt){
+    const dP=Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z);
+    if(dP>T.range+T.size*0.3){mvx=tgt.x-g.position.x;mvz=tgt.z-g.position.z}
+    else{g.rotation.y=angLerp(g.rotation.y,Math.atan2(tgt.x-g.position.x,tgt.z-g.position.z),dt*8);
+      if(m.cd<=0){m.cd=T.cd;m.atkAnim=1;m.atkN++;monsterStrike(m,tgt,T.atk*(0.85+rnd()*0.3));
+        if(m.type==='boss'&&rnd()<0.3){ringFx(g.position,8,0xff6a3a);emit(g.position.clone().setY(g.position.y+0.5),0xb0a090,40,8,2,0.8,8,4);
+          for(const p of plist)if(p.inD===area&&Math.hypot(p.x-g.position.x,p.z-g.position.z)<7)monsterStrike({T:{},id:m.id},p,T.atk*0.6)}}}
+    if(T.lich){m.spT-=dt;if(m.spT<=0){m.spT=5.5;
+      const spots=[[tgt.x,tgt.z]];if(rnd()<0.5){const a=rnd()*6.28;spots.push([tgt.x+Math.cos(a)*6,tgt.z+Math.sin(a)*6])}
+      for(const [x,z] of spots){telegraph(new THREE.Vector3(x,0,z),4.5,T.atk*1.3,0x7dff9a);netEmit('tl',{x:Math.round(x*10)/10,z:Math.round(z*10)/10})}}}
+  }else if(m.state==='return'){
+    mvx=m.home.x-g.position.x;mvz=m.home.z-g.position.z;spd*=1.4;m.hp=Math.min(m.max,m.hp+m.max*0.3*dt);
+    if(dHome<1.5){m.state='idle';m.hp=m.max;m.contrib={}}
+  }else{
+    m.wait-=dt;
+    if(m.wander){mvx=m.wander.x-g.position.x;mvz=m.wander.z-g.position.z;spd*=0.4;if(Math.hypot(mvx,mvz)<0.6){m.wander=null;m.wait=2+rnd()*4}}
+    else if(m.wait<=0){const a=rnd()*Math.PI*2,r=rnd()*8;m.wander={x:m.home.x+Math.cos(a)*r,z:m.home.z+Math.sin(a)*r};if(blocked(m.wander.x,m.wander.z,T.size*0.4))m.wander=null,m.wait=1}
+  }
+  let walking=false;
+  if(Math.hypot(mvx,mvz)>0.05){
+    walking=moveEnt(g.position,mvx,mvz,spd,dt,T.size*0.4);
+    if(!walking&&m.state==='idle'){m.wander=null;m.wait=1}
+    if(!walking&&m.state==='return'){g.position.x=m.home.x;g.position.z=m.home.z}
+    g.rotation.y=angLerp(g.rotation.y,Math.atan2(mvx,mvz),dt*8);
+  }
+  g.position.y=H(g.position.x,g.position.z);
+  return walking;
+}
+function followMonster(m,dt){ // não-anfitrião: segue o estado recebido
+  const g=m.g,sn=m.net;
+  if(!sn)return m.dead?null:(g.position.y=H(g.position.x,g.position.z),m.anim+=dt,false);
+  if(sn.dead&&!m.dead)killMon(m,false);
+  if(!sn.dead&&m.dead){m.dead=false;g.position.set(sn.x,H(sn.x,sn.z),sn.z);g.visible=true;m.lbl.style.display=''}
+  if(m.dead)return null;
+  if(sn.fresh){m.hp=sn.hp;sn.fresh=false}
+  m.anim+=dt;
+  const dx=sn.x-g.position.x,dz=sn.z-g.position.z,d=Math.hypot(dx,dz);
+  if(d>15){g.position.x=sn.x;g.position.z=sn.z}else{const k=Math.min(1,dt*8);g.position.x+=dx*k;g.position.z+=dz*k}
+  g.rotation.y=angLerp(g.rotation.y,sn.r,Math.min(1,dt*10));
+  if(sn.atk!==m.atkN){m.atkN=sn.atk;m.atkAnim=1}
+  g.position.y=H(g.position.x,g.position.z);
+  return d>0.05;
+}
+function animMonster(m,walking,dt){
+  const g=m.g;
+  m.atkAnim=Math.max(0,m.atkAnim-dt*3);
+  const ud=g.userData;
+  if(m.type==='slime'){const b=Math.abs(Math.sin(m.anim*(walking?7:3)));ud.body.position.y=0.55+b*(walking?0.5:0.12);ud.body.scale.set(1+(1-b)*0.12,0.75-(1-b)*0.1+m.atkAnim*0.3,1+(1-b)*0.12)}
+  if(ud.legs){const s=walking?Math.sin(m.anim*(m.type==='wolf'?12:m.type==='skel'||m.type==='archer'?9:5))*0.6:0;ud.legs.forEach((l,i)=>l.rotation.x=(i%2?s:-s)*(m.type==='wolf'&&i>1?-1:1))}
+  if(ud.spiderLegs){ud.spiderLegs.forEach((l,i)=>l.rotation.x=walking?Math.sin(m.anim*14+i*1.3)*0.35:0);g.children[0].position.y=1+(m.atkAnim>0?-0.2:0)}
+  if(ud.arms){ud.arms.forEach((a,i)=>a.rotation.x=m.atkAnim>0?-Math.sin(m.atkAnim*Math.PI)*1.6:(walking?Math.sin(m.anim*5+(i?Math.PI:0))*0.4:0))}
+  if(ud.float){g.position.y+=0.6+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
+  if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.6)}else g.scale.setScalar(1);
+}
 function moveP(dx,dz,spd,dt){const ok=moveEnt(P.pos,dx,dz,spd,dt,0.4);P.rot=angLerp(P.rot,Math.atan2(dx,dz),Math.min(1,dt*12));return ok}
 function update(dt){
   now+=dt;const C=CLS[P.cls];
@@ -1179,49 +1287,17 @@ function update(dt){
   if(P.dead){me.rotation.x=-Math.PI/2*Math.min(1,(4-P.deadT)*3);me.position.y+=0.3}else me.rotation.x=0;
   if(P.eq.weapon&&P.eq.weapon.rar>=2&&rnd()<0.25){u.wpnOrb.getWorldPosition(tmp);emit(tmp,RAR[P.eq.weapon.rar].h,1,0.5,0.8,0.6,0,0.6)}
 
-  // monstros
+  // monstros: o anfitrião simula a IA; os outros jogadores seguem as posições que ele envia
+  const wasHost=amHost;amHost=!netShared||hostId()===myId;
+  if(amHost&&!wasHost)for(const m of monsters){m.tgtId=null;m.wander=null;if(!m.dead)m.state=Math.hypot(m.g.position.x-m.home.x,m.g.position.z-m.home.z)>2?'return':'idle';if(m.net&&m.net.dead&&!m.dead)killMon(m,false)}
+  const plist=[];
+  if(!P.dead)plist.push({id:myKey(),me:true,x:P.pos.x,z:P.pos.z,inD,safe:!!zone.safe});
+  if(amHost)for(const [k,o] of others)if(!o.dead){const z0=zoneOf(o.tx,o.tz);plist.push({id:k,x:o.tx,z:o.tz,inD:!!z0.dun,safe:!!z0.safe})}
   for(const m of monsters){
-    const g=m.g,T=m.T;
-    if(m.dead){m.respawnT-=dt;if(m.respawnT<=0){m.dead=false;m.hp=m.max;m.state='idle';g.position.set(m.home.x,H(m.home.x,m.home.z),m.home.z);g.visible=true;m.lbl.style.display=''}continue}
-    const sameArea=inDungeon(g.position.x)===inD;
-    if(!sameArea&&m.state==='idle'&&!m.wander){continue}
-    m.cd=Math.max(0,m.cd-dt);m.anim+=dt;
-    const dP=(P.dead||!sameArea)?999:Math.hypot(g.position.x-P.pos.x,g.position.z-P.pos.z);
-    const dHome=Math.hypot(g.position.x-m.home.x,g.position.z-m.home.z);
-    if(m.state==='idle'&&T.aggro&&dP<T.aggro&&!zone.safe)m.state='chase';
-    let mvx=0,mvz=0,spd=T.spd;
-    if(m.state==='chase'){
-      if(P.dead||dHome>45||dP>32||zone.safe){m.state='return'}
-      else if(dP>T.range+T.size*0.3){mvx=P.pos.x-g.position.x;mvz=P.pos.z-g.position.z}
-      else{g.rotation.y=angLerp(g.rotation.y,Math.atan2(P.pos.x-g.position.x,P.pos.z-g.position.z),dt*8);
-        if(m.cd<=0){m.cd=T.cd;m.atkAnim=1;const dmg=T.atk*(0.85+rnd()*0.3);
-          if(T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg);
-          if(m.type==='boss'){if(rnd()<0.3){ringFx(g.position,8,0xff6a3a);emit(g.position.clone().setY(g.position.y+0.5),0xb0a090,40,8,2,0.8,8,4);if(dP<7)hurtPlayer(T.atk*0.6)}}}}
-      if(T.lich){m.spT-=dt;if(m.spT<=0){m.spT=5.5;telegraph(P.pos,4.5,T.atk*1.3,0x7dff9a);if(rnd()<0.5){const a=rnd()*6.28;telegraph(new THREE.Vector3(P.pos.x+Math.cos(a)*6,0,P.pos.z+Math.sin(a)*6),4.5,T.atk*1.3,0x7dff9a)}}}
-    }else if(m.state==='return'){
-      mvx=m.home.x-g.position.x;mvz=m.home.z-g.position.z;spd*=1.4;m.hp=Math.min(m.max,m.hp+m.max*0.3*dt);
-      if(dHome<1.5){m.state='idle';m.hp=m.max}
-    }else{
-      m.wait-=dt;
-      if(m.wander){mvx=m.wander.x-g.position.x;mvz=m.wander.z-g.position.z;spd*=0.4;if(Math.hypot(mvx,mvz)<0.6){m.wander=null;m.wait=2+rnd()*4}}
-      else if(m.wait<=0){const a=rnd()*Math.PI*2,r=rnd()*8;m.wander={x:m.home.x+Math.cos(a)*r,z:m.home.z+Math.sin(a)*r};if(blocked(m.wander.x,m.wander.z,T.size*0.4))m.wander=null,m.wait=1}
-    }
-    let walking=false;
-    if(Math.hypot(mvx,mvz)>0.05){
-      walking=moveEnt(g.position,mvx,mvz,spd,dt,T.size*0.4);
-      if(!walking&&m.state==='idle'){m.wander=null;m.wait=1}
-      if(!walking&&m.state==='return'){g.position.x=m.home.x;g.position.z=m.home.z}
-      g.rotation.y=angLerp(g.rotation.y,Math.atan2(mvx,mvz),dt*8);
-    }
-    g.position.y=H(g.position.x,g.position.z);
-    m.atkAnim=Math.max(0,m.atkAnim-dt*3);
-    const ud=g.userData;
-    if(m.type==='slime'){const b=Math.abs(Math.sin(m.anim*(walking?7:3)));ud.body.position.y=0.55+b*(walking?0.5:0.12);ud.body.scale.set(1+(1-b)*0.12,0.75-(1-b)*0.1+m.atkAnim*0.3,1+(1-b)*0.12)}
-    if(ud.legs){const s=walking?Math.sin(m.anim*(m.type==='wolf'?12:m.type==='skel'||m.type==='archer'?9:5))*0.6:0;ud.legs.forEach((l,i)=>l.rotation.x=(i%2?s:-s)*(m.type==='wolf'&&i>1?-1:1))}
-    if(ud.spiderLegs){ud.spiderLegs.forEach((l,i)=>l.rotation.x=walking?Math.sin(m.anim*14+i*1.3)*0.35:0);g.children[0].position.y=1+(m.atkAnim>0?-0.2:0)}
-    if(ud.arms){ud.arms.forEach((a,i)=>a.rotation.x=m.atkAnim>0?-Math.sin(m.atkAnim*Math.PI)*1.6:(walking?Math.sin(m.anim*5+(i?Math.PI:0))*0.4:0))}
-    if(ud.float){g.position.y+=0.6+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
-    if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.6)}else g.scale.setScalar(1);
+    const g=m.g;let walking=false;
+    if(amHost){const r=hostMonster(m,dt,plist);if(r===null)continue;walking=r}
+    else{const r=followMonster(m,dt);if(r===null)continue;walking=r}
+    animMonster(m,walking,dt);
   }
   // projéteis do jogador
   for(let i=bolts.length-1;i>=0;i--){
@@ -1274,7 +1350,7 @@ function update(dt){
   // vagalumes
   {const fp=flies.geometry.attributes.position,b=flies.userData.base;flies.material.opacity=nightF*0.95;
    if(nightF>0.02&&!inD){for(let i=0;i<b.length;i++){const q=b[i];fp.setXYZ(i,q.x+Math.sin(now*0.7+q.o)*1.5,q.y+Math.sin(now*1.3+q.o*2)*0.6,q.z+Math.cos(now*0.6+q.o)*1.5)}fp.needsUpdate=true}}
-  updateOthers(dt);netSend(dt);
+  updateOthers(dt);netSend(dt);sendSnapshot();
   // câmera
   const tx=P.pos.x,ty=P.pos.y+1.6,tz=P.pos.z;
   let dist=cam.dist;if(inD)dist=Math.min(dist,16);
@@ -1341,7 +1417,7 @@ function start(){
   P.lbl=document.createElement('div');P.lbl.className='lbl me';P.lbl.textContent=P.name;labelsEl.appendChild(P.lbl);
   const C=CLS[P.cls];$('skName').textContent=C.skill;$('icoSkill').textContent=C.skIco;$('icoAtk').textContent=C.atkIco;
   $('start').classList.add('hidden');$('hud').classList.remove('hidden');
-  cam.yaw=SPAWN.yaw;started=true;dayT=0.1;save();
+  cam.yaw=SPAWN.yaw;myJoin=Date.now();started=true;dayT=0.1;save();
   log(`Bem-vindo(a) a Reinos de Aether, ${P.name}!`,'sys');
   log('Monstros deixam cair itens (Comum, Incomum, Raro e Épico). Abra a mochila com I.','sys');
   log('Na vila: Curandeira Lia cura e Ferreiro Borin vende equipamentos. Aperte E perto deles.','sys');
