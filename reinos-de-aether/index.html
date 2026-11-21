@@ -551,7 +551,7 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb'};
+const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb'};
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -565,7 +565,7 @@ function cloneModel(k,height){
   const g=MODELS[k];if(!g)return null;
   const m=THREE.SkeletonUtils.clone(g.scene);m.scale.setScalar(height/g.height);
   const parts={};m.traverse(o=>{if(o.isMesh){o.material=o.material.clone();LIN.add(o.material)}if(o.name&&!parts[o.name])parts[o.name]=o});
-  const mixer=new THREE.AnimationMixer(m),actions={};for(const c of g.animations)actions[c.name]=mixer.clipAction(c);
+  const mixer=new THREE.AnimationMixer(m),actions={};for(const c of g.animations){const a=mixer.clipAction(c);actions[c.name]=a;const sh=c.name.split('|').pop();if(!actions[sh])actions[sh]=a}
   return{m,parts,mixer,actions};
 }
 function attachFrom(srcKey,names,r){ // empresta armas de outro modelo (mesmo esqueleto KayKit)
@@ -608,15 +608,21 @@ function driveHero(g,moving,trig,dead,dt){
   }
   u.mixer.update(dt);return true;
 }
-const MON_MODEL={skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4]};
+const MON_MODEL={skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
+const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons'};
+const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw'},lich:{...SK,atk:'Spellcast_Shoot'},
+  wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death'},
+  spider:{idle:'Spider_Idle',walk:'Spider_Walk',run:'Spider_Walk',runSpeed:1.8,atk:'Spider_Attack',death:'Spider_Death'},
+  slime:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death'}};
 function upgradeMonsterModels(){
   for(const m of monsters){const mm=MON_MODEL[m.type];if(!mm||m.g.userData.model)continue;const r=cloneModel(mm[0],mm[1]);if(!r)continue;
-    const g=m.g;for(const c of [...g.children])g.remove(c);g.add(r.m);
+    const g=m.g,tint=g.userData.body&&g.userData.body.material.color.clone();for(const c of [...g.children])g.remove(c);g.add(r.m);
+    if(m.type==='slime'&&tint)r.m.traverse(o=>{if(o.isMesh&&/Pink_Main/.test(o.material.name))o.material.color.copy(tint);if(o.isMesh&&/Pink_Secondary/.test(o.material.name))o.material.color.copy(tint).multiplyScalar(0.6)});
     if(m.type==='skel')attachFrom('knight',['1H_Sword','Round_Shield'],r);
     if(m.type==='lich')attachFrom('mage',['2H_Staff'],r);
     for(const [n,o] of Object.entries(r.parts))if(/Eyes/.test(n)&&o.material){o.material.emissive=lin(new THREE.Color(m.type==='lich'?0x7dff9a:0xff6a2a));o.material.emissiveIntensity=2.5}
     g.userData={model:true,mixer:r.mixer,actions:r.actions,parts:r.parts,t:0,lock:0,cur:null,curName:null,float:m.type==='lich',lastAtk:m.atkN,px:g.position.x,pz:g.position.z,spd:0};
-    playAnim(g.userData,'Idle_Combat');
+    playAnim(g.userData,MON_ANIM[m.type].idle);
     g.traverse(o=>{o.userData.mon=m});
   }
 }
@@ -981,7 +987,26 @@ const SFX=(()=>{
     const AC=window.AudioContext||window.webkitAudioContext;if(!AC)return;
     try{ctx=new AC();master=ctx.createGain();master.gain.value=vol;const comp=ctx.createDynamicsCompressor();master.connect(comp);comp.connect(ctx.destination);
       noiseBuf=ctx.createBuffer(1,ctx.sampleRate,ctx.sampleRate);const d=noiseBuf.getChannelData(0);for(let i=0;i<d.length;i++)d[i]=Math.random()*2-1}catch(e){ctx=null}
+    if(ctx&&location.protocol!=='file:')loadSamples();
   }
+  // gravações reais (Kenney e OpenGameArt, CC0); se não carregarem, ficam os sons sintetizados
+  const BUF={},SAMPLES={hit:['impactPunch_medium_000','impactPunch_medium_001','impactPunch_medium_002'],crit:['impactMetal_heavy_000','impactMetal_heavy_001'],
+    swing:['knifeSlice','knifeSlice2'],hurt:['impactSoft_heavy_000','impactSoft_heavy_001'],coin:['handleCoins','handleCoins2'],loot:['cloth1','cloth2'],
+    glass:['impactGlass_medium_000'],boom:['explosionCrunch_000','lowFrequency_explosion_000'],field:['forceField_000','forceField_001'],
+    bell:['impactBell_heavy_000','impactBell_heavy_001'],zap:['laserSmall_001'],click:['metalClick'],slime:['slime_000']};
+  function decode(ab){return new Promise((res,rej)=>{try{const p=ctx.decodeAudioData(ab,res,rej);if(p&&p.then)p.then(res,rej)}catch(e){rej(e)}})}
+  function loadSamples(){
+    for(const [k,list] of Object.entries(SAMPLES))for(const f of list)
+      fetch('audio/sfx/'+f+'.ogg').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(decode).then(b=>{(BUF[k]=BUF[k]||[]).push(b)}).catch(()=>{});
+    for(const k of ['forest_ambience','crickets'])
+      fetch('audio/ambient/'+k+'.ogg').then(r=>r.ok?r.arrayBuffer():Promise.reject()).then(decode).then(b=>startLoop(k,b)).catch(()=>{});
+  }
+  function smp(k,v,rate){if(!ctx||!BUF[k]||!BUF[k].length)return false;const L=BUF[k],src=ctx.createBufferSource(),g=ctx.createGain();
+    src.buffer=L[Math.random()*L.length|0];src.playbackRate.value=rate||(0.92+Math.random()*0.16);g.gain.value=v;src.connect(g);g.connect(master);src.start();return true}
+  const loops={};
+  function startLoop(k,b){const src=ctx.createBufferSource(),g=ctx.createGain();src.buffer=b;src.loop=true;g.gain.value=0;src.connect(g);g.connect(master);src.start();loops[k]=g}
+  function setAmbience(day,night){const t=ctx&&ctx.currentTime;if(!t)return;
+    if(loops.forest_ambience)loops.forest_ambience.gain.setTargetAtTime(day*0.32,t,0.6);if(loops.crickets)loops.crickets.gain.setTargetAtTime(night*0.22,t,0.6)}
   function env(g,t,a,d,v){g.gain.setValueAtTime(0.0001,t);g.gain.linearRampToValueAtTime(v,t+a);g.gain.exponentialRampToValueAtTime(0.0001,t+a+d)}
   function tone(f,f2,dur,v,type,delay){if(!ctx)return;const t=ctx.currentTime+(delay||0),o=ctx.createOscillator(),g=ctx.createGain();o.type=type||'sine';
     o.frequency.setValueAtTime(f,t);if(f2)o.frequency.exponentialRampToValueAtTime(f2,t+dur);env(g,t,0.006,dur,v);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+0.05)}
@@ -989,24 +1014,25 @@ const SFX=(()=>{
     src.buffer=noiseBuf;fl.type=ftype||'bandpass';fl.Q.value=q||1;fl.frequency.setValueAtTime(f,t);if(f2)fl.frequency.exponentialRampToValueAtTime(f2,t+dur);
     env(g,t,0.005,dur,v);src.connect(fl);fl.connect(g);g.connect(master);src.start(t,Math.random()*0.5);src.stop(t+dur+0.05)}
   const S={
-    swing:v=>{noise(2600,700,0.14,0.5*v,'bandpass',1.2)},
-    hit:v=>{noise(900,200,0.12,0.7*v,'lowpass',1);tone(150,70,0.12,0.35*v,'triangle')},
-    crit:v=>{noise(1400,250,0.18,0.8*v,'lowpass',1);tone(220,80,0.16,0.4*v,'square');tone(1300,1900,0.12,0.12*v,'sine',0.02)},
+    swing:v=>{if(!smp('swing',0.45*v))noise(2600,700,0.14,0.5*v,'bandpass',1.2)},
+    hit:v=>{if(!smp('hit',0.7*v)){noise(900,200,0.12,0.7*v,'lowpass',1);tone(150,70,0.12,0.35*v,'triangle')}},
+    crit:v=>{if(smp('crit',0.75*v)){smp('hit',0.6*v);return}noise(1400,250,0.18,0.8*v,'lowpass',1);tone(220,80,0.16,0.4*v,'square');tone(1300,1900,0.12,0.12*v,'sine',0.02)},
     cast:v=>{tone(500,1100,0.18,0.18*v,'sawtooth');tone(750,1650,0.18,0.12*v,'sine',0.03)},
-    zap:v=>{tone(900,1600,0.1,0.12*v,'square')},
+    zap:v=>{if(!smp('zap',0.25*v,0.9+Math.random()*0.3))tone(900,1600,0.1,0.12*v,'square')},
     whirl:v=>{noise(400,2600,0.35,0.55*v,'bandpass',2);noise(2600,500,0.3,0.4*v,'bandpass',2,0.25)},
-    boom:v=>{noise(1200,90,0.6,0.9*v,'lowpass',0.7);tone(90,40,0.5,0.5*v,'sine')},
-    hurt:v=>{tone(220,110,0.14,0.28*v,'square');noise(600,200,0.1,0.3*v,'lowpass')},
-    mdeath:v=>{noise(800,120,0.45,0.45*v,'lowpass',0.8);tone(300,90,0.35,0.15*v,'triangle')},
+    boom:v=>{if(!smp('boom',0.8*v))noise(1200,90,0.6,0.9*v,'lowpass',0.7);tone(90,40,0.5,0.4*v,'sine')},
+    hurt:v=>{if(!smp('hurt',0.6*v)){tone(220,110,0.14,0.28*v,'square');noise(600,200,0.1,0.3*v,'lowpass')}},
+    mdeath:v=>{if(!smp('hurt',0.5*v,0.7))noise(800,120,0.45,0.45*v,'lowpass',0.8);tone(300,90,0.35,0.12*v,'triangle')},
+    sdeath:v=>{if(!smp('slime',0.5*v))noise(800,120,0.45,0.45*v,'lowpass',0.8)},
     bossdeath:v=>{noise(600,60,1.4,1*v,'lowpass',0.6);tone(110,35,1.3,0.6*v,'sawtooth');for(let i=0;i<4;i++)tone(523*[1,1.25,1.5,2][i],0,0.5,0.15*v,'sine',0.5+i*0.12)},
-    coin:v=>{tone(1320,0,0.08,0.18*v,'square');tone(1760,0,0.16,0.15*v,'square',0.06)},
-    loot:v=>{tone(880,0,0.12,0.15*v,'triangle');tone(1320,0,0.18,0.13*v,'triangle',0.08)},
-    epic:v=>{for(let i=0;i<5;i++)tone([784,988,1175,1568,1976][i],0,0.35,0.13*v,'triangle',i*0.07);noise(5000,9000,0.5,0.12*v,'highpass',1,0.1)},
-    potion:v=>{tone(400,900,0.25,0.18*v,'sine');for(let i=0;i<3;i++)tone(1200+i*300,0,0.06,0.07*v,'sine',0.08+i*0.05)},
-    heal:v=>{for(let i=0;i<4;i++)tone([523,659,784,1047][i],0,0.45,0.12*v,'sine',i*0.09)},
-    levelup:v=>{for(let i=0;i<6;i++)tone([523,659,784,1047,1319,1568][i],0,0.5,0.16*v,'triangle',i*0.08);noise(4000,8000,0.8,0.1*v,'highpass',1,0.3)},
-    portal:v=>{tone(200,800,0.6,0.15*v,'sine');tone(300,1200,0.6,0.1*v,'triangle',0.1);noise(300,3000,0.7,0.15*v,'bandpass',3)},
-    click:v=>{tone(900,0,0.04,0.12*v,'square')},
+    coin:v=>{if(!smp('coin',0.45*v)){tone(1320,0,0.08,0.18*v,'square');tone(1760,0,0.16,0.15*v,'square',0.06)}},
+    loot:v=>{smp('loot',0.6*v);tone(880,0,0.12,0.12*v,'triangle');tone(1320,0,0.18,0.1*v,'triangle',0.08)},
+    epic:v=>{smp('bell',0.35*v,1.2);for(let i=0;i<5;i++)tone([784,988,1175,1568,1976][i],0,0.35,0.13*v,'triangle',i*0.07);noise(5000,9000,0.5,0.12*v,'highpass',1,0.1)},
+    potion:v=>{smp('glass',0.45*v,1.1);tone(400,900,0.25,0.18*v,'sine');for(let i=0;i<3;i++)tone(1200+i*300,0,0.06,0.07*v,'sine',0.08+i*0.05)},
+    heal:v=>{smp('field',0.35*v,1.2);for(let i=0;i<4;i++)tone([523,659,784,1047][i],0,0.45,0.12*v,'sine',i*0.09)},
+    levelup:v=>{smp('bell',0.5*v);for(let i=0;i<6;i++)tone([523,659,784,1047,1319,1568][i],0,0.5,0.16*v,'triangle',i*0.08);noise(4000,8000,0.8,0.1*v,'highpass',1,0.3)},
+    portal:v=>{smp('field',0.5*v,0.8);tone(200,800,0.6,0.15*v,'sine');tone(300,1200,0.6,0.1*v,'triangle',0.1);noise(300,3000,0.7,0.15*v,'bandpass',3)},
+    click:v=>{if(!smp('click',0.35*v))tone(900,0,0.04,0.12*v,'square')},
     msg:v=>{tone(1047,0,0.08,0.1*v,'sine');tone(1319,0,0.12,0.09*v,'sine',0.07)},
     shop:v=>{noise(3000,1500,0.05,0.25*v,'bandpass',4);noise(2500,1200,0.05,0.2*v,'bandpass',4,0.09)},
     bird:v=>{const f=2200+Math.random()*900;tone(f,f*1.35,0.09,0.05*v,'sine');tone(f*1.1,f*1.5,0.08,0.04*v,'sine',0.13);if(Math.random()<0.5)tone(f,f*1.3,0.07,0.035*v,'sine',0.26)},
@@ -1017,10 +1043,11 @@ const SFX=(()=>{
     let v=1;if(pos&&P&&P.pos){const d=Math.hypot(pos.x-P.pos.x,pos.z-P.pos.z);if(d>45)return;v=Math.max(0.15,1-d/45)}
     try{S[name](v)}catch(e){}
   }
-  return{init,play,get vol(){return vol},setVol(v){vol=v;try{localStorage.setItem('aether_vol',String(v))}catch(e){}if(master)master.gain.value=v}};
+  return{init,play,setAmbience,get hasLoops(){return!!(loops.forest_ambience||loops.crickets)},get vol(){return vol},setVol(v){vol=v;try{localStorage.setItem('aether_vol',String(v))}catch(e){}if(master)master.gain.value=v}};
 })();
 let ambT=3;
-function ambient(dt,inD){ // pássaros de dia, grilos à noite
+function ambient(dt,inD){ // floresta de dia, grilos à noite
+  if(SFX.hasLoops){SFX.setAmbience(inD?0:Math.max(0,1-nightF*1.4),inD?0:Math.max(0,nightF*1.3-0.3));return}
   ambT-=dt;if(ambT>0)return;
   if(inD){ambT=5;return}
   if(nightF>0.6){SFX.play('cricket');ambT=0.6+Math.random()*1.6}
@@ -1048,9 +1075,9 @@ function applyDamage(m,dmg,by){ // só no anfitrião
 }
 function killMon(m,rewarded){
   m.dead=true;m.lbl.style.display='none';m.respawnT=m.T.respawn;m.state='idle';m.tgtId=null;m.wander=null;
-  {const ud=m.g.userData;m.dyingT=m.dyingMax=ud.model?1.4:0.75;if(ud.model)playAnim(ud,'Death_C_Skeletons',true,1.2)}
+  {const ud=m.g.userData;m.dyingT=m.dyingMax=ud.model?1.4:0.75;if(ud.model)playAnim(ud,MON_ANIM[m.type].death,true,1.2)}
   if(m.net)m.net.dead=true;
-  SFX.play(m.T.boss?'bossdeath':'mdeath',m.g.position,0.08);
+  SFX.play(m.T.boss?'bossdeath':m.type==='slime'?'sdeath':'mdeath',m.g.position,0.08);
   emit(m.g.position.clone().setY(m.g.position.y+1),m.T.pc,m.T.boss?120:35,m.T.boss?9:5,3,1.1,5,m.T.size);
   if(P.target===m){setTarget(null);P.auto=false}
   if(!rewarded)return; // monstro derrotado por outros jogadores
@@ -1564,7 +1591,7 @@ function followMonster(m,dt){ // não-anfitrião: segue o estado recebido
   g.position.y=H(g.position.x,g.position.z);
   return d>0.05;
 }
-function spawnFx(m){emit(m.g.position.clone().setY(m.g.position.y+0.4),m.T.pc,18,2.5,2,0.7,3,m.T.size);if(m.g.userData.model)playAnim(m.g.userData,'Idle_Combat')}
+function spawnFx(m){emit(m.g.position.clone().setY(m.g.position.y+0.4),m.T.pc,18,2.5,2,0.7,3,m.T.size);if(m.g.userData.model)playAnim(m.g.userData,MON_ANIM[m.type].idle)}
 function updDying(dt){ // monstros derrotados: animação de queda antes de sumir
   for(const m of monsters){if(!(m.dyingT>0))continue;m.dyingT-=dt;const g=m.g,ud=g.userData,k=Math.max(0,m.dyingT/m.dyingMax);
     if(ud.model){ud.mixer.update(dt);if(k<0.3)g.position.y-=dt*1.6}
@@ -1577,8 +1604,9 @@ function animMonster(m,walking,dt){
   const ud=g.userData;
   if(ud.model){
     ud.t+=dt;const v=Math.hypot(g.position.x-ud.px,g.position.z-ud.pz)/Math.max(dt,1e-3);ud.px=g.position.x;ud.pz=g.position.z;ud.spd+=(v-ud.spd)*Math.min(1,dt*6);
-    if(m.atkN!==ud.lastAtk){ud.lastAtk=m.atkN;const n=m.type==='archer'?'Throw':m.type==='lich'?'Spellcast_Shoot':'1H_Melee_Attack_Chop';ud.lock=ud.t+playAnim(ud,n,true,1.4)*0.85}
-    if(ud.t>=ud.lock){const base=ud.spd<0.4||m.type==='lich'?'Idle_Combat':ud.spd>3?'Running_A':'Walking_D_Skeletons';if(ud.curName!==base)playAnim(ud,base,false)}
+    const A=MON_ANIM[m.type];
+    if(m.atkN!==ud.lastAtk){ud.lastAtk=m.atkN;ud.lock=ud.t+playAnim(ud,A.atk,true,1.4)*0.85}
+    if(ud.t>=ud.lock){const run=ud.spd>3,base=ud.spd<0.4||m.type==='lich'?A.idle:run?A.run:A.walk;if(ud.curName!==base)playAnim(ud,base,false,run?(A.runSpeed||1):1)}
     if(d2(g.position,P.pos)<90)ud.mixer.update(dt);
     if(ud.float){g.position.y+=0.5+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
     if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.4)}else g.scale.setScalar(1);

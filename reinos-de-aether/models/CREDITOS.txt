@@ -19,5 +19,13 @@ Modelos 3D dos personagens (com animações reduzidas às usadas pelo jogo):
   KayKit : Dungeon Remastered (1.0) — Kay Lousberg
   https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0
 
+- wolf.glb, spider.glb, slime.glb (Lobo Cinzento, Aranha Gigante e Geleia, com animações)
+  Quaternius — Animated Animal Pack e Ultimate Monsters (https://quaternius.com)
+  Obtidos via a pasta de assets do projeto vibeage (github.com/samoylenkodmitry/vibeage),
+  que os lista como CC0 em public/models/ASSET_MANIFEST.md. Nenhum código desse projeto foi usado.
+
+Sons (pasta audio/): efeitos da Kenney (kenney.nl — Impact Sounds, Sci-Fi Sounds, RPG Audio)
+e ambientes de floresta/grilos do OpenGameArt.org, todos CC0. Detalhes em audio/*/CREDITS.txt.
+
 Licença: Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
 Uso livre em projetos pessoais, educacionais e comerciais. Crédito não obrigatório, mas agradecido.
