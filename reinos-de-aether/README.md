@@ -23,6 +23,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Mascotes (loja do Ferreiro Borin): Geleia Mascote (busca baús, +10% ouro), Filhote de Lobo (+10% XP) e Dragãozinho (voa, busca baús, +10% ouro, +5% ataque; liberado após derrotar Ignarok). Visíveis no multiplayer.
 - Duelos PvP (Perfil → Grupo → ⚔️ ou /duelo Nome): 1x1 fora da vila, contagem de 3 s, 60% do dano normal, termina em 10% da vida (ninguém morre) ou em 90 s; vitórias contam para a conquista Duelista.
 - Visual do equipamento: a roupa (placas, couro ou manto), o chapéu (elmo, capuz de urso, chapéu de mago) e a arma (espada e escudo, lâminas gêmeas, espadão, machados, cajado, varinha e livro) mudam conforme o item equipado; a raridade muda a cor (bronze, aço, dourado) e itens raros/épicos ou +5 brilham. Visível no multiplayer.
+- Troca de itens (Perfil → Grupo → 🔁 ou /trocar Nome): até 4 itens + ouro de cada lado, a até 12 m; os dois confirmam e qualquer mudança desfaz as confirmações; itens recebidos são validados.
 - Montaria (tecla V): Lobo Branco, +70% de velocidade; atacar ou levar dano desmonta.
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
 - Sons gravados (Kenney e OpenGameArt, CC0) com sons sintetizados no navegador (WebAudio) como reserva; volume nas opções e tecla N para ligar/desligar.

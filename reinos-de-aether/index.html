@@ -52,6 +52,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 body.touch #emoPop{bottom:auto;top:56px}
 #party{position:fixed;left:12px;top:150px;width:200px;padding:6px 8px;font-size:12px}#party .pm{margin:3px 0}#party small{color:#bba;font-size:10px}#party .pb{height:5px;background:#3a1414;border-radius:3px;overflow:hidden;margin-top:2px}#party .pb i{display:block;height:100%;background:#d94040}
 #dinvite{position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px;border-color:#c04040}#dinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
+#tinvite{position:fixed;left:50%;top:26%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px}#tinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
+#trade{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:32;background:rgba(18,14,9,.97);width:min(520px,96vw);max-height:calc(100vh - 20px);overflow-y:auto}
+#trade .tcols{display:grid;grid-template-columns:1fr 1fr;gap:10px}#trade .tgrid{display:flex;flex-wrap:wrap;gap:4px;min-height:48px}#trade .tgrid.bag{max-height:150px;overflow-y:auto}
+#trade .meta{font-size:11px;color:#bba;margin:6px 0}#trade .arow{display:flex;align-items:center;gap:6px;margin:6px 0}
 #pinvite{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px}#pinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
 .prow{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #3a3020;border-radius:6px;margin-bottom:4px;font-size:13px}.prow .nm{flex:1}.prow small{color:#aa9;font-size:10px}
 #quest{position:fixed;right:12px;top:232px;width:190px;padding:8px 10px;background:rgba(14,11,6,.72);border:1px solid #6b5630;border-radius:8px;font-size:12px;color:#e8dcc0;text-shadow:0 1px 2px #000;pointer-events:none}
@@ -247,6 +251,8 @@ body.touch #detail{z-index:31}
     <div id="wmapLeg">🔷 você · 🟢 outros jogadores · 🟣 NPCs · 👑 chefes · 🕳️ masmorra · ✨ alvo da missão · M ou Esc fecha</div></div>
   <div id="daily" class="panel hidden"><div class="ph">🎁 Recompensa diária <span class="x" id="dailyX" title="Receber depois">✕</span></div><div id="dailyDays"></div><div id="dailyTxt" class="hint"></div><button class="mini" id="dailyGo" style="margin-top:8px;padding:8px 22px;font-size:14px">Receber</button></div>
   <div id="emoPop" class="panel hidden"></div>
+  <div id="tinvite" class="panel hidden"><div id="tinviteTxt"></div><div class="btns"><button class="mini" id="tinYes">Aceitar</button><button class="mini" id="tinNo">Recusar</button></div></div>
+  <div id="trade" class="panel hidden"><div class="ph">🔁 Troca <span class="x" id="tradeX">✕</span></div><div id="tradeBody"></div></div>
   <div id="dinvite" class="panel hidden"><div id="dinviteTxt"></div><div class="btns"><button class="mini" id="dinYes">Aceitar</button><button class="mini" id="dinNo">Recusar</button></div></div>
   <div id="party" class="panel hidden"></div>
   <div id="pinvite" class="panel hidden"><div id="pinviteTxt"></div><div class="btns"><button class="mini" id="pinYes">Aceitar</button><button class="mini" id="pinNo">Recusar</button></div></div>
@@ -1113,6 +1119,11 @@ function lookOf(cls,eq){const a=eq.armor,h=eq.helm,w=eq.weapon,nat=NATIVE[cls]||
   return[o,a?a.rar:-1,hs,h?h.rar:-1,main,off,w?w.rar:-1,w?(w.ref||0):0]}
 function sanLook(L,cls){if(!Array.isArray(L)||L.length<8)return null;const nat=NATIVE[cls]||'knight',r=x=>clamp(Math.floor(num(x,-1)),-1,3);
   return[OUTFIT_PARTS[L[0]]?L[0]:nat,r(L[1]),HAT[L[2]]?L[2]:'',r(L[3]),WPN_SRC[L[4]]?L[4]:'',WPN_SRC[L[5]]?L[5]:'',r(L[6]),clamp(Math.floor(num(L[7],0)),0,7)]}
+function setHue(m,h){if(!m||!m.material)return;const mt=m.material;if(!mt.userData.hueU){if(!h)return;mt.userData.hueU={value:0};
+    mt.onBeforeCompile=sh=>{sh.uniforms.uHue=mt.userData.hueU;sh.fragmentShader='uniform float uHue;\nvec3 hueRot(vec3 c,float a){const vec3 k=vec3(0.57735);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.0-ca);}\n'+
+      sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.rgb=max(hueRot(diffuseColor.rgb,uHue),0.0);')};mt.customProgramCacheKey=()=>'hue';mt.needsUpdate=true}
+  mt.userData.hueU.value=h||0}
+const ROBE_HUE=[0,-1.75,2.1,0.95]; // incomum verde, raro carmesim, épico violeta
 function tintMesh(m,hex,amt,glow){if(!m||!m.material)return;m.material.color.setRGB(1,1,1);if(hex)m.material.color.lerp(lin(tmpC.setHex(hex)),amt);
   if(m.material.emissive){if(glow)m.material.emissive.copy(lin(tmpC.setHex(glow[0]))).multiplyScalar(glow[1]);else m.material.emissive.setRGB(0,0,0)}}
 function grabPart(u,root,name){ // peça nativa ou emprestada de outro modelo, presa ao mesmo osso
@@ -1134,7 +1145,7 @@ function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.ro
   const natPre=OUTFIT_PARTS[nat],natParts=['Body','ArmLeft','ArmRight','LegLeft','LegRight'].map(p=>u.parts[natPre+'_'+p]).filter(Boolean);
   for(const k in (u.outfits||{}))for(const m of u.outfits[k])m.visible=false;
   let body=natParts;if(o!==nat){const om=outfitMeshes(u,R,o);if(om&&om.length){natParts.forEach(m=>m.visible=false);body=om;om.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true);
-  const AMT=[0,0.45,0.55,0.85],pal=TINT[o]||TINT.knight;for(const m of body)tintMesh(m,ar>0?pal[ar]:0,AMT[Math.max(0,ar)],ar>=3?[pal[3],0.1]:null);
+  const AMT=[0,0.45,0.55,0.85],pal=TINT[o]||TINT.knight;for(const m of body){if(o==='mage'){setHue(m,ar>0?ROBE_HUE[ar]:0);tintMesh(m,0,0,ar>=3?[0xb070ff,0.12]:null)}else{setHue(m,0);tintMesh(m,ar>0?pal[ar]:0,AMT[Math.max(0,ar)],ar>=3?[pal[3],0.1]:null)}}
   tintMesh(u.cape,ar>0?TINT.cape[ar]:0,0.6,null);
   // chapéu
   for(const k of Object.values(HAT)){const p=u.parts[k]&&!u.parts[k].userData.borrowed?u.parts[k]:(u.borrow&&u.borrow[k]);if(p)p.visible=false}
@@ -1263,6 +1274,7 @@ $('prof').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t){pr
   if(e.target.id==='frAdd'){addFriend($('frIn').value);return}
   const fr=e.target.closest('[data-fr]');if(fr){addFriend(fr.dataset.fr);return}
   const du=e.target.closest('[data-duel]');if(du){duelInvite(du.dataset.duel);toggleProfile(false);return}
+  const tr=e.target.closest('[data-trade]');if(tr){tradeInvite(tr.dataset.trade);return}
   const uf=e.target.closest('[data-unfr]');if(uf){delFriend(uf.dataset.unfr);return}
   const pmb=e.target.closest('[data-pm]');if(pmb){whisperTo(pmb.dataset.pm);return}
   if(e.target.id==='dailyOpen'){toggleProfile(false);$('daily').classList.remove('hidden');return}
@@ -1276,6 +1288,12 @@ $('dailyX').addEventListener('click',()=>{$('daily').classList.add('hidden');log
 $('emoPop').innerHTML=Object.entries(EMOTES).map(([k,E])=>`<div class="em" data-emo="${k}"><b>${E.ico}</b>${E.t}</div>`).join('');
 $('emoPop').addEventListener('click',e=>{const x=e.target.closest('[data-emo]');if(x)doEmote(x.dataset.emo)});
 $('dinYes').addEventListener('click',()=>duelAnswer(true));$('dinNo').addEventListener('click',()=>duelAnswer(false));
+$('tinYes').addEventListener('click',()=>tradeAnswer(true));$('tinNo').addEventListener('click',()=>tradeAnswer(false));
+$('tradeX').addEventListener('click',()=>tradeClose('🔁 Troca cancelada.',true));
+$('trade').addEventListener('click',e=>{if(e.target.id==='tOk'){tradeConfirm();return}if(e.target.id==='tCx'){tradeClose('🔁 Troca cancelada.',true);return}
+  const a=e.target.closest('[data-tadd]');if(a){const it=P.inv.find(x=>String(x.id)===a.dataset.tadd);if(it)tradeAdd(it);return}
+  const r=e.target.closest('[data-trm]');if(r){tradeRemove(+r.dataset.trm);return}});
+$('trade').addEventListener('change',e=>{if(e.target.id==='tGold')tradeSetGold(e.target.value)});
 $('pinYes').addEventListener('click',()=>ptyAnswer(true));$('pinNo').addEventListener('click',()=>ptyAnswer(false));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>{const id=x.dataset.close;$(id).classList.add('hidden');if(id==='wmap'){mapOpen=false;return}if(id==='prof'){profOpen=false;return}if(id==='shop'||id==='inv'){shopOpen=false;$('shop').classList.add('hidden')}hideDetail();renderInv()}));
 function toggleInv(force){const el=$('inv');const show=force!==undefined?force:el.classList.contains('hidden');el.classList.toggle('hidden',!show);if(!show){hideDetail();if(shopOpen){shopOpen=false;$('shop').classList.add('hidden')}}renderInv()}
@@ -1682,6 +1700,48 @@ function dailyCheck(){const today=dayKey(new Date()),y=new Date();y.setDate(y.ge
   $('daily').classList.remove('hidden')}
 function dailyClaim(){if(!dailyNext)return;const d=DAILY[dailyNext-1],got=d.f();P.daily={last:dayKey(new Date()),streak:dailyNext};dailyNext=0;$('daily').classList.add('hidden');
   SFX.play('epic',null,0.5);pillarFx(P.pos,0xffd23a);log(`🎁 Recompensa diária: ${got}!`,'loot');if(typeof renderInv==='function')renderInv();save()}
+/* ============ troca entre jogadores ============ */
+const TRADE={with:null,name:'',mine:[],gold:0,theirs:[],tgold:0,ok:false,tok:null,done:false};let tradeInv=null,tradeInvT=0;
+function sanItem(o){if(!o||typeof o!=='object'||!SLOTN[o.slot])return null;const st={};for(const k of ['atk','def','hp','mp','crit']){const v=num(o.st&&o.st[k],NaN);if(Number.isFinite(v))st[k]=clamp(Math.round(v),0,k==='crit'?60:100000)}
+  return{id:uid++,slot:o.slot,lvl:clamp(Math.floor(num(o.lvl,1)),1,99),rar:clamp(Math.floor(num(o.rar,0)),0,3),cls:okCls(o.cls),name:String(o.name||'Item').slice(0,48),st,val:clamp(Math.floor(num(o.val,1)),1,999999),ref:clamp(Math.floor(num(o.ref,0)),0,7)}}
+const itKey=it=>[it.slot,it.lvl,it.rar,it.cls,it.name,it.ref||0,...['atk','def','hp','mp','crit'].map(k=>it.st&&it.st[k]||0)].join(',');
+function hashStr(t){let h=2166136261;for(let i=0;i<t.length;i++){h^=t.charCodeAt(i);h=Math.imul(h,16777619)}return(h>>>0).toString(36)}
+const offerHash=(items,gold)=>hashStr(items.map(itKey).join(';')+'|'+gold);
+function tradeInvite(id){const o=others.get(id);if(!o)return;if(TRADE.with){log('Você já está em uma troca.','sys');return}
+  if(Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)>12){log(`🔁 Chegue mais perto de ${o.name} para trocar (máx. 12 m).`,'sys');return}
+  netEmit('tinv',{to:id,n:P.name});log(`🔁 Pedido de troca enviado para ${o.name}.`,'sys');SFX.play('click')}
+function tradeAnswer(ok){const inv=tradeInv;tradeInv=null;$('tinvite').classList.add('hidden');if(!inv)return;
+  if(!ok||TRADE.with||!others.has(inv.from)){netEmit('tno',{to:inv.from});return}netEmit('tacc',{to:inv.from});tradeOpen(inv.from)}
+function tradeOpen(id){const o=others.get(id);if(!o)return;Object.assign(TRADE,{with:id,name:o.name,mine:[],gold:0,theirs:[],tgold:0,ok:false,tok:null,done:false});
+  toggleProfile(false);$('trade').classList.remove('hidden');renderTrade();SFX.play('loot',null,0.5)}
+function tradeClose(msg,notify){if(!TRADE.with)return;if(notify)netEmit('tcx',{to:TRADE.with});TRADE.with=null;TRADE.mine=[];TRADE.theirs=[];$('trade').classList.add('hidden');if(msg)log(msg,'sys')}
+function tradeSend(){TRADE.ok=false;TRADE.tok=null;netEmit('toff',{to:TRADE.with,items:TRADE.mine.map(it=>({slot:it.slot,lvl:it.lvl,rar:it.rar,cls:it.cls,name:it.name,st:it.st,val:it.val,ref:it.ref||0})),gold:TRADE.gold});renderTrade()}
+function tradeAdd(it){if(!TRADE.with||TRADE.mine.includes(it))return;if(TRADE.mine.length>=4){log('Máximo de 4 itens por troca.','sys');return}TRADE.mine.push(it);tradeSend()}
+function tradeRemove(i){TRADE.mine.splice(i,1);tradeSend()}
+function tradeSetGold(v){TRADE.gold=clamp(Math.floor(num(v,0)),0,P.gold);tradeSend()}
+function tradeSpaceOK(){return P.inv.length-TRADE.mine.length+TRADE.theirs.length<=BAG_MAX}
+function tradeConfirm(){if(!TRADE.with||TRADE.ok)return;if(!tradeSpaceOK()){log('Sua mochila não tem espaço para receber esses itens.','bad');return}
+  if(TRADE.gold>P.gold){log('Você não tem esse ouro.','bad');return}TRADE.ok=true;
+  netEmit('tok',{to:TRADE.with,h:offerHash(TRADE.mine,TRADE.gold)+':'+offerHash(TRADE.theirs,TRADE.tgold)});tradeTry();renderTrade()}
+function tradeTry(){if(!TRADE.ok||!TRADE.tok||TRADE.done)return;const want=offerHash(TRADE.theirs,TRADE.tgold)+':'+offerHash(TRADE.mine,TRADE.gold);
+  if(TRADE.tok!==want){TRADE.tok=null;renderTrade();return}
+  if(TRADE.mine.some(it=>!P.inv.includes(it))||TRADE.gold>P.gold||!tradeSpaceOK()){tradeClose('🔁 A troca foi cancelada (os itens mudaram).',true);return}
+  TRADE.done=true;for(const it of TRADE.mine)P.inv.splice(P.inv.indexOf(it),1);P.gold-=TRADE.gold;
+  const got=TRADE.theirs.map(sanItem).filter(Boolean);for(const it of got)P.inv.push(it);P.gold+=TRADE.tgold;
+  const n=TRADE.name,gi=got.length,gg=TRADE.tgold;tradeClose('',false);SFX.play('coin');pillarFx(P.pos,0xf2d38a);
+  log(`🔁 Troca com ${n} concluída! Você recebeu ${gi} ${gi===1?'item':'itens'}${gg?` e ${gg} de ouro`:''}.`,'loot');for(const it of got)logItem('Recebido:',it);renderInv();save()}
+function renderTrade(){if(!TRADE.with)return;const cell=(it,attr)=>cellHTML(it,attr+` title="${esc(itName(it))} · Nv ${it.lvl}\n${Object.entries(it.st).map(([k,v])=>k+' +'+v).join(' · ')}"`);
+  const mine=TRADE.mine.map((it,i)=>cell(it,`data-trm="${i}"`)).join('')||'<div class="meta">Toque nos itens da sua mochila abaixo.</div>';
+  const theirs=TRADE.theirs.map(it=>cell(it,'')).join('')||'<div class="meta">Nada ainda.</div>';
+  const bag=P.inv.filter(it=>!TRADE.mine.includes(it)).map(it=>cell(it,`data-tadd="${it.id}"`)).join('')||'<div class="meta">Mochila vazia.</div>';
+  $('tradeBody').innerHTML=`<div class="tcols"><div><div class="ph2">Você oferece ${TRADE.ok?'✔':''}</div><div class="tgrid">${mine}</div>
+    <div class="arow">🪙 <input id="tGold" type="number" min="0" max="${P.gold}" value="${TRADE.gold}" style="width:90px;font-size:16px"> <small>de ${P.gold}</small></div></div>
+    <div><div class="ph2">${esc(TRADE.name)} oferece ${TRADE.tok?'✔':''}</div><div class="tgrid">${theirs}</div><div class="arow">🪙 ${TRADE.tgold}</div></div></div>
+    <div class="meta">${TRADE.ok&&TRADE.tok?'Concluindo…':TRADE.ok?`Esperando ${esc(TRADE.name)} confirmar…`:TRADE.tok?`${esc(TRADE.name)} já confirmou — confira e confirme.`:'Qualquer mudança na oferta desfaz as confirmações.'}${tradeSpaceOK()?'':' ⚠️ Sem espaço na mochila.'}</div>
+    <div class="arow"><button class="mini" id="tOk" ${TRADE.ok?'disabled':''}>✔ Confirmar troca</button><button class="mini" id="tCx">Cancelar</button></div>
+    <div class="ph2">Sua mochila</div><div class="tgrid bag">${bag}</div>`}
+function updTrade(dt){if(tradeInv&&(tradeInvT-=dt)<=0)tradeAnswer(false);if(!TRADE.with)return;const o=others.get(TRADE.with);
+  if(!o){tradeClose(`🔁 Troca cancelada: ${TRADE.name} saiu.`,false);return}if(Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)>15)tradeClose('🔁 Troca cancelada: vocês se afastaram.',true)}
 /* ============ duelos (PvP) ============ */
 const DUEL={with:null,name:'',phase:'',t:0,proxy:null};let duelInv=null,duelInvT=0;
 const inDuel=()=>DUEL.phase==='fight';
@@ -1766,9 +1826,10 @@ function chatCommand(t){const m=t.match(/^\/(\S+)\s*(.*)$/);if(!m)return false;c
   if(c==='s'||c==='w'||c==='sussurrar'){const mm=rest.match(/^(\S+)\s+(.+)$/);if(!mm){log('Use: /s Nome mensagem','sys');return true}sendPM(mm[1],mm[2]);return true}
   if(c==='r'){if(!lastPmFrom){log('Ninguém sussurrou para você ainda.','sys');return true}sendPM(lastPmFrom,rest);return true}
   if(c==='amigo'){addFriend(rest);return true}
+  if(c==='trocar'||c==='troca'){const pr=peerByName(rest.trim());if(!pr){log(`${rest.trim()||'Esse jogador'} não está online.`,'bad');return true}tradeInvite(pr[0]);return true}
   if(c==='duelo'){const pr=peerByName(rest.trim());if(!pr){log(`${rest.trim()||'Esse jogador'} não está online.`,'bad');return true}duelInvite(pr[0]);return true}
   if(EMOTES[c]){doEmote(c);return true}if(c==='dançar'||c==='dancar'){doEmote('girar');return true}
-  if(c==='ajuda'||c==='help'){log('Comandos: /s Nome msg (sussurrar) · /r msg (responder) · /amigo Nome · /duelo Nome · /comemorar · /girar · /magia · /morto · /susto','sys');return true}
+  if(c==='ajuda'||c==='help'){log('Comandos: /s Nome msg (sussurrar) · /r msg (responder) · /amigo Nome · /duelo Nome · /trocar Nome · /comemorar · /girar · /magia · /morto · /susto','sys');return true}
   log('Comando desconhecido. Digite /ajuda.','sys');return true}
 /* ============ grupo (party) ============ */
 const PARTY_MAX=4,PTY={l:null,m:[]};let ptyInv=null,ptyInvT=0;const recentRew={};
@@ -1853,7 +1914,7 @@ function renderProfile(){if(!profOpen)return;const b=$('profBody');document.quer
     h+=`<div class="meta">⚔️ Duelos: ${P.stats.duelW||0} vitórias · ${P.stats.duelL||0} derrotas. Desafie alguém com ⚔️ (fora da vila, a até 30 m). PvP causa 60% do dano e termina em 10% da vida — ninguém morre.</div>`;
     const ol=[...others.entries()].filter(([id])=>!inParty(id));h+='<div class="ph2">Jogadores online</div>';
     if(!ol.length)h+='<div class="meta">Ninguém mais online agora. Chame um amigo para jogar com você!</div>';
-    for(const [id,o] of ol)h+=`<div class="prow"><span class="nm">${CLSICO[o.cls]||'🛡️'} ${esc(o.name)}<br><small>Nv ${o.lvl} · ${esc(zoneOf(o.tx,o.tz).n)}</small></span>${(!PTY.m.length||PTY.l===myId)&&PTY.m.length<PARTY_MAX?`<button class="mini" data-inv="${esc(id)}">Convidar</button>`:''}${isFriend(o.name)?'':`<button class="mini" data-fr="${esc(o.name)}" title="Adicionar amigo">🤝</button>`}<button class="mini" data-duel="${esc(id)}" title="Desafiar para duelo">⚔️</button></div>`;
+    for(const [id,o] of ol)h+=`<div class="prow"><span class="nm">${CLSICO[o.cls]||'🛡️'} ${esc(o.name)}<br><small>Nv ${o.lvl} · ${esc(zoneOf(o.tx,o.tz).n)}</small></span>${(!PTY.m.length||PTY.l===myId)&&PTY.m.length<PARTY_MAX?`<button class="mini" data-inv="${esc(id)}">Convidar</button>`:''}${isFriend(o.name)?'':`<button class="mini" data-fr="${esc(o.name)}" title="Adicionar amigo">🤝</button>`}<button class="mini" data-duel="${esc(id)}" title="Desafiar para duelo">⚔️</button><button class="mini" data-trade="${esc(id)}" title="Trocar itens">🔁</button></div>`;
     b.innerHTML=h;return}
   if(!rankCache){b.innerHTML='<div class="meta">Carregando ranking…</div>';return}
   if(rankCache.err){b.innerHTML=`<div class="meta">${rankCache.err}</div>`;return}
@@ -2049,6 +2110,14 @@ function netEmit(e,d){if(netEmitFn)netEmitFn(e,d)}
 // anfitrião = quem está há mais tempo no mundo (desempate pelo id); ele simula os monstros
 function hostId(){let hid=myId,hj=myJoin;for(const [k,o] of others){if(o.j<hj||(o.j===hj&&k<hid)){hid=k;hj=o.j}}return hid}
 const NET={
+  tinv(d,from){if(!d||d.to!==myId||!others.has(from))return;if(TRADE.with||tradeInv||DUEL.with){netEmit('tno',{to:from,busy:1});return}
+    tradeInv={from,n:String(d.n||'').slice(0,16)};tradeInvT=20;$('tinviteTxt').textContent=`🔁 ${tradeInv.n} quer trocar itens com você.`;$('tinvite').classList.remove('hidden');SFX.play('msg')},
+  tno(d,from){if(!d||d.to!==myId)return;const o=others.get(from);log(`🔁 ${o?o.name:'O jogador'} ${d.busy?'está ocupado':'recusou a troca'}.`,'sys')},
+  tacc(d,from){if(!d||d.to!==myId||TRADE.with)return;tradeOpen(from)},
+  toff(d,from){if(!d||d.to!==myId||from!==TRADE.with||TRADE.done)return;const items=Array.isArray(d.items)?d.items.slice(0,4).map(sanItem).filter(Boolean):[];
+    TRADE.theirs=items;TRADE.tgold=clamp(Math.floor(num(d.gold,0)),0,10000000);TRADE.ok=false;TRADE.tok=null;renderTrade()},
+  tok(d,from){if(!d||d.to!==myId||from!==TRADE.with)return;TRADE.tok=String(d.h||'').slice(0,40);tradeTry();renderTrade()},
+  tcx(d,from){if(!d||d.to!==myId||from!==TRADE.with)return;tradeClose(`🔁 ${TRADE.name} cancelou a troca.`,false)},
   dinv(d,from){if(!d||d.to!==myId||!others.has(from))return;if(DUEL.with||duelInv){netEmit('dno',{to:from,busy:1});return}
     duelInv={from,n:String(d.n||'').slice(0,16)};duelInvT=20;$('dinviteTxt').textContent=`⚔️ ${duelInv.n} desafiou você para um duelo!`;$('dinvite').classList.remove('hidden');SFX.play('msg')},
   dno(d,from){if(!d||d.to!==myId)return;const o=others.get(from);log(`⚔️ ${o?o.name:'O jogador'} ${d.busy?'está ocupado':'recusou o duelo'}.`,'sys')},
@@ -2428,7 +2497,7 @@ function update(dt){
   P.cd=Math.max(0,P.cd-dt);P.skCd=Math.max(0,P.skCd-dt);P.potCd=Math.max(0,P.potCd-dt);P.ultCd=Math.max(0,P.ultCd-dt);
   if(P.furyT>0){P.furyT-=dt;if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xff5a2a,1,0.8,1.2,0.6,-1,1.2);if(P.furyT<=0){P.furyT=0;recalc();log('A Fúria passou.','sys')}}
   if(P.bloodT>0){P.bloodT-=dt;if(rnd()<0.4)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xc01020,1,0.8,1.2,0.6,-1,1.2);if(P.bloodT<=0){P.bloodT=0;log('A Sede de Sangue passou.','sys')}}
-  updDash(dt);updDuel(dt);updRecall(dt);updMeteors(dt);if(ptyInv&&(ptyInvT-=dt)<=0)ptyAnswer(false);if((ptyT-=dt)<=0){ptyT=1;if(PTY.m.length>1)renderParty();if(profOpen&&(profTab==='friends'||profTab==='party')&&!(document.activeElement&&document.activeElement.id==='frIn'))renderProfile()}if((wbT-=dt)<=0){wbT=1;wbTick()}if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
+  updDash(dt);updDuel(dt);updTrade(dt);updRecall(dt);updMeteors(dt);if(ptyInv&&(ptyInvT-=dt)<=0)ptyAnswer(false);if((ptyT-=dt)<=0){ptyT=1;if(PTY.m.length>1)renderParty();if(profOpen&&(profTab==='friends'||profTab==='party')&&!(document.activeElement&&document.activeElement.id==='frIn'))renderProfile()}if((wbT-=dt)<=0){wbT=1;wbTick()}if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
   const zone=zoneOf(P.pos.x,P.pos.z),inD=!!zone.dun;
   if(P.dead){
     P.deadT-=dt;
