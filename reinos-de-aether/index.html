@@ -51,6 +51,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 #log .pm{color:#ff9ad5}
 body.touch #emoPop{bottom:auto;top:56px}
 #party{position:fixed;left:12px;top:150px;width:200px;padding:6px 8px;font-size:12px}#party .pm{margin:3px 0}#party small{color:#bba;font-size:10px}#party .pb{height:5px;background:#3a1414;border-radius:3px;overflow:hidden;margin-top:2px}#party .pb i{display:block;height:100%;background:#d94040}
+#dinvite{position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px;border-color:#c04040}#dinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
 #pinvite{position:fixed;left:50%;top:22%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px}#pinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
 .prow{display:flex;align-items:center;gap:8px;padding:6px 8px;border:1px solid #3a3020;border-radius:6px;margin-bottom:4px;font-size:13px}.prow .nm{flex:1}.prow small{color:#aa9;font-size:10px}
 #quest{position:fixed;right:12px;top:232px;width:190px;padding:8px 10px;background:rgba(14,11,6,.72);border:1px solid #6b5630;border-radius:8px;font-size:12px;color:#e8dcc0;text-shadow:0 1px 2px #000;pointer-events:none}
@@ -246,6 +247,7 @@ body.touch #detail{z-index:31}
     <div id="wmapLeg">🔷 você · 🟢 outros jogadores · 🟣 NPCs · 👑 chefes · 🕳️ masmorra · ✨ alvo da missão · M ou Esc fecha</div></div>
   <div id="daily" class="panel hidden"><div class="ph">🎁 Recompensa diária <span class="x" id="dailyX" title="Receber depois">✕</span></div><div id="dailyDays"></div><div id="dailyTxt" class="hint"></div><button class="mini" id="dailyGo" style="margin-top:8px;padding:8px 22px;font-size:14px">Receber</button></div>
   <div id="emoPop" class="panel hidden"></div>
+  <div id="dinvite" class="panel hidden"><div id="dinviteTxt"></div><div class="btns"><button class="mini" id="dinYes">Aceitar</button><button class="mini" id="dinNo">Recusar</button></div></div>
   <div id="party" class="panel hidden"></div>
   <div id="pinvite" class="panel hidden"><div id="pinviteTxt"></div><div class="btns"><button class="mini" id="pinYes">Aceitar</button><button class="mini" id="pinNo">Recusar</button></div></div>
   <div id="prof" class="panel hidden"><div class="ph">🏆 Perfil <span class="x" data-close="prof">✕</span></div>
@@ -1083,7 +1085,7 @@ function updHUD(){
   const n=need(P.lvl);$('xpB').style.width=(P.xp/n*100)+'%';$('xpT').textContent=`XP ${P.xp} / ${n}`;
   $('gold').textContent=P.gold;$('pots').textContent=P.pots;$('scrolls').textContent=P.scrolls;$('atkV').textContent=P.atk;$('defV').textContent=P.def;
   const t=P.target;
-  if(t){$('tName').textContent=`${t.T.name} — Nv ${t.T.lvl}`;$('thpB').style.width=(Math.max(0,t.hp)/t.max*100)+'%';$('thpT').textContent=`${Math.max(0,Math.ceil(t.hp))} / ${t.max}`}
+  if(t){$('tName').textContent=`${t.T.name} — Nv ${t.T.lvl}`;$('thpB').style.width=(Math.max(0,t.hp)/t.max*100)+'%';$('thpT').textContent=t.duel?`${Math.max(0,Math.round(t.hp))}%`:`${Math.max(0,Math.ceil(t.hp))} / ${t.max}`}
   const C=CLS[P.cls];
   $('cdAtk').style.height=(P.cd/C.cd*100)+'%';$('cdSkill').style.height=(P.skCd/C.skCd*100)+'%';$('cdPot').style.height=(P.potCd/3*100)+'%';
   const U=ULT[P.cls],lk=P.lvl<10;$('slotUlt').classList.toggle('locked',lk);$('cdUlt').style.height=lk?'100%':(P.ultCd/U.cd*100)+'%';
@@ -1159,6 +1161,7 @@ $('prof').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t){pr
   if(e.target.id==='ptyLeave'){ptyLeave();return}
   if(e.target.id==='frAdd'){addFriend($('frIn').value);return}
   const fr=e.target.closest('[data-fr]');if(fr){addFriend(fr.dataset.fr);return}
+  const du=e.target.closest('[data-duel]');if(du){duelInvite(du.dataset.duel);toggleProfile(false);return}
   const uf=e.target.closest('[data-unfr]');if(uf){delFriend(uf.dataset.unfr);return}
   const pmb=e.target.closest('[data-pm]');if(pmb){whisperTo(pmb.dataset.pm);return}
   if(e.target.id==='dailyOpen'){toggleProfile(false);$('daily').classList.remove('hidden');return}
@@ -1171,6 +1174,7 @@ $('dailyGo').addEventListener('click',dailyClaim);
 $('dailyX').addEventListener('click',()=>{$('daily').classList.add('hidden');log('🎁 Sua recompensa diária fica guardada — abra o Perfil (P) para receber.','sys')});
 $('emoPop').innerHTML=Object.entries(EMOTES).map(([k,E])=>`<div class="em" data-emo="${k}"><b>${E.ico}</b>${E.t}</div>`).join('');
 $('emoPop').addEventListener('click',e=>{const x=e.target.closest('[data-emo]');if(x)doEmote(x.dataset.emo)});
+$('dinYes').addEventListener('click',()=>duelAnswer(true));$('dinNo').addEventListener('click',()=>duelAnswer(false));
 $('pinYes').addEventListener('click',()=>ptyAnswer(true));$('pinNo').addEventListener('click',()=>ptyAnswer(false));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>{const id=x.dataset.close;$(id).classList.add('hidden');if(id==='wmap'){mapOpen=false;return}if(id==='prof'){profOpen=false;return}if(id==='shop'||id==='inv'){shopOpen=false;$('shop').classList.add('hidden')}hideDetail();renderInv()}));
 function toggleInv(force){const el=$('inv');const show=force!==undefined?force:el.classList.contains('hidden');el.classList.toggle('hidden',!show);if(!show){hideDetail();if(shopOpen){shopOpen=false;$('shop').classList.add('hidden')}}renderInv()}
@@ -1334,6 +1338,7 @@ function ambient(dt,inD){ // floresta de dia, grilos à noite
 /* ============ combate ============ */
 // O jogador acerta um monstro: mostra o efeito na hora; quem aplica o dano é o anfitrião.
 function damageMon(m,dmg,crit){
+  if(m.duel){duelHit(dmg,crit);return}
   if(m.dead)return;
   if(P.bloodT>0&&dmg>0&&!P.dead){const h=Math.round(dmg*0.3);P.hp=Math.min(P.maxHp,P.hp+h);if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+1.2),0xc01020,3,1.5,1.2,0.5,0)}
   m.flash=0.15;
@@ -1399,7 +1404,8 @@ const d2=(a,b)=>Math.hypot(a.x-b.x,a.z-b.z); // distância no plano (ignora altu
 function nearestMon(maxD){let b=null,bd=maxD;for(const m of monsters){if(m.dead)continue;const d=d2(m.g.position,P.pos);if(d<bd){bd=d;b=m}}return b}
 function actAttack(){
   if(P.dead)return;
-  let t=P.target;if(!t||t.dead){t=nearestMon(25);if(!t){log('Nenhum monstro por perto.','sys');return}setTarget(t)}
+  let t=P.target;if(inDuel()&&(!t||t.dead||!t.duel)&&DUEL.proxy)setTarget(t=DUEL.proxy);
+  if(!t||t.dead){t=nearestMon(25);if(!t){log('Nenhum monstro por perto.','sys');return}setTarget(t)}
   P.auto=true;P.moveTo=null;
 }
 function actSkill(){
@@ -1412,6 +1418,7 @@ function actSkill(){
     P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.spin=0.5;P.trig='skill';SFX.play('whirl');ringFx(P.pos,7,0xffc070);
     for(let i=0;i<24;i++){const a=i/24*6.283;emit(new THREE.Vector3(P.pos.x+Math.cos(a)*3,P.pos.y+1,P.pos.z+Math.sin(a)*3),0xffc070,2,4,1,0.5,3)}
     let hit=0;for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,P.pos)<5.5+m.T.size*0.5){const cr=crit();damageMon(m,Math.round(P.atk*2.1*(0.9+rnd()*0.2)*(cr?1.8:1)),cr);hit++}}
+    if(inDuel()){const o=others.get(DUEL.with);if(o&&Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)<5.5){duelAoe(P.pos,5.5,2.1);hit++}}
     if(!hit)log('O golpe não acertou ninguém.','sys');
   }else if(P.cls==='barbaro'){
     let t=P.target;if(!t||t.dead)t=nearestMon(16);
@@ -1425,12 +1432,14 @@ function actSkill(){
     setTarget(t);P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';
     const c=t.g.position.clone();burstFx(c,0xb36bff);ringFx(c,9,0xb36bff);SFX.play('boom',c);
     for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,c)<6.5){const cr=crit();damageMon(m,Math.round(P.atk*2.4*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}
+    if(!t.duel)duelAoe(c,6.5,2.4);else duelAoe(c,99,2.4);
   }
 }
 function updDash(dt){const D=P.dash;if(!D)return;D.t+=dt;const k=Math.min(1,D.t/D.dur);
   P.pos.x=D.fx+(D.tx-D.fx)*k;P.pos.z=D.fz+(D.tz-D.fz)*k;if(rnd()<0.9)emit(P.pos.clone().setY(H(P.pos.x,P.pos.z)+0.6),0xc9a070,2,2,1.5,0.5,2);
   if(k<1)return;P.dash=null;P.atkAnim=1;P.trig='skill';const c=P.pos.clone();ringFx(c,4,0xff6040);burstFx(D.tgt.g.position.clone(),0xff6040);SFX.play('crit',c);
-  for(const m of monsters){if(m.dead)continue;const dd=d2(m.g.position,c),main=m===D.tgt;if(main||dd<3.5+m.T.size*0.4){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*(main?2.6:1.3)*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}}
+  for(const m of monsters){if(m.dead)continue;const dd=d2(m.g.position,c),main=m===D.tgt;if(main||dd<3.5+m.T.size*0.4){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*(main?2.6:1.3)*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}
+  duelAoe(c,D.tgt.duel?5:3.5,D.tgt.duel?2.6:1.3)}
 function actRecall(){
   if(P.dead)return;if(P.recallT>0){log('Você já está lendo o pergaminho…','sys');return}
   if(zoneOf(P.pos.x,P.pos.z).safe){log('Você já está na vila.','sys');return}
@@ -1478,6 +1487,7 @@ function updMeteors(dt){for(let i=meteors.length-1;i>=0;i--){const M=meteors[i];
     if(M.m){const k=Math.max(0,M.t/0.45);M.m.position.set(M.x+k*6,H(M.x,M.z)+k*20,M.z-k*4);if(rnd()<0.8)emit(M.m.position.clone(),0xff7a2a,1,1,0.6,0.5,0,1.5)}continue}
   if(M.m){scene.remove(M.m);M.m.geometry.dispose()}meteors.splice(i,1);
   const c=new THREE.Vector3(M.x,H(M.x,M.z),M.z);burstFx(c,0xff6a20);ringFx(c,4,0xff7a2a);SFX.play('boom',c,0.12);
+  if(M.mine)duelAoe(c,3.6,1.7);
   if(M.mine)for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,c)<3.6+m.T.size*0.3){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*1.7*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}}}
 /* ============ mapa-múndi ============ */
 let ptyT=0,wbT=0,mapOpen=false,mapBg=null,mapT=0;
@@ -1526,6 +1536,7 @@ const ACH=[
   {id:'mil',ico:'⚔️',t:'Lenda Viva',d:'Derrote 1000 monstros',n:1000,v:()=>Object.values(P.stats.k).reduce((a,b)=>a+b,0)},
   {id:'nivel',ico:'⭐',t:'Veterano',d:'Alcance o nível 20',n:20,v:()=>P.lvl},
   {id:'ferreiro',ico:'🔨',t:'Mestre Ferreiro',d:'Refine um item até +7',n:7,v:()=>P.stats.refMax||0},
+  {id:'duelista',ico:'⚔️',t:'Duelista',d:'Vença 5 duelos contra outros jogadores',n:5,v:()=>P.stats.duelW||0},
   {id:'heroi',ico:'📜',t:'Herói de Aether',d:'Complete a campanha do Capitão Aldric',n:QUESTS.length,v:()=>Q.i},
 ];
 function achCheck(){let got=false;for(const a of ACH){if(P.ach.includes(a.id)||a.v()<a.n)continue;P.ach.push(a.id);got=true;
@@ -1569,6 +1580,36 @@ function dailyCheck(){const today=dayKey(new Date()),y=new Date();y.setDate(y.ge
   $('daily').classList.remove('hidden')}
 function dailyClaim(){if(!dailyNext)return;const d=DAILY[dailyNext-1],got=d.f();P.daily={last:dayKey(new Date()),streak:dailyNext};dailyNext=0;$('daily').classList.add('hidden');
   SFX.play('epic',null,0.5);pillarFx(P.pos,0xffd23a);log(`🎁 Recompensa diária: ${got}!`,'loot');if(typeof renderInv==='function')renderInv();save()}
+/* ============ duelos (PvP) ============ */
+const DUEL={with:null,name:'',phase:'',t:0,proxy:null};let duelInv=null,duelInvT=0;
+const inDuel=()=>DUEL.phase==='fight';
+function duelProxy(o){return{duel:true,T:{name:'⚔️ '+o.name,lvl:o.lvl,size:0.6,boss:false},g:o.mesh,hp:o.hp,max:100,dead:false,lbl:document.createElement('div'),id:-7}}
+function duelInvite(id){const o=others.get(id);if(!o)return;if(DUEL.with){log('Você já está em um duelo.','sys');return}
+  if(zoneOf(P.pos.x,P.pos.z).safe||zoneOf(o.tx,o.tz).safe){log('⚔️ Duelos só fora da vila — saiam da zona segura.','sys');return}
+  if(Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)>30){log(`⚔️ ${o.name} está longe demais (máx. 30 m).`,'sys');return}
+  netEmit('dinv',{to:id,n:P.name});log(`⚔️ Desafio enviado para ${o.name}.`,'sys');SFX.play('click')}
+function duelAnswer(ok){const inv=duelInv;duelInv=null;$('dinvite').classList.add('hidden');if(!inv)return;
+  if(!ok){netEmit('dno',{to:inv.from});return}const o=others.get(inv.from);
+  if(!o||DUEL.with||zoneOf(P.pos.x,P.pos.z).safe){log('Não foi possível começar o duelo agora (saia da vila).','bad');netEmit('dno',{to:inv.from});return}
+  netEmit('dacc',{to:inv.from});duelStart(inv.from)}
+function duelStart(id){const o=others.get(id);if(!o)return;DUEL.with=id;DUEL.name=o.name;DUEL.phase='count';DUEL.t=3;DUEL.proxy=duelProxy(o);
+  dismount();if(AUTO.on)setAuto(false,'Auto-caça desligada para o duelo.');banner('⚔️ Duelo!',`Você contra ${o.name}`);SFX.play('bossdeath',null,0.4)}
+function duelEnd(res,why){if(!DUEL.with)return;const n=DUEL.name;if(P.target&&P.target.duel){setTarget(null);P.auto=false}
+  DUEL.with=null;DUEL.phase='';DUEL.proxy=null;
+  if(res==='win'){P.stats.duelW=(P.stats.duelW||0)+1;banner('🏆 Vitória!',`Você venceu ${n} no duelo`);SFX.play('levelup',null,0.6);pillarFx(P.pos,0xffd23a);log(`⚔️ Você venceu o duelo contra ${n}! (${P.stats.duelW} ${P.stats.duelW===1?'vitória':'vitórias'})`,'xp');achCheck()}
+  else if(res==='lose'){P.stats.duelL=(P.stats.duelL||0)+1;banner('Derrota',`${n} venceu o duelo`);log(`⚔️ ${n} venceu o duelo. Sem perdas — tente de novo!`,'sys')}
+  else log(`⚔️ Duelo com ${n} encerrado${why?' ('+why+')':''}.`,'sys');save()}
+function duelHit(dmg,cr){if(!inDuel())return;const o=others.get(DUEL.with);if(!o)return;dmg=Math.max(1,Math.round(dmg*0.6)); // PvP causa 60% do dano normal
+  netEmit('dhit',{to:DUEL.with,d:dmg,c:cr?1:0});floatText(o.mesh.position.clone().setY(o.mesh.position.y+2.6),(cr?'💥':'')+dmg,cr?'crit':'dmg');
+  emit(o.mesh.position.clone().setY(o.mesh.position.y+1.3),0xffd0a0,6,3,1,0.4,6);SFX.play(cr?'crit':'hit',o.mesh.position)}
+function duelAoe(c,r,mult){if(!inDuel())return;const o=others.get(DUEL.with);if(!o)return;if(Math.hypot(o.tx-c.x,o.tz-c.z)<r){const cr=rnd()<P.crit/100;duelHit(Math.round(P.atk*mult*(0.9+rnd()*0.2)*(cr?1.8:1)),cr)}}
+function updDuel(dt){if(duelInv&&(duelInvT-=dt)<=0)duelAnswer(false);if(!DUEL.with)return;const o=others.get(DUEL.with);
+  if(!o){duelEnd('',`${DUEL.name} saiu do jogo`);return}
+  if(Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)>45){netEmit('dend',{to:DUEL.with,r:'far'});duelEnd('','vocês se afastaram demais');return}
+  if(DUEL.proxy){DUEL.proxy.hp=o.hp;DUEL.proxy.T.lvl=o.lvl}
+  if(DUEL.phase==='count'){const before=Math.ceil(DUEL.t);DUEL.t-=dt;const now_=Math.ceil(DUEL.t);if(now_!==before&&now_>0){banner(String(now_),'Prepare-se');SFX.play('click')}
+    if(DUEL.t<=0){DUEL.phase='fight';DUEL.t=90;banner('Lutem!','Até 10% da vida');SFX.play('crit');setTarget(DUEL.proxy);P.auto=true}return}
+  DUEL.t-=dt;if(DUEL.t<=0){netEmit('dend',{to:DUEL.with,r:'time'});duelEnd('','tempo esgotado — empate')}}
 /* ============ mascotes ============ */
 const PETS={
   geleia:{n:'Geleia Mascote',ico:'🟢',m:'slimem',type:'slime',h:0.75,price:400,fetch:true,gold:0.1,d:'Busca baús de itens perto de você · +10% de ouro'},
@@ -1623,8 +1664,9 @@ function chatCommand(t){const m=t.match(/^\/(\S+)\s*(.*)$/);if(!m)return false;c
   if(c==='s'||c==='w'||c==='sussurrar'){const mm=rest.match(/^(\S+)\s+(.+)$/);if(!mm){log('Use: /s Nome mensagem','sys');return true}sendPM(mm[1],mm[2]);return true}
   if(c==='r'){if(!lastPmFrom){log('Ninguém sussurrou para você ainda.','sys');return true}sendPM(lastPmFrom,rest);return true}
   if(c==='amigo'){addFriend(rest);return true}
+  if(c==='duelo'){const pr=peerByName(rest.trim());if(!pr){log(`${rest.trim()||'Esse jogador'} não está online.`,'bad');return true}duelInvite(pr[0]);return true}
   if(EMOTES[c]){doEmote(c);return true}if(c==='dançar'||c==='dancar'){doEmote('girar');return true}
-  if(c==='ajuda'||c==='help'){log('Comandos: /s Nome msg (sussurrar) · /r msg (responder) · /amigo Nome · /comemorar · /girar · /magia · /morto · /susto','sys');return true}
+  if(c==='ajuda'||c==='help'){log('Comandos: /s Nome msg (sussurrar) · /r msg (responder) · /amigo Nome · /duelo Nome · /comemorar · /girar · /magia · /morto · /susto','sys');return true}
   log('Comando desconhecido. Digite /ajuda.','sys');return true}
 /* ============ grupo (party) ============ */
 const PARTY_MAX=4,PTY={l:null,m:[]};let ptyInv=null,ptyInvT=0;const recentRew={};
@@ -1706,9 +1748,10 @@ function renderProfile(){if(!profOpen)return;const b=$('profBody');document.quer
   if(profTab==='party'){let h='<div class="meta">Em grupo, cada monstro que alguém derrota dá 60% do XP aos outros membros a até 70 m — e conta para as missões de todos. Máximo de 4 jogadores.</div>';
     if(PTY.m.length>1){h+='<div class="ph2">Seu grupo</div>';for(const id of PTY.m){const o=others.get(id);h+=`<div class="prow"><span class="nm">${id===PTY.l?'👑 ':''}${esc(ptyName(id))}${id===myId?' (você)':''}<br><small>${id===myId?P.cls:(o?o.cls:'')} · Nv ${id===myId?P.lvl:(o?o.lvl:'?')}</small></span></div>`}
       h+='<button class="mini" id="ptyLeave" style="margin:4px 0 8px">Sair do grupo</button>'}
+    h+=`<div class="meta">⚔️ Duelos: ${P.stats.duelW||0} vitórias · ${P.stats.duelL||0} derrotas. Desafie alguém com ⚔️ (fora da vila, a até 30 m). PvP causa 60% do dano e termina em 10% da vida — ninguém morre.</div>`;
     const ol=[...others.entries()].filter(([id])=>!inParty(id));h+='<div class="ph2">Jogadores online</div>';
     if(!ol.length)h+='<div class="meta">Ninguém mais online agora. Chame um amigo para jogar com você!</div>';
-    for(const [id,o] of ol)h+=`<div class="prow"><span class="nm">${CLSICO[o.cls]||'🛡️'} ${esc(o.name)}<br><small>Nv ${o.lvl} · ${esc(zoneOf(o.tx,o.tz).n)}</small></span>${(!PTY.m.length||PTY.l===myId)&&PTY.m.length<PARTY_MAX?`<button class="mini" data-inv="${esc(id)}">Convidar</button>`:''}${isFriend(o.name)?'':`<button class="mini" data-fr="${esc(o.name)}" title="Adicionar amigo">🤝</button>`}</div>`;
+    for(const [id,o] of ol)h+=`<div class="prow"><span class="nm">${CLSICO[o.cls]||'🛡️'} ${esc(o.name)}<br><small>Nv ${o.lvl} · ${esc(zoneOf(o.tx,o.tz).n)}</small></span>${(!PTY.m.length||PTY.l===myId)&&PTY.m.length<PARTY_MAX?`<button class="mini" data-inv="${esc(id)}">Convidar</button>`:''}${isFriend(o.name)?'':`<button class="mini" data-fr="${esc(o.name)}" title="Adicionar amigo">🤝</button>`}<button class="mini" data-duel="${esc(id)}" title="Desafiar para duelo">⚔️</button></div>`;
     b.innerHTML=h;return}
   if(!rankCache){b.innerHTML='<div class="meta">Carregando ranking…</div>';return}
   if(rankCache.err){b.innerHTML=`<div class="meta">${rankCache.err}</div>`;return}
@@ -1904,6 +1947,15 @@ function netEmit(e,d){if(netEmitFn)netEmitFn(e,d)}
 // anfitrião = quem está há mais tempo no mundo (desempate pelo id); ele simula os monstros
 function hostId(){let hid=myId,hj=myJoin;for(const [k,o] of others){if(o.j<hj||(o.j===hj&&k<hid)){hid=k;hj=o.j}}return hid}
 const NET={
+  dinv(d,from){if(!d||d.to!==myId||!others.has(from))return;if(DUEL.with||duelInv){netEmit('dno',{to:from,busy:1});return}
+    duelInv={from,n:String(d.n||'').slice(0,16)};duelInvT=20;$('dinviteTxt').textContent=`⚔️ ${duelInv.n} desafiou você para um duelo!`;$('dinvite').classList.remove('hidden');SFX.play('msg')},
+  dno(d,from){if(!d||d.to!==myId)return;const o=others.get(from);log(`⚔️ ${o?o.name:'O jogador'} ${d.busy?'está ocupado':'recusou o duelo'}.`,'sys')},
+  dacc(d,from){if(!d||d.to!==myId||DUEL.with)return;duelStart(from)},
+  dhit(d,from){if(!d||d.to!==myId||from!==DUEL.with||!inDuel()||P.dead)return;let x=clamp(Math.floor(num(d.d,0)),0,5000);
+    x=Math.max(1,Math.round(x*100/(100+P.def*2)));if(P.furyT>0)x=Math.max(1,Math.round(x*0.65));
+    P.hp-=x;P.lastHurt=now;SFX.play('hurt',null,0.2);floatText(P.pos.clone().setY(P.pos.y+2.6),'-'+x,'hurt');emit(P.pos.clone().setY(P.pos.y+1.3),0xff3030,6,3,1,0.4,6);
+    if(P.hp<=P.maxHp*0.1){P.hp=Math.ceil(P.maxHp*0.1);netEmit('dend',{to:from,r:'win'});duelEnd('lose')}},
+  dend(d,from){if(!d||d.to!==myId||from!==DUEL.with)return;duelEnd(d.r==='win'?'win':'',d.r==='time'?'tempo esgotado — empate':d.r==='far'?'vocês se afastaram demais':'')},
   pm(d,from){if(!d||d.to!==myId||!others.has(from))return;const t=String(d.t||'').slice(0,120).trim();if(!t)return;const o=others.get(from);
     lastPmFrom=o.name;pmLog(`[de ${o.name}]: ${t}`);SFX.play('msg');if(document.body.classList.contains('touch')&&!$('chat').classList.contains('open'))floatText(P.pos.clone().setY(P.pos.y+3.4),'💌','xp')},
   emo(d,from){const o=others.get(from);if(!o||!d||!EMOTES[d.k])return;o.atkTrig='emo:'+d.k;floatText(o.mesh.position.clone().setY(o.mesh.position.y+3.2),EMOTES[d.k].ico,'xp')},
@@ -2269,7 +2321,7 @@ function update(dt){
   P.cd=Math.max(0,P.cd-dt);P.skCd=Math.max(0,P.skCd-dt);P.potCd=Math.max(0,P.potCd-dt);P.ultCd=Math.max(0,P.ultCd-dt);
   if(P.furyT>0){P.furyT-=dt;if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xff5a2a,1,0.8,1.2,0.6,-1,1.2);if(P.furyT<=0){P.furyT=0;recalc();log('A Fúria passou.','sys')}}
   if(P.bloodT>0){P.bloodT-=dt;if(rnd()<0.4)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xc01020,1,0.8,1.2,0.6,-1,1.2);if(P.bloodT<=0){P.bloodT=0;log('A Sede de Sangue passou.','sys')}}
-  updDash(dt);updRecall(dt);updMeteors(dt);if(ptyInv&&(ptyInvT-=dt)<=0)ptyAnswer(false);if((ptyT-=dt)<=0){ptyT=1;if(PTY.m.length>1)renderParty();if(profOpen&&(profTab==='friends'||profTab==='party')&&!(document.activeElement&&document.activeElement.id==='frIn'))renderProfile()}if((wbT-=dt)<=0){wbT=1;wbTick()}if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
+  updDash(dt);updDuel(dt);updRecall(dt);updMeteors(dt);if(ptyInv&&(ptyInvT-=dt)<=0)ptyAnswer(false);if((ptyT-=dt)<=0){ptyT=1;if(PTY.m.length>1)renderParty();if(profOpen&&(profTab==='friends'||profTab==='party')&&!(document.activeElement&&document.activeElement.id==='frIn'))renderProfile()}if((wbT-=dt)<=0){wbT=1;wbTick()}if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
   const zone=zoneOf(P.pos.x,P.pos.z),inD=!!zone.dun;
   if(P.dead){
     P.deadT-=dt;
@@ -2536,7 +2588,7 @@ function start(){
     if(Array.isArray(sv.pets))P.pets=sv.pets.filter(k=>PETS[k]);if(typeof sv.pet==='string'&&P.pets.includes(sv.pet))P.pet=sv.pet;
     if(Array.isArray(sv.friends))P.friends=sv.friends.filter(f=>typeof f==='string').map(f=>f.slice(0,16)).slice(0,50);
     if(sv.daily&&typeof sv.daily.last==='string')P.daily={last:sv.daily.last.slice(0,10),streak:Math.max(0,Math.min(7,sv.daily.streak|0))};
-    if(sv.stats&&typeof sv.stats==='object'){P.stats={k:Object.assign({},sv.stats.k||{}),deaths:sv.stats.deaths|0,refMax:sv.stats.refMax|0}}
+    if(sv.stats&&typeof sv.stats==='object'){P.stats={k:Object.assign({},sv.stats.k||{}),deaths:sv.stats.deaths|0,refMax:sv.stats.refMax|0,duelW:sv.stats.duelW|0,duelL:sv.stats.duelL|0}}
     if(Array.isArray(sv.ach))P.ach=sv.ach.filter(a=>ACH.some(x=>x.id===a));if(typeof sv.title==='string'&&P.ach.includes(sv.title))P.title=sv.title;
     if(Array.isArray(sv.inv))P.inv=sv.inv.filter(Boolean).slice(0,BAG_MAX);
     if(sv.eq)for(const s of Object.keys(SLOTN))P.eq[s]=sv.eq[s]||null;
