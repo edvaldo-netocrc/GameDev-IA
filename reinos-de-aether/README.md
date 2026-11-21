@@ -7,6 +7,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Multiplayer em tempo real via Supabase Realtime (presença dos jogadores e chat). A chave usada no código é a chave pública (anon) do projeto, feita para ficar no navegador.
 - Monstros compartilhados: o jogador há mais tempo no mundo é o anfitrião e simula a IA dos monstros; os outros enviam seus golpes a ele. Quem causou dano recebe XP, ouro e loot próprio. Se o anfitrião sair, o próximo assume.
 - Regiões: Vila de Aether (segura), Campos Verdes, Floresta dos Lobos, Terras de Pedra, Desfiladeiro dos Orcs (oeste, Nv 11–15, chefe Ignarok, o Dragão) e Masmorra Esquecida (chefe Lich Morvath).
+- Missões: o Capitão Aldric (o ! dourado na vila) dá uma campanha de 9 missões, das Geleias até o dragão Ignarok, com XP, ouro, poções e itens. Depois dela, caçadas repetíveis.
 - Auto-caça (H) e auto-loot (L), com painel de opções (O): raio de caça, raridade mínima para coletar, poção automática e uso de habilidade.
 - Efeitos sonoros e sons de ambiente gerados no navegador (WebAudio), com volume nas opções e tecla M.
 - Itens e progresso ficam salvos no navegador de cada jogador.

@@ -11,6 +11,7 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 #game canvas{display:block}
 .hidden{display:none!important}
 #labels{position:fixed;inset:0;pointer-events:none;overflow:hidden}
+.qmark{display:block;font-size:22px;font-weight:900;color:#ffd23a;text-shadow:0 0 6px #000,0 0 10px #c9962e;line-height:1}
 .lbl{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap}
 .lbl .hb{width:54px;height:5px;background:#300;border:1px solid #000;margin:2px auto 0;border-radius:2px;overflow:hidden}
 .lbl .hb i{display:block;height:100%;background:#e33}
@@ -30,6 +31,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 #tframe{position:fixed;left:50%;top:12px;transform:translateX(-50%);width:260px;padding:8px 12px;text-align:center}
 #tName{font-family:Cinzel,serif;font-weight:800;color:#ff9a7a;font-size:14px}
 #mini{position:fixed;right:12px;top:12px;border-radius:50%;border:2px solid #6b5630;box-shadow:0 4px 16px rgba(0,0,0,.6);background:#1b2a16}
+#quest{position:fixed;right:12px;top:232px;width:190px;padding:8px 10px;background:rgba(14,11,6,.72);border:1px solid #6b5630;border-radius:8px;font-size:12px;color:#e8dcc0;text-shadow:0 1px 2px #000;pointer-events:none}
+#quest b{display:block;font-family:Cinzel,serif;color:#f2d38a;font-size:12px;margin-bottom:3px}#quest .qb{height:5px;background:#2a2216;border-radius:3px;margin-top:5px;overflow:hidden}#quest .qb i{display:block;height:100%;background:linear-gradient(90deg,#c9962e,#f2d38a)}#quest.done b{color:#7dff9a}
 #zone{position:fixed;right:12px;top:190px;width:174px;text-align:center;font-family:Cinzel,serif;font-size:12px;color:#f2d38a;text-shadow:0 1px 2px #000}
 #chat{position:fixed;left:12px;bottom:12px;width:340px;padding:8px}
 #log{height:130px;overflow-y:auto;font-size:12px;line-height:1.45;padding-right:4px}
@@ -90,7 +93,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 .hint{font-size:11px;color:#a8987a;padding:8px 12px}
 @media (max-width:1240px){#help{display:none}#chat{width:260px}}
 @media (max-width:1000px){#chat{width:200px}#log{height:100px}.slot{width:46px;height:50px}.slot b{font-size:19px}.slot small{font-size:8px}#bar{gap:5px}}
-@media (max-width:760px){#bar{gap:4px;padding:6px}#autoBadge{bottom:76px}#autoPanel{bottom:80px;width:94vw}#pframe{width:190px}#tframe{top:auto;bottom:100px;width:200px}#mini{width:110px;height:110px}#zone{top:128px;width:114px;font-size:10px}
+@media (max-width:760px){#bar{gap:4px;padding:6px}#autoBadge{bottom:76px}#autoPanel{bottom:80px;width:94vw}#pframe{width:190px}#tframe{top:auto;bottom:100px;width:200px}#mini{width:110px;height:110px}#zone{top:128px;width:114px;font-size:10px}#quest{top:166px;width:150px;font-size:10px;padding:5px 7px}
 #chat,body.touch #chat{top:132px;bottom:auto;width:190px;padding:5px 7px;background:rgba(12,10,8,.55)}#log,body.touch #log{height:48px;font-size:10px;line-height:1.35;overflow:hidden;pointer-events:none}#chatIn{margin-top:4px;padding:3px 6px;font-size:16px}#help{display:none}
 .slot{width:40px;height:44px}.slot b{font-size:17px}.slot small{font-size:7px}#joy{bottom:100px}
 #inv{right:50%;transform:translate(50%,-50%);width:96vw;max-width:410px}.invwrap{gap:8px;padding:10px}.eqcol{width:104px}.bag{grid-template-columns:repeat(5,1fr);gap:4px;flex:1}.bag .cell{width:auto;aspect-ratio:1;height:auto;font-size:20px}#detail{right:50%;top:auto;bottom:8px;transform:translateX(50%);z-index:5}#shop{top:auto;bottom:90px;left:50%;transform:translateX(-50%);width:94vw;max-width:300px;z-index:4}}
@@ -141,6 +144,7 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
   </div>
   <div id="tframe" class="panel hidden"><div id="tName"></div><div class="bar hp"><i id="thpB"></i><span id="thpT"></span></div></div>
   <canvas id="mini" width="170" height="170"></canvas>
+  <div id="quest" class="hidden"></div>
   <div id="zone"></div>
   <div id="chat" class="panel"><div id="log"></div><input id="chatIn" placeholder="Enter para conversar com todos…" maxlength="120"></div>
   <div id="bar" class="panel">
@@ -814,13 +818,53 @@ for(const [t,x,z] of [['skel',-8,40],['skel',8,38],['skel',0,30],['archer',-10,2
 /* NPCs */
 const healer=makeNPC(0x7a4ab8,0x7dff9a);healer.position.set(6,0,6);scene.add(healer);
 const smith=makeNPC(0x5a4030,null,true);smith.position.set(-7,0,7.5);scene.add(smith);
+const captain=makeNPC(0x2f4f8f,null,true);captain.position.set(4.5,0,-8.5);scene.add(captain);
 function mkLabel(html,cls){const d=document.createElement('div');d.className='lbl '+cls;d.innerHTML=html;labelsEl.appendChild(d);return d}
 const staticLabels=[
   {o:healer,h:3,el:mkLabel('✚ Curandeira Lia<br><span style="font-size:10px;opacity:.8">[E] curar</span>','npc'),far:60},
   {o:smith,h:3,el:mkLabel('⚒️ Ferreiro Borin<br><span style="font-size:10px;opacity:.8">[E] loja</span>','npc'),far:60},
+  {o:captain,h:3.2,el:mkLabel('<span class="qmark"></span>📜 Capitão Aldric<br><span style="font-size:10px;opacity:.8">[E] missões</span>','npc'),far:70},
   {o:entrance,h:8.5,el:mkLabel('🕳️ Masmorra Esquecida<br><span style="font-size:10px;opacity:.8">Nv 10+ · [E] entrar</span>','portal'),far:90},
   {o:exitPortal,h:5,el:mkLabel('Portal de saída<br><span style="font-size:10px;opacity:.8">[E] voltar ao mundo</span>','portal'),far:60}
 ];
+
+/* ============ missões (Capitão Aldric) ============ */
+const QUESTS=[
+  {t:['slime'],n:8,title:'Praga de Geleias',txt:'As geleias estão invadindo as plantações perto da vila. Derrote 8 delas.',xp:120,gold:60,pots:3},
+  {t:['wolf'],n:8,title:'Uivos na Floresta',txt:'Lobos sombrios atacam viajantes na Floresta dos Lobos. Derrote 8.',xp:380,gold:120,pots:3,item:['weapon',4,1]},
+  {t:['spider'],n:6,title:'Teias Venenosas',txt:'Aranhas gigantes tomaram a parte funda da floresta. Derrote 6.',xp:650,gold:180,pots:4},
+  {t:['golem'],n:6,title:'Pedras que Andam',txt:'Golens despertaram nas Terras de Pedra. Derrote 6.',xp:1100,gold:260,pots:4,item:['armor',9,2]},
+  {t:['skel','archer'],n:10,title:'Os Mortos Inquietos',txt:'Entre na Masmorra Esquecida e derrote 10 esqueletos.',xp:1800,gold:380,pots:5},
+  {t:['lich'],n:1,title:'O Fim de Morvath',txt:'O Lich Morvath comanda os mortos. Derrote-o no salão do trono.',xp:3000,gold:600,pots:6,item:['helm',12,3]},
+  {t:['orc'],n:10,title:'Saqueadores do Oeste',txt:'Orcs saqueiam caravanas no Desfiladeiro dos Orcs. Derrote 10.',xp:3200,gold:650,pots:6},
+  {t:['troll'],n:5,title:'Gigantes da Montanha',txt:'Trolls protegem o acampamento orc. Derrote 5.',xp:4200,gold:800,pots:6,item:['ring',14,2]},
+  {t:['dragon'],n:1,title:'A Fúria de Ignarok',txt:'O dragão Ignarok aterroriza o reino. Derrote-o de uma vez por todas!',xp:9000,gold:1500,pots:10,item:['weapon',18,3]},
+];
+const QREP=[['slime',1],['wolf',3],['spider',5],['golem',8],['orc',11],['troll',13]]; // caçadas repetíveis após a campanha
+const Q={i:0,n:0,on:false,rep:null};
+function qCur(){if(Q.i<QUESTS.length)return QUESTS[Q.i];if(!Q.rep)return null;const T=TYPES[Q.rep];
+  return{t:[Q.rep],n:10,title:'Caçada: '+T.name,txt:`Derrote 10 ${T.name}.`,xp:Math.round(T.xp*6),gold:Math.round(T.gold[1]*4),pots:3,rep:true}}
+function qNames(q){return q.t.map(t=>TYPES[t].name).join(' / ')}
+function qRender(){const el=$('quest');const q=Q.on&&qCur();if(!q){el.classList.add('hidden');qMark();return}
+  const done=Q.n>=q.n;el.classList.remove('hidden');el.classList.toggle('done',done);
+  el.innerHTML=`<b>📜 ${q.title}</b>${done?'✔ Concluída! Fale com o Capitão Aldric.':`${qNames(q)}: ${Q.n}/${q.n}`}<div class="qb"><i style="width:${Math.min(100,Q.n/q.n*100)}%"></i></div>`;qMark()}
+function qMark(){const q=qCur(),el=document.querySelector('.qmark');if(!el)return;el.textContent=!Q.on?(q?'!':''):Q.n>=(q?q.n:1e9)?'?':''}
+function qKill(type){if(!Q.on)return;const q=qCur();if(!q||!q.t.includes(type)||Q.n>=q.n)return;Q.n++;
+  if(Q.n>=q.n){log(`📜 Missão concluída: ${q.title}! Volte ao Capitão Aldric para receber a recompensa.`,'xp');SFX.play('loot')}
+  qRender();save()}
+function qTalk(){npcGesture(captain,'Interact');const q=qCur();
+  if(!Q.on){
+    if(!q){const opts=QREP.filter(([t,l])=>l<=P.lvl+1);Q.rep=pick(opts.slice(-3))[0];return qTalk()}
+    if(Q.i<QUESTS.length&&P.lvl+3<TYPES[q.t[0]].lvl)log(`Capitão Aldric: Essa missão é perigosa para você (nível ${P.lvl}). Fique mais forte antes.`,'npc');
+    Q.on=true;Q.n=0;SFX.play('click');log(`Capitão Aldric: ${q.txt}`,'npc');banner('Nova missão: '+q.title,qNames(q)+' 0/'+q.n);qRender();save();return}
+  if(Q.n<q.n){log(`Capitão Aldric: Ainda faltam ${q.n-Q.n} — ${qNames(q)}. Conto com você!`,'npc');return}
+  // recompensa
+  P.gold+=q.gold;P.pots+=q.pots;let txt=`+${q.xp} XP, +${q.gold} ouro, +${q.pots} poções`;
+  if(q.item){const it=makeItem(q.item[0],Math.max(q.item[1],P.lvl),q.item[2],P.cls);if(P.inv.length<BAG_MAX){P.inv.push(it);txt+=`, ${it.name}`}else dropItem(it,P.pos)}
+  log(`📜 Capitão Aldric: Excelente trabalho! Recompensa: ${txt}.`,'loot');banner('Missão concluída!',q.title);SFX.play('epic',null,0.6);pillarFx(P.pos,0xf2d38a);
+  if(q.rep)Q.rep=null;else Q.i++;Q.on=false;Q.n=0;
+  if(Q.i===QUESTS.length&&!q.rep)log('Capitão Aldric: Você salvou o reino! Volte sempre que quiser — sempre há caçadas a fazer.','npc');
+  gainXp(q.xp);if(typeof renderInv==='function')renderInv();qRender();save()}
 
 /* ============ itens ============ */
 const RAR=[{n:'Comum',c:'#d9d9d9',h:0xd9d9d9},{n:'Incomum',c:'#5dff7a',h:0x5dff7a},{n:'Raro',c:'#4da6ff',h:0x4da6ff},{n:'Épico',c:'#c070ff',h:0xc070ff}];
@@ -876,7 +920,7 @@ function applyLook(u,cls,ar,hr,wr){
 }
 const rarOf=it=>it?it.rar:-1;
 function refreshLook(){if(P.mesh)applyLook(P.mesh.userData,P.cls,rarOf(P.eq.armor),rarOf(P.eq.helm),rarOf(P.eq.weapon))}
-function save(){try{localStorage.setItem('aether_save',JSON.stringify({v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq}))}catch(e){}}
+function save(){try{localStorage.setItem('aether_save',JSON.stringify({v:2,name:P.name,cls:P.cls,lvl:P.lvl,xp:P.xp,gold:P.gold,pots:P.pots,inv:P.inv,eq:P.eq,q:{i:Q.i,n:Q.n,on:Q.on,rep:Q.rep}}))}catch(e){}}
 function load(){try{return JSON.parse(localStorage.getItem('aether_save')||'null')}catch(e){return null}}
 
 /* ============ UI ============ */
@@ -1138,7 +1182,7 @@ function killMon(m,rewarded){
   const nDrops=m.T.boss?2:1;
   for(let i=0;i<nDrops;i++)if(rnd()<m.T.dc){const lv=m.T.lvl+Math.floor(rnd()*3)-1;dropItem(makeItem(pick(['weapon','armor','helm','ring']),lv,i===0?rollRarity(m.T.epic):rollRarity(false),P.cls),m.g.position)}
   if(m.T.boss){log(`⭐ ${P.name} derrotou ${m.T.name}!`,'sys');banner(`${m.T.name} foi derrotado!`,'Um tesouro épico caiu no chão')}
-  gainXp(xp);
+  qKill(m.type);gainXp(xp);
 }
 function gainXp(x){
   P.xp+=x;
@@ -1198,12 +1242,13 @@ function actTalk(){
   if(P.dead)return;
   const opts=[
     {o:healer,r:5,f:()=>{npcGesture(healer,'Spellcast_Long');SFX.play('heal');P.hp=P.maxHp;P.mp=P.maxMp;ringFx(P.pos,4,0x7dff9a);emit(P.pos.clone().setY(P.pos.y+0.5),0x7dff9a,40,1.5,4,1.2,0,1.2);log('Curandeira Lia: '+pick(healLines)+' (vida e mana restauradas)','npc')}},
+    {o:captain,r:5,f:qTalk},
     {o:smith,r:5,f:()=>{npcGesture(smith,'Interact');SFX.play('shop');openShop();log('Ferreiro Borin: Armas e armaduras fresquinhas da forja! Também compro o que você não quiser.','npc')}},
     {o:entrance,r:7,f:()=>{if(P.lvl<10)log(`Cuidado: a masmorra é para nível 10+. Você é nível ${P.lvl}.`,'bad');teleport(DX,53.5,'Masmorra Esquecida','O Lich Morvath aguarda no salão do trono')}},
     {o:exitPortal,r:6,f:()=>{const a=entrance.rotation.y;teleport(ENT.x+Math.sin(a)*8,ENT.z+Math.cos(a)*8,'Terras de Pedra','Você voltou ao mundo')}}
   ];
   let best=null,bd=1e9;for(const o of opts){const d=Math.hypot(o.o.position.x-P.pos.x,o.o.position.z-P.pos.z);if(d<o.r&&d<bd){bd=d;best=o}}
-  if(best)best.f();else log('Não há ninguém por perto. Na vila: Curandeira Lia (cura) e Ferreiro Borin (loja).','sys');
+  if(best)best.f();else log('Não há ninguém por perto. Na vila: Curandeira Lia (cura), Ferreiro Borin (loja) e Capitão Aldric (missões).','sys');
 }
 /* ============ auto-caça e auto-loot ============ */
 const AUTO={on:false,loot:false,radius:35,minRar:0,potPct:45,skill:true,strong:false,anchor:new THREE.Vector3(),tick:0,stuckT:0,lastD:0,ban:new Map(),lootDrop:null,lootT:0,warnT:-99,lowWarn:false};
@@ -1508,7 +1553,7 @@ function drawMini(){
     mctx.fillStyle='#2f7fb8';mctx.beginPath();mctx.arc(W/2+LAKE.x*S,W/2+LAKE.z*S,18*S,0,7);mctx.fill();
     for(const m of monsters){if(m.dead||inDungeon(m.g.position.x))continue;mctx.fillStyle=m.T.boss?'#ff8b5c':m===P.target?'#ffd76a':'#e04848';const r=m.T.boss?4:2;mctx.beginPath();mctx.arc(W/2+m.g.position.x*S,W/2+m.g.position.z*S,r,0,Math.PI*2);mctx.fill()}
     for(const d of drops){if(inDungeon(d.g.position.x))continue;mctx.fillStyle=RAR[d.it.rar].c;mctx.fillRect(W/2+d.g.position.x*S-2,W/2+d.g.position.z*S-2,4,4)}
-    mctx.fillStyle='#c9a6ff';for(const n of [healer,smith])mctx.fillRect(W/2+n.position.x*S-1.5,W/2+n.position.z*S-1.5,3,3);
+    mctx.fillStyle='#c9a6ff';for(const n of [healer,smith,captain])mctx.fillRect(W/2+n.position.x*S-1.5,W/2+n.position.z*S-1.5,3,3);
     mctx.fillStyle='#b36bff';mctx.beginPath();mctx.arc(W/2+ENT.x*S,W/2+ENT.z*S,4,0,7);mctx.fill();
     mctx.fillStyle='#5dff7a';for(const o of others.values()){const q=o.mesh.position;if(inDungeon(q.x))continue;mctx.beginPath();mctx.arc(W/2+q.x*S,W/2+q.z*S,3,0,7);mctx.fill()}
     if(AUTO.on&&!inDungeon(AUTO.anchor.x)){mctx.strokeStyle='rgba(93,255,122,.8)';mctx.setLineDash([4,3]);mctx.lineWidth=1.5;mctx.beginPath();mctx.arc(W/2+AUTO.anchor.x*S,W/2+AUTO.anchor.z*S,AUTO.radius*S,0,7);mctx.stroke();mctx.setLineDash([])}
@@ -1792,6 +1837,7 @@ function update(dt){
   for(const u of npcAnims){u.t+=dt;if(u.t>=u.lock&&u.curName!==u.idle)playAnim(u,u.idle);u.mixer.update(dt)}
   healer.rotation.y=angLerp(healer.rotation.y,Math.atan2(P.pos.x-healer.position.x,P.pos.z-healer.position.z),dt*2);
   smith.rotation.y=angLerp(smith.rotation.y,Math.atan2(P.pos.x-smith.position.x,P.pos.z-smith.position.z),dt*2);
+  captain.rotation.y=angLerp(captain.rotation.y,Math.atan2(P.pos.x-captain.position.x,P.pos.z-captain.position.z),dt*2);
   entrance.userData.portal.userData.disc.material.opacity=0.35+Math.sin(now*3)*0.15;exitPortal.userData.disc.material.opacity=0.35+Math.sin(now*3)*0.15;
   if(rnd()<0.4){entrance.userData.portal.getWorldPosition(tmp);emit(tmp.setY(tmp.y+2.8),0xb36bff,1,1.2,0.5,1,0,3)}
   if(inD){
@@ -1911,6 +1957,10 @@ function upgradeNPCs(){
   if(MODELS.barbarian&&!smith.userData.npc){const r=cloneModel('barbarian',2.4);
     for(const n of ['1H_Axe_Offhand','Barbarian_Round_Shield','2H_Axe','Mug'])if(r.parts[n])r.parts[n].visible=false;
     swap(smith,r,'Idle')}
+  if(MODELS.knight&&!captain.userData.npc){const r=cloneModel('knight',2.45);
+    for(const n of ['1H_Sword_Offhand','Rectangle_Shield','Spike_Shield','Round_Shield','2H_Sword'])if(r.parts[n])r.parts[n].visible=false; // espada + escudo com brasão
+    const cape=r.parts.Knight_Cape;if(cape)cape.material.color.copy(lin(tmpC.setHex(0x2f5fb8)));
+    swap(captain,r,'Idle')}
 }
 function npcGesture(npc,name){const u=npc.userData.npc;if(!u)return;u.lock=u.t+playAnim(u,name,true,1.1)*0.95}
 function modelsArrived(ok){ // modelos prontos: troca os bonecos simples pelos animados
@@ -1936,7 +1986,8 @@ function start(){
   Object.assign(P,{name:n,cls:chosen});
   if(same){Object.assign(P,{lvl:sv.lvl,xp:sv.xp,gold:sv.gold,pots:sv.pots});
     if(Array.isArray(sv.inv))P.inv=sv.inv.filter(Boolean).slice(0,BAG_MAX);
-    if(sv.eq)for(const s of Object.keys(SLOTN))P.eq[s]=sv.eq[s]||null;}
+    if(sv.eq)for(const s of Object.keys(SLOTN))P.eq[s]=sv.eq[s]||null;
+    if(sv.q){Q.i=Math.max(0,Math.min(QUESTS.length,sv.q.i|0));Q.n=Math.max(0,sv.q.n|0);Q.on=!!sv.q.on;Q.rep=TYPES[sv.q.rep]?sv.q.rep:null}}
   for(const it of [...P.inv,...Object.values(P.eq)])if(it&&it.id>=uid)uid=it.id+1;
   if(!P.eq.weapon)P.eq.weapon=makeItem('weapon',1,0,P.cls);
   if(!P.eq.armor)P.eq.armor=makeItem('armor',1,0,P.cls);
@@ -1944,11 +1995,11 @@ function start(){
   recalc();P.hp=P.maxHp;P.mp=P.maxMp;refreshLook();
   P.lbl=document.createElement('div');P.lbl.className='lbl me';P.lbl.textContent=P.name;labelsEl.appendChild(P.lbl);
   const C=CLS[P.cls];$('skName').textContent=C.skill;$('icoSkill').textContent=C.skIco;$('icoAtk').textContent=C.atkIco;
-  $('start').classList.add('hidden');$('hud').classList.remove('hidden');
+  $('start').classList.add('hidden');$('hud').classList.remove('hidden');qRender();
   cam.yaw=SPAWN.yaw;myJoin=Date.now();started=true;dayT=0.1;save();
   log(`Bem-vindo(a) a Reinos de Aether, ${P.name}!`,'sys');
   log('Monstros deixam cair itens (Comum, Incomum, Raro e Épico). Abra a mochila com I.','sys');
-  log('Na vila: Curandeira Lia cura e Ferreiro Borin vende equipamentos. Aperte E perto deles.','sys');
+  log('Na vila: Curandeira Lia cura, Ferreiro Borin vende equipamentos e o Capitão Aldric (o ! dourado) dá missões. Aperte E perto deles.','sys');
   if(P.cls==='mago')log('Dica: magos atacam de longe — mantenha distância dos lobos.','sys');
   banner('Vila de Aether','Zona segura');
 }
