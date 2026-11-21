@@ -29,3 +29,11 @@ e ambientes de floresta/grilos do OpenGameArt.org, todos CC0. Detalhes em audio/
 
 Licença: Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
 Uso livre em projetos pessoais, educacionais e comerciais. Crédito não obrigatório, mas agradecido.
+
+Cenário modelado no Blender (models/env/*.glb) — criado para Reinos de Aether via Blender MCP,
+modelagem procedural (bpy/bmesh), low-poly com flat shading:
+  orc_tent, orc_totem, orc_palisade, campfire (Desfiladeiro dos Orcs)
+  swamp_tree, glow_mushrooms, witch_hut (Pântano Assombrado)
+  obsidian_pillar, brazier (Arena do Azgaroth)
+  loot_chest (baús de loot), rock_a, rock_b, flower_bush, wildflowers (campos)
+  Script-fonte: ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.

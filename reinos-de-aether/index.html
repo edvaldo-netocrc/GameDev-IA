@@ -682,6 +682,9 @@ function makeHeroBox(cls){
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
 const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
+const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut'];
+for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb'; // cenário modelado no Blender
+const ENVP={fireDeco:[],spikes:[],swTrees:[],swMush:[],pillars:[]}; // decorações procedurais que o Blender substitui
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -947,14 +950,14 @@ function ringSpawn(type,n,d0,d1,a0=0,a1=Math.PI*2,ok=()=>true){
 { // acampamento orc: paliçadas de estacas, fogueiras e ossos
   const wood=stdM(0x5a3a22,0.95),bone=stdM(0xe8e2cc,0.7),stone=stdM(0x4a4440,0.95),camp=new THREE.Group();scene.add(camp);
   const fire=(x,z,big)=>{const y=H(x,z),f=new THREE.Group();f.position.set(x,y,z);
-    for(let i=0;i<6;i++){const a=i/6*6.28;f.add(ell(0.28,0.2,0.24,stone,Math.cos(a)*0.85,0.1,Math.sin(a)*0.85))}
-    for(let i=0;i<3;i++){const l=cyl(0.09,0.09,1.4,wood,0,0.25,0);l.rotation.set(Math.PI/2,i*1.05,0.3);f.add(l)}
+    for(let i=0;i<6;i++){const a=i/6*6.28,e=ell(0.28,0.2,0.24,stone,Math.cos(a)*0.85,0.1,Math.sin(a)*0.85);f.add(e);ENVP.fireDeco.push(e)}
+    for(let i=0;i<3;i++){const l=cyl(0.09,0.09,1.4,wood,0,0.25,0);l.rotation.set(Math.PI/2,i*1.05,0.3);f.add(l);ENVP.fireDeco.push(l)}ENVP.fireDeco.push({fire:f,x,z,big})
     const fl=new THREE.Mesh(new THREE.ConeGeometry(0.42,1.2,7),new THREE.MeshBasicMaterial({color:0xff8a2a}));fl.position.y=0.75;f.add(fl);
     const gs=glowSprite(0xff7a2a,big?6:4,0.8);gs.position.y=1.1;f.add(gs);
     if(big&&!GFX.lo){const l=new THREE.PointLight(0xff8a3a,1.4,22,1.6);l.position.y=2;f.add(l)}
     camp.add(f);obstacles.push({x,z,r:1.1});orcFires.push(fl)};
-  const spikes=(x,z,yaw,n)=>{for(let i=0;i<n;i++){const ox=x+Math.cos(yaw)*(i-n/2)*0.75,oz=z-Math.sin(yaw)*(i-n/2)*0.75,h=2.4+((i*37)%5)*0.25;
-    const st=new THREE.Mesh(new THREE.ConeGeometry(0.26,h,6),wood);st.position.set(ox,H(ox,oz)+h/2-0.3,oz);st.rotation.z=((i*13)%7-3)*0.04;st.castShadow=true;camp.add(st);obstacles.push({x:ox,z:oz,r:0.4})}};
+  const spikes=(x,z,yaw,n)=>{ENVP.spikes.push({x,z,yaw,n,m:[]});for(let i=0;i<n;i++){const ox=x+Math.cos(yaw)*(i-n/2)*0.75,oz=z-Math.sin(yaw)*(i-n/2)*0.75,h=2.4+((i*37)%5)*0.25;
+    const st=new THREE.Mesh(new THREE.ConeGeometry(0.26,h,6),wood);st.position.set(ox,H(ox,oz)+h/2-0.3,oz);st.rotation.z=((i*13)%7-3)*0.04;st.castShadow=true;camp.add(st);ENVP.spikes[ENVP.spikes.length-1].m.push(st);obstacles.push({x:ox,z:oz,r:0.4})}};
   for(const [x,z,big] of [[-138,8,1],[-150,-22,0],[-158,30,0],[-176,-4,1]])fire(x,z,big);
   for(const [x,z,yaw,n] of [[-126,-14,1.35,9],[-127,22,1.75,8],[-165,-38,0.2,10],[-168,40,-0.15,10]])spikes(x,z,yaw,n);
   for(let i=0;i<14;i++){const a=Math.PI*(0.88+((i*0.61)%0.24)),d=135+((i*29)%45),x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inOrcs(x,z))continue;
@@ -979,11 +982,11 @@ const swampFx=[];
     const t=new THREE.Group();t.position.set(x,H(x,z),z);t.rotation.y=rng(i,3)*6.28;const h=4+rng(i,4)*3;
     const tr=cyl(0.25,0.4,h,bark,0,h/2,0);tr.rotation.z=(rng(i,5)-0.5)*0.25;t.add(tr);
     for(let k=0;k<3;k++){const br=cyl(0.06,0.14,1.8,bark,0,0,0);br.position.set(0,h*(0.55+k*0.13),0);br.rotation.set(0,k*2.1,1+rng(i,6+k)*0.4);br.translateY(0.8);t.add(br)}
-    t.traverse(o=>{if(o.isMesh)o.castShadow=true});sw.add(t);obstacles.push({x,z,r:0.7})}
+    t.traverse(o=>{if(o.isMesh)o.castShadow=true});sw.add(t);ENVP.swTrees.push({g:t,x,z,h,yaw:t.rotation.y});obstacles.push({x,z,r:0.7})}
   for(let i=0;i<34;i++){const a=Math.PI*(0.37+rng(i,9)*0.26),d=122+rng(i,10)*66,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inSwamp(x,z))continue;
     const col=[0x7dff6a,0x6ad8ff,0xc77dff][i%3],sc=0.5+rng(i,11)*0.9,mg=new THREE.Group();mg.position.set(x,H(x,z),z);
     mg.add(cyl(0.08*sc,0.12*sc,0.6*sc,stdM(0xe8e0d0,0.8),0,0.3*sc,0));const cp=new THREE.Mesh(new THREE.SphereGeometry(0.35*sc,10,6,0,6.29,0,1.5),new THREE.MeshBasicMaterial({color:col}));cp.position.y=0.6*sc;mg.add(cp);
-    if(i%4===0){const gs=glowSprite(col,2.4*sc,0.55);gs.position.y=0.7*sc;mg.add(gs)}sw.add(mg)}
+    if(i%4===0){const gs=glowSprite(col,2.4*sc,0.55);gs.position.y=0.7*sc;mg.add(gs)}sw.add(mg);ENVP.swMush.push({g:mg,x,z,sc,yaw:rng(i,12)*6.28})}
   for(let i=0;i<9;i++){const a=Math.PI*(0.4+rng(i,13)*0.2),d=130+rng(i,14)*48,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!inSwamp(x,z))continue;
     const pool=new THREE.Mesh(new THREE.CircleGeometry(2.5+rng(i,15)*3,20),new THREE.MeshStandardMaterial({color:0x1c2a24,roughness:0.15,metalness:0.3,transparent:true,opacity:0.85}));
     pool.rotation.x=-Math.PI/2;pool.position.set(x,H(x,z)+0.06,z);sw.add(pool)}
@@ -993,7 +996,7 @@ spawnMonster('demon',WB_POS.x,WB_POS.z);{const wb=monsters[monsters.length-1];if
 { // Arena do chefe mundial: anel de pilares e braseiros roxos
   const st=stdM(0x4a4450,0.95,{flatShading:!GFX.lo}),ar=new THREE.Group();scene.add(ar);
   for(let i=0;i<10;i++){const a=i/10*Math.PI*2,x=WB_POS.x+Math.cos(a)*17,z=WB_POS.z+Math.sin(a)*17;if(i===2||i===7)continue; // duas passagens
-    const pl=cyl(0.9,1.1,5.5,st,0,0,0);pl.position.set(x,H(x,z)+2.4,z);pl.castShadow=true;ar.add(pl);obstacles.push({x,z,r:1.2});
+    const pl=cyl(0.9,1.1,5.5,st,0,0,0);pl.position.set(x,H(x,z)+2.4,z);pl.castShadow=true;ar.add(pl);ENVP.pillars.push({m:pl,x,z,a});obstacles.push({x,z,r:1.2});
     if(i%2===0){const f=glowSprite(0xb040ff,3.5,0.85);f.position.set(x,H(x,z)+5.8,z);ar.add(f)}}
   const ring=new THREE.Mesh(new THREE.RingGeometry(13,13.6,48),new THREE.MeshBasicMaterial({color:0xb040ff,transparent:true,opacity:0.35,depthWrite:false}));
   ring.rotation.x=-Math.PI/2;ring.position.set(WB_POS.x,H(WB_POS.x,WB_POS.z)+0.12,WB_POS.z);ar.add(ring);
@@ -1376,7 +1379,7 @@ function telegraph(pos,r,dmg,col){
 const drops=[];
 function dropItem(it,pos){
   const g=new THREE.Group();g.position.set(pos.x+(rnd()-0.5)*2,0,pos.z+(rnd()-0.5)*2);g.position.y=H(g.position.x,g.position.z);
-  const chest=propClone('dungeon',it.rar>=3?'chest_gold':'chest',0.5);
+  const chest=envClone('loot_chest',0.6)||propClone('dungeon',it.rar>=3?'chest_gold':'chest',0.5);
   if(chest){chest.rotation.y=rnd()*6.28;g.add(chest)}else{g.add(part(0.7,0.5,0.5,0x7a4a20,0,0.25,0));g.add(part(0.74,0.12,0.54,0xd9a84a,0,0.52,0))}
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.35,6,8,1,true),new THREE.MeshBasicMaterial({color:RAR[it.rar].h,transparent:true,opacity:0.35+it.rar*0.1,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
   beam.position.y=3;g.add(beam);scene.add(g);
@@ -2712,7 +2715,57 @@ function placeProp(lib,name,scale,x,z,yaw,parent,solidK,occ){
   if(occ)g.traverse(o=>{if(o.isMesh)occluders.push(o)});
   if(solidK){g.updateMatrixWorld(true);_bx.setFromObject(g).getSize(_bv);const r=Math.max(_bv.x,_bv.z)/2*solidK;solids.push({x,z,r})}
   return g}
-const VILLAGE_FACE=Math.PI; // as portas dos modelos ficam viradas para -Z
+const VILLAGE_FACE=Math.PI;
+/* ============ cenário modelado no Blender (models/env) ============ */
+const ENV_CACHE={};
+function envParts(k){ // geometria de cada material, já sem o deslocamento da vitrine do Blender
+  if(ENV_CACHE[k])return ENV_CACHE[k];const g=MODELS['env_'+k];if(!g)return null;
+  const root=g.scene.clone(true);for(const c of root.children)c.position.set(0,0,0);root.position.set(0,0,0);root.updateMatrixWorld(true);
+  const out=[];root.traverse(o=>{if(!o.isMesh)return;const geo=o.geometry.clone().applyMatrix4(o.matrixWorld);let mat=o.material.clone();
+    for(const ch of ['r','g','b'])mat.color[ch]=Math.pow(mat.color[ch],2); // cores do Blender mais saturadas, no tom do resto do mundo
+    if(GFX.lo){const em=mat.emissive&&(mat.emissive.r+mat.emissive.g+mat.emissive.b)>0.05;mat=new THREE.MeshLambertMaterial({color:mat.color,emissive:em?mat.emissive:0x000000,flatShading:true});LIN.add(mat)}
+    else{mat.flatShading=true;LIN.add(mat)}
+    out.push({geo,mat,glow:!!(mat.emissive&&(mat.emissive.r+mat.emissive.g+mat.emissive.b)>0.05)})});
+  return ENV_CACHE[k]=out}
+function envClone(k,s){const ps=envParts(k);if(!ps)return null;const g=new THREE.Group();
+  for(const p of ps){const m=new THREE.Mesh(p.geo,p.mat);m.castShadow=!p.glow;m.receiveShadow=GFX.hi;g.add(m)}if(s)g.scale.setScalar(s);return g}
+function envPlace(k,x,z,yaw,s,solidR,y){const g=envClone(k,s);if(!g)return null;g.position.set(x,y!=null?y:H(x,z),z);g.rotation.y=yaw||0;scene.add(g);if(solidR)solids.push({x,z,r:solidR});return g}
+const _em=new THREE.Matrix4(),_eq=new THREE.Quaternion(),_ev=new THREE.Vector3(),_es=new THREE.Vector3(),_eup=new THREE.Vector3(0,1,0);
+function envInst(k,list,shadow){ // list: [{x,y,z,yaw,s}] → um InstancedMesh por material (poucas chamadas de desenho)
+  const ps=envParts(k);if(!ps||!list.length)return null;const g=new THREE.Group();
+  for(const p of ps){const im=new THREE.InstancedMesh(p.geo,p.mat,list.length);im.frustumCulled=false;im.castShadow=!!shadow&&!p.glow;im.receiveShadow=GFX.hi;
+    list.forEach((t,i)=>{_ev.set(t.x,t.y!=null?t.y:H(t.x,t.z),t.z);_eq.setFromAxisAngle(_eup,t.yaw||0);_es.setScalar(t.s||1);_em.compose(_ev,_eq,_es);im.setMatrixAt(i,_em)});g.add(im)}
+  scene.add(g);return g}
+function buildEnv(){
+  if(!MODELS.env_campfire||buildEnv.done)return;buildEnv.done=true;
+  const rnd2=(i,k)=>((Math.sin(i*91.7+k*47.3)*24634.6345)%1+1)%1;
+  // Desfiladeiro dos Orcs: fogueiras de pedra, paliçadas, tendas e totens
+  for(const d of ENVP.fireDeco){if(d.fire){envPlace('campfire',d.x,d.z,d.x*0.3,d.big?1.25:1);continue}d.visible=false}
+  for(const sp of ENVP.spikes){sp.m.forEach(m=>m.visible=false);const len=sp.n*0.75,cnt=Math.max(1,Math.round(len/3.7));
+    for(let i=0;i<cnt;i++){const o=(i-(cnt-1)/2)*3.7,x=sp.x+Math.cos(sp.yaw)*o,z=sp.z-Math.sin(sp.yaw)*o;envPlace('orc_palisade',x,z,sp.yaw,1)}}
+  for(const [x,z,yaw] of [[-145,-4,1.6],[-152,16,2.2],[-164,-20,0.6],[-170,22,-0.8],[-185,10,3.4]]){if(!inOrcs(x,z))continue;envPlace('orc_tent',x,z,yaw,1.15,2.4)}
+  for(const [x,z,yaw] of [[-132,0,Math.PI/2],[-160,6,1.2],[-178,-16,0.4]]){if(!inOrcs(x,z))continue;envPlace('orc_totem',x,z,yaw,0.85,0.7);
+    const eye=glowSprite(0xff6a1a,1.6,0.7);eye.position.set(x,H(x,z)+4.0,z);scene.add(eye)}
+  // Pântano Assombrado: árvores retorcidas, cogumelos brilhantes e a cabana da bruxa
+  const trees=ENVP.swTrees.map(t=>{t.g.visible=false;return{x:t.x,z:t.z,yaw:t.yaw,s:(t.h+1.5)/8,y:H(t.x,t.z)-0.1}});envInst('swamp_tree',trees,true);
+  const mush=ENVP.swMush.map(m=>{m.g.traverse(o=>{if(o.isMesh)o.visible=false});return{x:m.x,z:m.z,yaw:m.yaw,s:0.35+m.sc*0.45}});envInst('glow_mushrooms',mush,false);
+  const hx=24,hz=142;if(inSwamp(hx,hz)){envPlace('witch_hut',hx,hz,-2.6,1.15,3.4);
+    for(const [ox,oy,oz,c,s] of [[1.2,2.8,1.0,0x9aff6a,2.2],[-1.5,2.6,0.2,0x9aff6a,1.8],[-1.0,2.7,1.7,0x7dff4a,2.6]]){const gs=glowSprite(c,s,0.75);const a=-2.6,cx=ox*Math.cos(a)+oz*Math.sin(a),cz=-ox*Math.sin(a)+oz*Math.cos(a);gs.position.set(hx+cx,H(hx,hz)+oy,hz+cz);scene.add(gs)}
+    if(!GFX.lo){const l=new THREE.PointLight(0x8aff5a,1.1,16,1.6);l.position.set(hx,H(hx,hz)+3.2,hz);scene.add(l)}}
+  // Arena do Azgaroth: pilares de obsidiana com runas e braseiros
+  for(const p of ENVP.pillars){p.m.visible=false;envPlace('obsidian_pillar',p.x,p.z,p.a,0.88)}
+  for(const i of [2,7])for(const s of [-1,1]){const a=i/10*Math.PI*2+s*0.2,x=WB_POS.x+Math.cos(a)*19.5,z=WB_POS.z+Math.sin(a)*19.5;envPlace('brazier',x,z,a,1.1,0.8);
+    const f=glowSprite(0xff8a2a,2.6,0.8);f.position.set(x,H(x,z)+2.2,z);scene.add(f)}
+  // Campos: pedras com musgo, arbustos floridos e tufos de flores
+  const free=(x,z,r)=>lakeMask(x,z)<=0.05&&Math.hypot(x,z)>24&&!obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<o.r+r)&&!inOrcs(x,z)&&!inSwamp(x,z);
+  const ra=[],rb=[],bush=[],wild=[];
+  for(let i=0;i<70;i++){const a=rnd2(i,1)*6.283,d=30+rnd2(i,2)*150,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!free(x,z,2))continue;const s=0.6+rnd2(i,3)*(d>115?1.1:0.5);
+    (i%2?ra:rb).push({x,z,yaw:rnd2(i,4)*6.28,s,y:H(x,z)-0.15*s});if(s>0.8)obstacles.push({x,z,r:s*0.9})}
+  for(let i=0;i<90;i++){const a=rnd2(i,5)*6.283,d=26+rnd2(i,6)*70,x=Math.cos(a)*d,z=Math.sin(a)*d;if(!free(x,z,1))continue;bush.push({x,z,yaw:rnd2(i,7)*6.28,s:0.7+rnd2(i,8)*0.6})}
+  const NW=GFX.lo?60:GFX.hi?220:140;for(let i=0;i<NW;i++){const a=rnd2(i,9)*6.283,d=25+rnd2(i,10)*80,x=Math.cos(a)*d,z=Math.sin(a)*d;if(lakeMask(x,z)>0.05||Math.hypot(x,z)<23)continue;wild.push({x,z,yaw:rnd2(i,11)*6.28,s:0.8+rnd2(i,12)*0.7})}
+  envInst('rock_a',ra,true);envInst('rock_b',rb,true);envInst('flower_bush',bush,false);envInst('wildflowers',wild,false);
+}
+ // as portas dos modelos ficam viradas para -Z
 function buildVillage(){
   if(!MODELS.village||town.userData.built)return;town.userData.built=true;
   for(const k of ['anvil','forge','forgeBox','forgeGlow'])if(town.userData[k])town.userData[k].visible=false; // a ferraria nova já tem forja
@@ -2765,7 +2818,7 @@ function upgradeNPCs(){
 }
 function npcGesture(npc,name){const u=npc.userData.npc;if(!u)return;u.lock=u.t+playAnim(u,name,true,1.1)*0.95}
 function modelsArrived(ok){ // modelos prontos: troca os bonecos simples pelos animados
-  buildVillage();decorateDungeon();upgradeNPCs();
+  buildVillage();decorateDungeon();upgradeNPCs();try{buildEnv()}catch(e){console.warn('env',e)}
   ok=!!(MODELS.knight&&MODELS.mage);
   modelsOK=ok;if(ok){upgradeMonsterModels();
     for(const o of others.values()){if(o.mesh.userData.model)continue;const n=makeHero(o.cls);n.position.copy(o.mesh.position);n.rotation.y=o.mesh.rotation.y;scene.remove(o.mesh);o.mesh=n;scene.add(n);if(o.lk)applyLook(n.userData,o.cls,o.lk);else if(o.eqR)applyLook(n.userData,o.cls,...o.eqR)}
