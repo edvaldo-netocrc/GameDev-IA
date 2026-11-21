@@ -52,6 +52,10 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 body.touch #emoPop{bottom:auto;top:56px}
 #party{position:fixed;left:12px;top:150px;width:200px;padding:6px 8px;font-size:12px}#party .pm{margin:3px 0}#party small{color:#bba;font-size:10px}#party .pb{height:5px;background:#3a1414;border-radius:3px;overflow:hidden;margin-top:2px}#party .pb i{display:block;height:100%;background:#d94040}
 #dinvite{position:fixed;left:50%;top:30%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px;border-color:#c04040}#dinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
+#pmenu{position:fixed;z-index:34;min-width:210px;padding:6px;background:rgba(18,14,9,.97)}#pmenu .pmh{padding:4px 8px 6px;border-bottom:1px solid #6b563066;margin-bottom:4px}#pmenu .pmh small{display:block;font-size:10px;color:#aa9}
+#pmenu .pmi{padding:8px 10px;border-radius:5px;cursor:pointer;font-size:13px}#pmenu .pmi:hover{background:#6b563044}#pmenu .pmi.off{opacity:.45;cursor:default}#pmenu .pmi small{display:block;font-size:10px;color:#aa9}
+body.touch #pmenu .pmi{padding:11px 12px;font-size:14px}
+.lbl.other{pointer-events:auto;cursor:pointer}
 #tinvite{position:fixed;left:50%;top:26%;transform:translateX(-50%);z-index:35;padding:12px 16px;text-align:center;font-size:14px}#tinvite .btns{margin-top:8px;display:flex;gap:8px;justify-content:center}
 #trade{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:32;background:rgba(18,14,9,.97);width:min(520px,96vw);max-height:calc(100vh - 20px);overflow-y:auto}
 #trade .tcols{display:grid;grid-template-columns:1fr 1fr;gap:10px}#trade .tgrid{display:flex;flex-wrap:wrap;gap:4px;min-height:48px}#trade .tgrid.bag{max-height:150px;overflow-y:auto}
@@ -251,6 +255,7 @@ body.touch #detail{z-index:31}
     <div id="wmapLeg">🔷 você · 🟢 outros jogadores · 🟣 NPCs · 👑 chefes · 🕳️ masmorra · ✨ alvo da missão · M ou Esc fecha</div></div>
   <div id="daily" class="panel hidden"><div class="ph">🎁 Recompensa diária <span class="x" id="dailyX" title="Receber depois">✕</span></div><div id="dailyDays"></div><div id="dailyTxt" class="hint"></div><button class="mini" id="dailyGo" style="margin-top:8px;padding:8px 22px;font-size:14px">Receber</button></div>
   <div id="emoPop" class="panel hidden"></div>
+  <div id="pmenu" class="panel hidden"></div>
   <div id="tinvite" class="panel hidden"><div id="tinviteTxt"></div><div class="btns"><button class="mini" id="tinYes">Aceitar</button><button class="mini" id="tinNo">Recusar</button></div></div>
   <div id="trade" class="panel hidden"><div class="ph">🔁 Troca <span class="x" id="tradeX">✕</span></div><div id="tradeBody"></div></div>
   <div id="dinvite" class="panel hidden"><div id="dinviteTxt"></div><div class="btns"><button class="mini" id="dinYes">Aceitar</button><button class="mini" id="dinNo">Recusar</button></div></div>
@@ -1294,6 +1299,8 @@ $('trade').addEventListener('click',e=>{if(e.target.id==='tOk'){tradeConfirm();r
   const a=e.target.closest('[data-tadd]');if(a){const it=P.inv.find(x=>String(x.id)===a.dataset.tadd);if(it)tradeAdd(it);return}
   const r=e.target.closest('[data-trm]');if(r){tradeRemove(+r.dataset.trm);return}});
 $('trade').addEventListener('change',e=>{if(e.target.id==='tGold')tradeSetGold(e.target.value)});
+$('pmenu').addEventListener('click',e=>{const it=e.target.closest('[data-pm]');if(!it||!pmenuId)return;const id=pmenuId,o=others.get(id);closePMenu();if(!o)return;
+  const a=it.dataset.pm;if(a==='party')ptyInvite(id);else if(a==='trade')tradeInvite(id);else if(a==='duel')duelInvite(id);else if(a==='pm')whisperTo(o.name);else if(a==='friend')addFriend(o.name)});
 $('pinYes').addEventListener('click',()=>ptyAnswer(true));$('pinNo').addEventListener('click',()=>ptyAnswer(false));
 document.querySelectorAll('[data-close]').forEach(x=>x.addEventListener('click',()=>{const id=x.dataset.close;$(id).classList.add('hidden');if(id==='wmap'){mapOpen=false;return}if(id==='prof'){profOpen=false;return}if(id==='shop'||id==='inv'){shopOpen=false;$('shop').classList.add('hidden')}hideDetail();renderInv()}));
 function toggleInv(force){const el=$('inv');const show=force!==undefined?force:el.classList.contains('hidden');el.classList.toggle('hidden',!show);if(!show){hideDetail();if(shopOpen){shopOpen=false;$('shop').classList.add('hidden')}}renderInv()}
@@ -1700,6 +1707,20 @@ function dailyCheck(){const today=dayKey(new Date()),y=new Date();y.setDate(y.ge
   $('daily').classList.remove('hidden')}
 function dailyClaim(){if(!dailyNext)return;const d=DAILY[dailyNext-1],got=d.f();P.daily={last:dayKey(new Date()),streak:dailyNext};dailyNext=0;$('daily').classList.add('hidden');
   SFX.play('epic',null,0.5);pillarFx(P.pos,0xffd23a);log(`🎁 Recompensa diária: ${got}!`,'loot');if(typeof renderInv==='function')renderInv();save()}
+/* ============ menu do jogador (clicar/tocar em outro jogador) ============ */
+const _pv=new THREE.Vector3();
+function playerAt(cx,cy){let best=null,bd=1e9;const tol=document.body.classList.contains('touch')?48:34;
+  for(const [id,o] of others){if(!o.mesh||!o.mesh.visible)continue;for(const hgt of [0.6,1.4,2.2]){_pv.copy(o.mesh.position);_pv.y+=hgt;_pv.project(camera);if(_pv.z>1)continue;
+    const sx=(_pv.x+1)/2*innerWidth,sy=(1-_pv.y)/2*innerHeight,d=Math.hypot(sx-cx,sy-cy);if(d<tol&&d<bd){bd=d;best=id}}}return best}
+let pmenuId=null;
+function openPMenu(id,x,y){const o=others.get(id);if(!o)return;pmenuId=id;const el=$('pmenu');
+  const canInv=(!PTY.m.length||PTY.l===myId)&&!inParty(id)&&PTY.m.length<PARTY_MAX;
+  el.innerHTML=`<div class="pmh">${CLSICO[o.cls]||''} <b>${esc(o.name)}</b><small>Nv ${o.lvl} · ${esc(zoneOf(o.tx,o.tz).n)}${inParty(id)?' · no seu grupo':''}</small></div>`+
+    (canInv?`<div class="pmi" data-pm="party">👥 Convidar para o grupo</div>`:inParty(id)?'':`<div class="pmi off">👥 Convidar para o grupo<small>${PTY.m.length>=PARTY_MAX?'grupo cheio':'só o líder convida'}</small></div>`)+
+    `<div class="pmi" data-pm="trade">🔁 Trocar itens</div><div class="pmi" data-pm="duel">⚔️ Desafiar para duelo</div><div class="pmi" data-pm="pm">💬 Sussurrar</div>`+
+    (isFriend(o.name)?'':`<div class="pmi" data-pm="friend">🤝 Adicionar amigo</div>`);
+  el.classList.remove('hidden');const w=el.offsetWidth,h=el.offsetHeight;el.style.left=clamp(x+8,6,innerWidth-w-6)+'px';el.style.top=clamp(y-10,6,innerHeight-h-6)+'px';SFX.play('click')}
+function closePMenu(){$('pmenu').classList.add('hidden');pmenuId=null}
 /* ============ troca entre jogadores ============ */
 const TRADE={with:null,name:'',mine:[],gold:0,theirs:[],tgold:0,ok:false,tok:null,done:false};let tradeInv=null,tradeInvT=0;
 function sanItem(o){if(!o||typeof o!=='object'||!SLOTN[o.slot])return null;const st={};for(const k of ['atk','def','hp','mp','crit']){const v=num(o.st&&o.st[k],NaN);if(Number.isFinite(v))st[k]=clamp(Math.round(v),0,k==='crit'?60:100000)}
@@ -2035,7 +2056,7 @@ addEventListener('keydown',e=>{
   if(k==='v')actMount();
   if(k==='g')toggleEmotes();
   if(k==='n'){const v=SFX.vol?0:(lastVol||0.6);SFX.setVol(v);$('optVol').value=String(v);log(v?'🔊 Som ligado.':'🔇 Som desligado.','sys')}
-  if(k==='escape'){if(!$('emoPop').classList.contains('hidden')){toggleEmotes(false);return}if(mapOpen){toggleMap(false);return}if(profOpen){toggleProfile(false);return}if(!$('autoPanel').classList.contains('hidden'))$('autoPanel').classList.add('hidden');else if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
+  if(k==='escape'){if(!$('pmenu').classList.contains('hidden')){closePMenu();return}if(!$('emoPop').classList.contains('hidden')){toggleEmotes(false);return}if(mapOpen){toggleMap(false);return}if(profOpen){toggleProfile(false);return}if(!$('autoPanel').classList.contains('hidden'))$('autoPanel').classList.add('hidden');else if(!$('detail').classList.contains('hidden'))hideDetail();else if(!$('inv').classList.contains('hidden'))toggleInv(false);else{setTarget(null);P.auto=false}}
 });
 addEventListener('keyup',e=>{keys[e.key.toLowerCase()]=false});
 addEventListener('blur',()=>{for(const k in keys)keys[k]=false});
@@ -2063,6 +2084,8 @@ cv.addEventListener('pointermove',e=>{
 });
 cv.addEventListener('pointerup',e=>{
   if(!drag)return;const wasDrag=drag.moved;drag=null;if(wasDrag||!started||P.dead)return;
+  if(!$('pmenu').classList.contains('hidden')){closePMenu();return}
+  const pid=playerAt(e.clientX,e.clientY);if(pid){openPMenu(pid,e.clientX,e.clientY);return}
   mouse.set(e.clientX/innerWidth*2-1,-(e.clientY/innerHeight)*2+1);ray.setFromCamera(mouse,camera);
   const hits=ray.intersectObjects(monsters.filter(m=>!m.dead).map(m=>m.g),true);
   if(hits.length){const m=hits[0].object.userData.mon;if(m){setTarget(m);P.auto=true;P.moveTo=null;return}}
@@ -2227,6 +2250,7 @@ function upsertPeer(p){
   if(!o){
     const mesh=makeHero(cls);scene.add(mesh);
     const lbl=document.createElement('div');lbl.className='lbl other';const nm=document.createElement('span');lbl.appendChild(nm);
+    lbl.addEventListener('click',ev=>{ev.stopPropagation();if(started&&!P.dead)openPMenu(p.peer,ev.clientX,ev.clientY)});
     const hb=document.createElement('div');hb.className='hb';const hi=document.createElement('i');hb.appendChild(hi);lbl.appendChild(hb);labelsEl.appendChild(lbl);
     const bub=document.createElement('div');bub.className='bub';bub.style.display='none';labelsEl.appendChild(bub);
     const recent=s.say&&Math.abs(Date.now()-num(s.say.ts,0))<15000; // mensagem recente chega junto com o jogador
