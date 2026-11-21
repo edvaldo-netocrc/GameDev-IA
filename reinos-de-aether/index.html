@@ -1473,8 +1473,9 @@ function drawMini(){
 
 /* ============ dia / noite ============ */
 const DAY_LEN=480;let dayT=0.1; // 0 = 06:00
-const SKY_DAY=new THREE.Color(0x9cc7e8),SKY_DUSK=new THREE.Color(0xe9976a),SKY_NIGHT=new THREE.Color(0x0b1230),DUN=new THREE.Color(0x07060a);
+const SKY_DAY=new THREE.Color(0x9cc7e8),SKY_DUSK=new THREE.Color(0xe9976a),SKY_NIGHT=new THREE.Color(0x1c2a55),DUN=new THREE.Color(0x07060a);
 let nightF=0;
+const heroLight=new THREE.PointLight(0xffd9a0,0,16,1.6);scene.add(heroLight); // lanterna do herói à noite
 function updSky(dt,inD){
   dayT=(dayT+dt/DAY_LEN)%1;
   const a=dayT*Math.PI*2,sh=Math.sin(a);
@@ -1483,19 +1484,20 @@ function updSky(dt,inD){
   const tx=P.pos.x,ty=P.pos.y,tz=P.pos.z;
   if(inD){
     scene.background=DUN;scene.fog.color.copy(DUN);scene.fog.near=14;scene.fog.far=85;
-    hemi.intensity=1.6;lin(hemi.color.setHex(0xb0a2c8));lin(hemi.groundColor.setHex(0x201810));sun.intensity=0;
+    hemi.intensity=1.6;renderer.toneMappingExposure=1.08;lin(hemi.color.setHex(0xb0a2c8));lin(hemi.groundColor.setHex(0x201810));sun.intensity=0;
     stars.visible=moon.visible=sunDisk.visible=false;if(sky)sky.visible=false;
   }else{
     stars.visible=moon.visible=true;sunDisk.visible=!sky;
     tmpC.copy(SKY_NIGHT).lerp(SKY_DAY,day);tmpC.lerp(SKY_DUSK,dusk*0.55);
     if(sky){sky.visible=true;scene.background=null;sky.position.copy(camera.position);sky.material.uniforms.sunPosition.value.set(Math.cos(a),sh,0.27).normalize()}
     else{if(!scene.background||!scene.background.isColor||scene.background===DUN)scene.background=new THREE.Color();scene.background.copy(tmpC)}
-    lin(scene.fog.color.copy(tmpC).lerp(tmpC2.setHex(0xc9dcec),day*0.55));scene.fog.near=80-nightF*30;scene.fog.far=260-nightF*80;
-    hemi.intensity=0.35+0.55*day;lin(hemi.color.copy(tmpC2.setHex(0x5a6aa0).lerp(tmpC.setHex(0xdcebff),day)));lin(hemi.groundColor.setHex(0x55603a));
+    lin(scene.fog.color.copy(tmpC).lerp(tmpC2.setHex(0xc9dcec),day*0.55));scene.fog.near=80-nightF*20;scene.fog.far=260-nightF*50;
+    hemi.intensity=0.78+0.12*day;lin(hemi.color.copy(tmpC2.setHex(0x9fb4ea).lerp(tmpC.setHex(0xdcebff),day)));lin(hemi.groundColor.copy(tmpC2.setHex(0x3c4a52).lerp(tmpC.setHex(0x55603a),day)));
+    renderer.toneMappingExposure=1.08+0.22*nightF; // a noite fica azulada, mas legível
     const isDay=sh>-0.05;
     const lx=Math.cos(a)*70,ly=Math.max(18,Math.abs(sh)*90);
     if(isDay){sun.position.set(tx+lx,ty+ly,tz+19);lin(sun.color.copy(tmpC2.setHex(0xffa060).lerp(tmpC.setHex(0xfff4e0),smooth(0,0.4,sh))));sun.intensity=0.35+1.15*day}
-    else{sun.position.set(tx-lx,ty+ly,tz-19);lin(sun.color.setHex(0x8aa0ff));sun.intensity=0.3}
+    else{sun.position.set(tx-lx,ty+ly,tz-19);lin(sun.color.setHex(0xa9bcff));sun.intensity=0.6} // luar
     sun.target.position.set(tx,ty,tz);
     stars.position.copy(camera.position);stars.material.opacity=nightF;
     sunDisk.position.set(camera.position.x+Math.cos(a)*450,camera.position.y+sh*450,camera.position.z+120);
@@ -1503,7 +1505,8 @@ function updSky(dt,inD){
     for(const c of clouds){c.position.x+=dt*2.2;if(c.position.x>260)c.position.x=-260;c.children.forEach(b=>b.material.opacity=0.92-nightF*0.5)}
   }
   for(const n of nightMats){lin((n.basic?n.m.color:n.m.emissive).copy(tmpC.setHex(n.day).lerp(tmpC2.setHex(n.night),nightF)))}
-  for(const l of townLights)l.intensity=nightF*1.6;for(const g of lampGlows)g.material.opacity=nightF*0.9;
+  for(const l of townLights)l.intensity=nightF*0.9;
+  heroLight.position.set(tx,ty+5,tz);heroLight.intensity=inD?0:nightF*(Math.hypot(tx,tz)<22?0.25:0.9);for(const g of lampGlows)g.material.opacity=nightF*0.9;
   const hr=(dayT*24+6)%24,h=Math.floor(hr),mi=Math.floor((hr-h)*60/10)*10;
   return `${nightF>0.5?'🌙':'☀️'} ${String(h).padStart(2,'0')}:${String(mi).padStart(2,'0')}`;
 }
