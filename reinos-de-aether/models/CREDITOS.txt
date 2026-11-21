@@ -8,5 +8,16 @@ Modelos 3D dos personagens (com animações reduzidas às usadas pelo jogo):
   KayKit : Skeletons Character Pack (1.0) — Kay Lousberg (www.kaylousberg.com)
   https://github.com/KayKit-Game-Assets/KayKit-Character-Pack-Skeletons-1.0
 
+- barbarian.glb (Ferreiro Borin)
+  KayKit : Adventurers Character Pack (1.0) — Kay Lousberg
+
+- village.glb (casas, taverna, ferraria, igreja, mercado, poço, moinho, torre e objetos da vila)
+  KayKit : Medieval Hexagon Pack (1.0) — Kay Lousberg
+  https://github.com/KayKit-Game-Assets/KayKit-Medieval-Hexagon-Pack-1.0
+
+- dungeon.glb (baús de loot, tochas, estandartes, barris, moedas e decoração da masmorra)
+  KayKit : Dungeon Remastered (1.0) — Kay Lousberg
+  https://github.com/KayKit-Game-Assets/KayKit-Dungeon-Remastered-1.0
+
 Licença: Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
 Uso livre em projetos pessoais, educacionais e comerciais. Crédito não obrigatório, mas agradecido.

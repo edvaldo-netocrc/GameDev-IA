@@ -334,7 +334,7 @@ for(let i=0;i<14;i++){const a=rnd()*6.28,r=4+rnd()*12;const l=new THREE.Mesh(new
 
 /* vila */
 const town=new THREE.Group();scene.add(town);
-const townLights=[],lampGlows=[];
+const townLights=[],lampGlows=[],houses=[],torchSticks=[];
 {
   const plaza=new THREE.Mesh(new THREE.CylinderGeometry(22,22.5,0.4,48),Lam(0x9a8a6e));plaza.position.y=-0.1;plaza.receiveShadow=true;town.add(plaza);
   const ring=new THREE.Mesh(new THREE.TorusGeometry(22.2,0.35,6,64),Lam(0x8c7a5c));ring.rotation.x=Math.PI/2;ring.position.y=0.1;town.add(ring);
@@ -355,7 +355,7 @@ const townLights=[],lampGlows=[];
     const win2=win.clone();win2.position.x=-1.7;h.add(win2);
     const chim=new THREE.Mesh(new THREE.BoxGeometry(0.6,1.6,0.6),Lam(0x7a6a5a));chim.position.set(1.4,5.6,-1);h.add(chim);
     h.rotation.y=Math.atan2(-hx,-hz);
-    town.add(h);occluders.push(wall,roof);solids.push({x:hx,z:hz,r:3.2});
+    const sol={x:hx,z:hz,r:3.2};town.add(h);occluders.push(wall,roof);solids.push(sol);houses.push({g:h,wall,roof,a,hx,hz,sol});
   }
   const lampMat=new THREE.MeshBasicMaterial({color:0x6a5a3a});nightMats.push({m:lampMat,basic:true,day:0x8a7a5a,night:0xffd27a});
   for(let i=0;i<10;i++){
@@ -367,10 +367,10 @@ const townLights=[],lampGlows=[];
   for(let i=0;i<3;i++){const a=i/3*Math.PI*2+0.5;const l=new THREE.PointLight(0xffb060,0,34,1.6);l.position.set(Math.cos(a)*11,4,Math.sin(a)*11);town.add(l);townLights.push(l)}
   // bigorna do ferreiro
   const anvil=new THREE.Group();anvil.position.set(-7,0,5);
-  anvil.add(part0(0.8,0.6,0.6,0x3a3a40,0,0.3,0));anvil.add(part0(1.4,0.35,0.6,0x50505a,0,0.75,0));town.add(anvil);
+  anvil.add(part0(0.8,0.6,0.6,0x3a3a40,0,0.3,0));anvil.add(part0(1.4,0.35,0.6,0x50505a,0,0.75,0));town.add(anvil);town.userData.anvil=anvil;
   const forge=new THREE.Mesh(new THREE.BoxGeometry(1.6,1.2,1.6),Lam(0x6a5a50));forge.position.set(-9.5,0.6,6.5);forge.castShadow=true;town.add(forge);
-  const fire=new THREE.Mesh(new THREE.BoxGeometry(1,0.2,1),new THREE.MeshBasicMaterial({color:0xff7a20}));fire.position.set(-9.5,1.25,6.5);town.add(fire);town.userData.forge=fire;
-  {const gs=glowSprite(0xff7a20,3,0.7);gs.position.set(-9.5,1.5,6.5);town.add(gs)}
+  const fire=new THREE.Mesh(new THREE.BoxGeometry(1,0.2,1),new THREE.MeshBasicMaterial({color:0xff7a20}));fire.position.set(-9.5,1.25,6.5);town.add(fire);town.userData.forge=fire;town.userData.forgeBox=forge;
+  {const gs=glowSprite(0xff7a20,3,0.7);gs.position.set(-9.5,1.5,6.5);town.add(gs);town.userData.forgeGlow=gs}
 }
 function part0(w,h,d,col,x,y,z){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),Lam(col));m.position.set(x,y,z);m.castShadow=true;return m}
 
@@ -475,7 +475,7 @@ const dungeon=new THREE.Group();scene.add(dungeon);
     const t=new THREE.CanvasTexture(cv);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.encoding=THREE.sRGBEncoding;return t})();
   const floorT=tex.clone();floorT.needsUpdate=true;floorT.repeat.set(10,30);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(44,124),new THREE.MeshLambertMaterial({map:floorT}));floor.rotation.x=-Math.PI/2;floor.position.set(DX,0,0);floor.receiveShadow=true;dungeon.add(floor);
-  const wallMat=new THREE.MeshLambertMaterial({map:tex,color:0x9a948c});
+  const wallMat=new THREE.MeshLambertMaterial({map:tex,color:0xb8b0a4,emissive:0x2a2420,emissiveMap:tex});
   const wb=(x0,x1,z0,z1,h)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,h,z1-z0),wallMat);m.position.set((x0+x1)/2,h/2,(z0+z1)/2);m.castShadow=m.receiveShadow=true;dungeon.add(m);walls.push({x0,x1,z0,z1});occluders.push(m)};
   wb(DX-22,DX-20,-62,62,9);wb(DX+20,DX+22,-62,62,9);wb(DX-22,DX+22,-62,-60,9);wb(DX-22,DX+22,60,62,9);
   wb(DX-20,DX-4,19,21,7);wb(DX+4,DX+20,19,21,7);
@@ -483,12 +483,12 @@ const dungeon=new THREE.Group();scene.add(dungeon);
   for(const z of [50,35,5,-8]){for(const x of [-12,12]){wb(DX+x-0.8,DX+x+0.8,z-0.8,z+0.8,8)}}
   // tochas
   const tor=[[-19.6,40],[19.6,40],[-19.6,0],[19.6,0],[-19.6,-40],[19.6,-40],[-19.6,-52],[19.6,-52]];
-  for(const [x,z] of tor){const s=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.9,0.3),Lam(0x4a3020));s.position.set(DX+x,3.2,z);dungeon.add(s);
+  for(const [x,z] of tor){const s=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.9,0.3),Lam(0x4a3020));s.position.set(DX+x,3.2,z);dungeon.add(s);torchSticks.push(s);
     const f=new THREE.Mesh(new THREE.SphereGeometry(0.28,8,6),new THREE.MeshBasicMaterial({color:0xffa030}));f.position.set(DX+x,3.8,z);dungeon.add(f);torchFlames.push(f);const gs=glowSprite(0xff9a40,3.6,0.85);gs.position.copy(f.position);dungeon.add(gs)}
   for(const z of [42,0,-40]){const l=new THREE.PointLight(0xff9a40,2.6,44,1.3);l.position.set(DX,5,z);dungeon.add(l);dunLights.push(l)}
   const bossL=new THREE.PointLight(0x9a50ff,2.6,34,1.3);bossL.position.set(DX,4,-50);dungeon.add(bossL);dunLights.push(bossL);
   // trono
-  const th=new THREE.Group();th.position.set(DX,0,-57);th.add(part0(4,1,3,0x302a3a,0,0.5,0));th.add(part0(3,5,0.8,0x302a3a,0,3,-1.2));dungeon.add(th);
+  const th=new THREE.Group();th.position.set(DX,0,-57);th.add(part0(4,1,3,0x302a3a,0,0.5,0));th.add(part0(3,5,0.8,0x302a3a,0,3,-1.2));dungeon.add(th);occluders.push(...th.children);
   // ossos espalhados
   for(let i=0;i<30;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.6+rnd()*0.5),Lam(0xd8d0bc));b.position.set(DX+(rnd()-0.5)*36,0.06,(rnd()-0.5)*110);b.rotation.y=rnd()*6;dungeon.add(b)}
 }
@@ -550,7 +550,7 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb'};
+const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb'};
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -934,7 +934,8 @@ function telegraph(pos,r,dmg,col){
 const drops=[];
 function dropItem(it,pos){
   const g=new THREE.Group();g.position.set(pos.x+(rnd()-0.5)*2,0,pos.z+(rnd()-0.5)*2);g.position.y=H(g.position.x,g.position.z);
-  g.add(part(0.7,0.5,0.5,0x7a4a20,0,0.25,0));g.add(part(0.74,0.12,0.54,0xd9a84a,0,0.52,0));
+  const chest=propClone('dungeon',it.rar>=3?'chest_gold':'chest',0.5);
+  if(chest){chest.rotation.y=rnd()*6.28;g.add(chest)}else{g.add(part(0.7,0.5,0.5,0x7a4a20,0,0.25,0));g.add(part(0.74,0.12,0.54,0xd9a84a,0,0.52,0))}
   const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.35,6,8,1,true),new THREE.MeshBasicMaterial({color:RAR[it.rar].h,transparent:true,opacity:0.35+it.rar*0.1,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
   beam.position.y=3;g.add(beam);scene.add(g);
   const lbl=mkLabel(`<span style="color:${RAR[it.rar].c}">${esc(it.name)}</span>`,'loot');
@@ -1036,8 +1037,8 @@ function teleport(x,z,title,sub){P.pos.set(x,0,z);AUTO.anchor.set(x,0,z);AUTO.lo
 function actTalk(){
   if(P.dead)return;
   const opts=[
-    {o:healer,r:5,f:()=>{P.hp=P.maxHp;P.mp=P.maxMp;ringFx(P.pos,4,0x7dff9a);emit(P.pos.clone().setY(P.pos.y+0.5),0x7dff9a,40,1.5,4,1.2,0,1.2);log('Curandeira Lia: '+pick(healLines)+' (vida e mana restauradas)','npc')}},
-    {o:smith,r:5,f:()=>{openShop();log('Ferreiro Borin: Armas e armaduras fresquinhas da forja! Também compro o que você não quiser.','npc')}},
+    {o:healer,r:5,f:()=>{npcGesture(healer,'Spellcast_Long');P.hp=P.maxHp;P.mp=P.maxMp;ringFx(P.pos,4,0x7dff9a);emit(P.pos.clone().setY(P.pos.y+0.5),0x7dff9a,40,1.5,4,1.2,0,1.2);log('Curandeira Lia: '+pick(healLines)+' (vida e mana restauradas)','npc')}},
+    {o:smith,r:5,f:()=>{npcGesture(smith,'Interact');openShop();log('Ferreiro Borin: Armas e armaduras fresquinhas da forja! Também compro o que você não quiser.','npc')}},
     {o:entrance,r:7,f:()=>{if(P.lvl<10)log(`Cuidado: a masmorra é para nível 10+. Você é nível ${P.lvl}.`,'bad');teleport(DX,53.5,'Masmorra Esquecida','O Lich Morvath aguarda no salão do trono')}},
     {o:exitPortal,r:6,f:()=>{const a=entrance.rotation.y;teleport(ENT.x+Math.sin(a)*8,ENT.z+Math.cos(a)*8,'Terras de Pedra','Você voltou ao mundo')}}
   ];
@@ -1600,7 +1601,8 @@ function update(dt){
   for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.t+=dt;const k=e.t/e.dur;if(k>=1){scene.remove(e.m);effects.splice(i,1)}else e.upd(e,k)}
   // ambiente
   town.userData.crystal.rotation.y+=dt;town.userData.crystal.position.y=3.9+Math.sin(now*2)*0.2;
-  if(rnd()<0.3)emit(new THREE.Vector3(-9.5,1.4,6.5),0xff8a30,1,0.6,2,0.8,0,0.8);
+  if(!town.userData.built&&rnd()<0.3)emit(new THREE.Vector3(-9.5,1.4,6.5),0xff8a30,1,0.6,2,0.8,0,0.8);
+  for(const u of npcAnims){u.t+=dt;if(u.t>=u.lock&&u.curName!==u.idle)playAnim(u,u.idle);u.mixer.update(dt)}
   healer.rotation.y=angLerp(healer.rotation.y,Math.atan2(P.pos.x-healer.position.x,P.pos.z-healer.position.z),dt*2);
   smith.rotation.y=angLerp(smith.rotation.y,Math.atan2(P.pos.x-smith.position.x,P.pos.z-smith.position.z),dt*2);
   entrance.userData.portal.userData.disc.material.opacity=0.35+Math.sin(now*3)*0.15;exitPortal.userData.disc.material.opacity=0.35+Math.sin(now*3)*0.15;
@@ -1621,9 +1623,9 @@ function update(dt){
   let dist=cam.dist;if(inD)dist=Math.min(dist,16);
   // aproxima a câmera quando uma casa ou parede fica entre ela e o jogador
   camDir.set(Math.sin(cam.yaw)*Math.cos(cam.pitch),Math.sin(cam.pitch),Math.cos(cam.yaw)*Math.cos(cam.pitch));
-  camRay.set(tmp.set(tx,ty,tz),camDir);camRay.far=dist;
+  camRay.set(tmp.set(tx,ty,tz),camDir);camRay.far=dist+1.2;
   const oh=camRay.intersectObjects(occluders,false);
-  if(oh.length)dist=Math.max(2.5,oh[0].distance-0.6);
+  if(oh.length)dist=Math.max(2.5,Math.min(dist,oh[0].distance-0.9));
   camDist=camDist<dist?Math.min(dist,camDist+dt*12):dist;dist=camDist;
   let cx=tx+Math.sin(cam.yaw)*Math.cos(cam.pitch)*dist,cz=tz+Math.cos(cam.yaw)*Math.cos(cam.pitch)*dist,cy=ty+Math.sin(cam.pitch)*dist;
   cy=Math.max(cy,H(cx,cz)+1.2);
@@ -1667,7 +1669,66 @@ function resetStartBtn(){overwriteOk=false;$('err').textContent='';const b=$('go
   if(!assetsReady){b.disabled=true;b.textContent=`Carregando personagens… ${Math.round(loadPct*100)}%`;return}
   b.disabled=false;if(!sv){b.textContent='Entrar no mundo';return}
   const same=$('nameIn').value.trim()===sv.name&&chosen===sv.cls;b.textContent=same?`Continuar (Nv ${sv.lvl})`:'Criar novo personagem'}
+function propClone(lib,name,scale){ // cópia de uma peça estática (construção, baú, barril…)
+  const src=MODELS[lib]&&MODELS[lib].scene.getObjectByName(name);if(!src)return null;
+  const o=src.clone(true);o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.setScalar(scale);const g=new THREE.Group();g.add(o);return g}
+const _bx=new THREE.Box3(),_bv=new THREE.Vector3();
+function placeProp(lib,name,scale,x,z,yaw,parent,solidK,occ){
+  const g=propClone(lib,name,scale);if(!g)return null;g.position.set(x,inDungeon(x)?0:H(x,z),z);g.rotation.y=yaw||0;(parent||scene).add(g);
+  if(occ)g.traverse(o=>{if(o.isMesh)occluders.push(o)});
+  if(solidK){g.updateMatrixWorld(true);_bx.setFromObject(g).getSize(_bv);const r=Math.max(_bv.x,_bv.z)/2*solidK;solids.push({x,z,r})}
+  return g}
+const VILLAGE_FACE=Math.PI; // as portas dos modelos ficam viradas para -Z
+function buildVillage(){
+  if(!MODELS.village||town.userData.built)return;town.userData.built=true;
+  for(const k of ['anvil','forge','forgeBox','forgeGlow'])if(town.userData[k])town.userData[k].visible=false; // a ferraria nova já tem forja
+  const set=['church','home_A','blacksmith','tavern','home_B','market'],S=5.2;
+  houses.forEach((hs,i)=>{
+    const b=propClone('village',set[i],S);if(!b)return;
+    hs.g.visible=false;for(const m of [hs.wall,hs.roof]){const k=occluders.indexOf(m);if(k>=0)occluders.splice(k,1)}
+    b.position.set(hs.hx,0,hs.hz);b.rotation.y=hs.g.rotation.y+VILLAGE_FACE;town.add(b);
+    b.updateMatrixWorld(true);_bx.setFromObject(b).getSize(_bv);hs.sol.r=Math.max(_bv.x,_bv.z)/2*0.82;
+    b.traverse(o=>{if(o.isMesh)occluders.push(o)});
+  });
+  const at=(a,r)=>[Math.cos(a)*r,Math.sin(a)*r],face=(x,z)=>Math.atan2(-x,-z)+VILLAGE_FACE;
+  // poço, barracas e objetos espalhados pela praça
+  {const [x,z]=at(0.82,16.3);placeProp('village','well',4.2,x,z,face(x,z),town,0.8,true)}
+  {const [x,z]=at(5.0,17.2);placeProp('village','tent',4.4,x,z,face(x,z),town,0.7,true)}
+  for(const [nm,a,r,sc,k] of [['barrel',3.2,12.6,4.5,0.9],['barrel',3.3,13.4,4.5,0.9],['crate',3.68,12.8,4.5,0.9],['weaponrack',2.62,12.2,5,0.8],['lumber',2.12,12.9,4.5,0.8],['crate',5.85,12.7,4.5,0.9],['crate_s',5.95,13.1,4.5,0],['sack',5.75,12.2,5,0],['wheelbarrow',1.2,12.4,4.5,0.7],['barrel',4.25,12.6,4.5,0.9]]){
+    const [x,z]=at(a,r);placeProp('village',nm,sc,x,z,face(x,z)+(Math.random()-0.5)*0.6,town,k)}
+  for(let i=0;i<6;i++){const a=0.3+i*Math.PI/3+Math.PI/6,[x,z]=at(a,23.4);placeProp('village','flag',5,x,z,face(x,z),town,0)}
+  // moinho e torre de vigia fora da vila
+  placeProp('village','windmill',6,0,-30.5,0.4,scene,0.6,true);
+  placeProp('village','tower',5,-24,-16,0.8,scene,0.6,true);
+}
+function decorateDungeon(){
+  if(!MODELS.dungeon||dungeon.userData.built)return;dungeon.userData.built=true;
+  // tochas de parede no lugar das hastes simples
+  torchSticks.forEach((st,i)=>{const t=propClone('dungeon','torch',1.3);if(!t)return;st.visible=false;const left=st.position.x<DX;
+    t.position.set(st.position.x+(left?0.05:-0.05),2.9,st.position.z);t.rotation.y=left?Math.PI/2:-Math.PI/2;dungeon.add(t)});
+  const wall=(nm,sc,x,z,yaw,y)=>{const g=propClone('dungeon',nm,sc);if(!g)return;g.position.set(DX+x,y||0,z);g.rotation.y=yaw;dungeon.add(g);return g};
+  for(const z of [28,8,-28,-46]){wall('banner',1.5,-19.85,z,Math.PI/2,1.2);wall('banner',1.5,19.85,z,-Math.PI/2,1.2)}
+  wall('sword_shield',1.6,0,-59.7,0,4.2);
+  for(const [x,z] of [[-5,-56],[5,-56]]){wall('coins',1.2,x,z,Math.random()*6);wall('candles',1.5,x*1.5,-58.5,0)}
+  const solidBox=(x,z,r)=>walls.push({x0:DX+x-r,x1:DX+x+r,z0:z-r,z1:z+r});
+  for(const [nm,sc,x,z,r] of [['barrel',0.75,-17.5,57,0.8],['barrel',0.75,-15.6,57.6,0.8],['crates',0.9,17,56.5,1.1],['barrel',0.75,17.5,23,0.8],['crates',0.9,-17,-17,1.1],['barrel',0.75,-17.5,-23,0.8],['barrel',0.75,16.8,-56,0.8],['crates',0.9,-16.5,-55,1.1]]){
+    wall(nm,sc,x,z,Math.random()*6);solidBox(x,z,r)}
+}
+const npcAnims=[];
+function upgradeNPCs(){
+  const swap=(npc,r,idle)=>{if(!r)return null;for(const c of [...npc.children])npc.remove(c);npc.add(r.m||r);const u={mixer:r.mixer,actions:r.actions,t:0,lock:0,cur:null,curName:null,idle};playAnim(u,idle);npc.userData.npc=u;npcAnims.push(u);return r};
+  if(MODELS.mage&&!healer.userData.npc){const r=cloneModel('mage',2.25);
+    for(const n of ['Spellbook','Spellbook_open','1H_Wand'])if(r.parts[n])r.parts[n].visible=false;
+    const cape=r.parts.Mage_Cape,hat=r.parts.Mage_Hat;if(cape)cape.material.color.copy(lin(tmpC.setHex(0x9dffb0)));if(hat)hat.material.color.copy(lin(tmpC.setHex(0xd8fff0)));
+    swap(healer,r,'Idle')}
+  if(MODELS.barbarian&&!smith.userData.npc){const r=cloneModel('barbarian',2.4);
+    for(const n of ['1H_Axe_Offhand','Barbarian_Round_Shield','2H_Axe','Mug'])if(r.parts[n])r.parts[n].visible=false;
+    swap(smith,r,'Idle')}
+}
+function npcGesture(npc,name){const u=npc.userData.npc;if(!u)return;u.lock=u.t+playAnim(u,name,true,1.1)*0.95}
 function modelsArrived(ok){ // modelos prontos: troca os bonecos simples pelos animados
+  buildVillage();decorateDungeon();upgradeNPCs();
+  ok=!!(MODELS.knight&&MODELS.mage);
   modelsOK=ok;if(ok){upgradeMonsterModels();
     for(const o of others.values()){if(o.mesh.userData.model)continue;const n=makeHero(o.cls);n.position.copy(o.mesh.position);n.rotation.y=o.mesh.rotation.y;scene.remove(o.mesh);o.mesh=n;scene.add(n);if(o.eqR)applyLook(n.userData,o.cls,...o.eqR)}
     if(P.mesh&&!P.mesh.userData.model){const n=makeHero(P.cls);n.position.copy(P.mesh.position);scene.remove(P.mesh);P.mesh=n;scene.add(n);refreshLook()}}
