@@ -349,6 +349,7 @@ function angLerp(a,b,t){let d=b-a;while(d>Math.PI)d-=Math.PI*2;while(d<-Math.PI)
 const WORLD_R=195;
 const LAKE={x:45,z:-35},WATER_Y=-0.2;
 const DX=700; // masmorra fica em x≈700
+const ENVP={fireDeco:[],spikes:[],swTrees:[],swMush:[],pillars:[],dpil:[],dbones:[]}; // decorações procedurais que o Blender substitui
 const inDungeon=x=>x>400;
 function Hbase(x,z){
   const d=Math.hypot(x,z);
@@ -607,11 +608,11 @@ const dungeon=new THREE.Group();scene.add(dungeon);
   const floorT=tex.clone();floorT.needsUpdate=true;floorT.repeat.set(10,30);
   const floor=new THREE.Mesh(new THREE.PlaneGeometry(44,124),new THREE.MeshLambertMaterial({map:floorT}));floor.rotation.x=-Math.PI/2;floor.position.set(DX,0,0);floor.receiveShadow=true;dungeon.add(floor);
   const wallMat=new THREE.MeshLambertMaterial({map:tex,color:0xb8b0a4,emissive:0x2a2420,emissiveMap:tex});
-  const wb=(x0,x1,z0,z1,h)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,h,z1-z0),wallMat);m.position.set((x0+x1)/2,h/2,(z0+z1)/2);m.castShadow=m.receiveShadow=true;dungeon.add(m);walls.push({x0,x1,z0,z1});occluders.push(m)};
+  const wb=(x0,x1,z0,z1,h)=>{const m=new THREE.Mesh(new THREE.BoxGeometry(x1-x0,h,z1-z0),wallMat);m.position.set((x0+x1)/2,h/2,(z0+z1)/2);m.castShadow=m.receiveShadow=true;dungeon.add(m);walls.push({x0,x1,z0,z1});occluders.push(m);return m};
   wb(DX-22,DX-20,-62,62,9);wb(DX+20,DX+22,-62,62,9);wb(DX-22,DX+22,-62,-60,9);wb(DX-22,DX+22,60,62,9);
   wb(DX-20,DX-4,19,21,7);wb(DX+4,DX+20,19,21,7);
   wb(DX-20,DX-4,-21,-19,7);wb(DX+4,DX+20,-21,-19,7);
-  for(const z of [50,35,5,-8]){for(const x of [-12,12]){wb(DX+x-0.8,DX+x+0.8,z-0.8,z+0.8,8)}}
+  for(const z of [50,35,5,-8]){for(const x of [-12,12]){ENVP.dpil.push({m:wb(DX+x-0.8,DX+x+0.8,z-0.8,z+0.8,8),x:DX+x,z})}}
   // tochas
   const tor=[[-19.6,40],[19.6,40],[-19.6,0],[19.6,0],[-19.6,-40],[19.6,-40],[-19.6,-52],[19.6,-52]];
   for(const [x,z] of tor){const s=new THREE.Mesh(new THREE.BoxGeometry(0.3,0.9,0.3),Lam(0x4a3020));s.position.set(DX+x,3.2,z);dungeon.add(s);torchSticks.push(s);
@@ -619,9 +620,9 @@ const dungeon=new THREE.Group();scene.add(dungeon);
   for(const z of [42,0,-40]){const l=new THREE.PointLight(0xff9a40,2.6,44,1.3);l.position.set(DX,5,z);dungeon.add(l);dunLights.push(l)}
   const bossL=new THREE.PointLight(0x9a50ff,2.6,34,1.3);bossL.position.set(DX,4,-50);dungeon.add(bossL);dunLights.push(bossL);
   // trono
-  const th=new THREE.Group();th.position.set(DX,0,-57);th.add(part0(4,1,3,0x302a3a,0,0.5,0));th.add(part0(3,5,0.8,0x302a3a,0,3,-1.2));dungeon.add(th);occluders.push(...th.children);
+  const th=new THREE.Group();th.position.set(DX,0,-57);th.add(part0(4,1,3,0x302a3a,0,0.5,0));th.add(part0(3,5,0.8,0x302a3a,0,3,-1.2));dungeon.add(th);ENVP.throne=th;occluders.push(...th.children);
   // ossos espalhados
-  for(let i=0;i<30;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.6+rnd()*0.5),Lam(0xd8d0bc));b.position.set(DX+(rnd()-0.5)*36,0.06,(rnd()-0.5)*110);b.rotation.y=rnd()*6;dungeon.add(b)}
+  for(let i=0;i<30;i++){const b=new THREE.Mesh(new THREE.BoxGeometry(0.12,0.12,0.6+rnd()*0.5),Lam(0xd8d0bc));b.position.set(DX+(rnd()-0.5)*36,0.06,(rnd()-0.5)*110);b.rotation.y=rnd()*6;dungeon.add(b);ENVP.dbones.push(b)}
 }
 function makePortal(color){
   const g=new THREE.Group();
@@ -682,9 +683,8 @@ function makeHeroBox(cls){
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
 const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
-const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut'];
+const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate'];
 for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb'; // cenário modelado no Blender
-const ENVP={fireDeco:[],spikes:[],swTrees:[],swMush:[],pillars:[]}; // decorações procedurais que o Blender substitui
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -2717,12 +2717,12 @@ function placeProp(lib,name,scale,x,z,yaw,parent,solidK,occ){
   return g}
 const VILLAGE_FACE=Math.PI;
 /* ============ cenário modelado no Blender (models/env) ============ */
-const ENV_CACHE={};
+const ENV_CACHE={};const ENV_RAW=new Set(['lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate']); // pedra escura: cores já no tom certo
 function envParts(k){ // geometria de cada material, já sem o deslocamento da vitrine do Blender
   if(ENV_CACHE[k])return ENV_CACHE[k];const g=MODELS['env_'+k];if(!g)return null;
   const root=g.scene.clone(true);for(const c of root.children)c.position.set(0,0,0);root.position.set(0,0,0);root.updateMatrixWorld(true);
   const out=[];root.traverse(o=>{if(!o.isMesh)return;const geo=o.geometry.clone().applyMatrix4(o.matrixWorld);let mat=o.material.clone();
-    for(const ch of ['r','g','b'])mat.color[ch]=Math.pow(mat.color[ch],2); // cores do Blender mais saturadas, no tom do resto do mundo
+    if(!ENV_RAW.has(k))for(const ch of ['r','g','b'])mat.color[ch]=Math.pow(mat.color[ch],2); // cores do Blender mais saturadas, no tom do resto do mundo
     if(GFX.lo){const em=mat.emissive&&(mat.emissive.r+mat.emissive.g+mat.emissive.b)>0.05;mat=new THREE.MeshLambertMaterial({color:mat.color,emissive:em?mat.emissive:0x000000,flatShading:true});LIN.add(mat)}
     else{mat.flatShading=true;LIN.add(mat)}
     out.push({geo,mat,glow:!!(mat.emissive&&(mat.emissive.r+mat.emissive.g+mat.emissive.b)>0.05)})});
@@ -2756,6 +2756,21 @@ function buildEnv(){
   for(const p of ENVP.pillars){p.m.visible=false;envPlace('obsidian_pillar',p.x,p.z,p.a,0.88)}
   for(const i of [2,7])for(const s of [-1,1]){const a=i/10*Math.PI*2+s*0.2,x=WB_POS.x+Math.cos(a)*19.5,z=WB_POS.z+Math.sin(a)*19.5;envPlace('brazier',x,z,a,1.1,0.8);
     const f=glowSprite(0xff8a2a,2.6,0.8);f.position.set(x,H(x,z)+2.2,z);scene.add(f)}
+  // Masmorra Esquecida: colunas góticas, trono do Lich, sarcófagos, jaulas, candelabros e ossadas
+  const unOcc=m=>{const k=occluders.indexOf(m);if(k>=0)occluders.splice(k,1)};
+  for(const p of ENVP.dpil){p.m.visible=false;const g=envPlace('gothic_pillar',p.x,p.z,0,1,0,0);if(g)g.traverse(o=>{if(o.isMesh)occluders.push(o)});unOcc(p.m)}
+  if(ENVP.throne){ENVP.throne.children.forEach(c=>{c.visible=false;unOcc(c)});envPlace('lich_throne',DX,-57.4,0,0.82,0,0);
+    for(const [x,z] of [[-2.2,-55.8],[2.2,-55.8]]){const gs=glowSprite(0xb36bff,2.2,0.6);gs.position.set(DX+x,1.8,z);scene.add(gs)}}
+  ENVP.dbones.forEach(b=>b.visible=false);
+  envInst('bone_pile',ENVP.dbones.filter((b,i)=>i%2===0&&Math.abs(b.position.x-DX)<17).map((b,i)=>({x:b.position.x,z:b.position.z,y:0,yaw:b.rotation.y,s:0.8+(i%3)*0.2})),false);
+  const wbox=(x,z,rx,rz)=>walls.push({x0:x-rx,x1:x+rx,z0:z-rz,z1:z+rz});
+  for(const [x,z] of [[-18.4,44],[18.4,40],[-18.4,12],[18.4,-12],[-18.4,-34],[18.4,-32]]){envPlace('sarcophagus',DX+x,z,0,1.1,0,0);wbox(DX+x,z,0.9,1.5)}
+  for(const [x,z,yaw] of [[-19,30,Math.PI/2],[19,-2,-Math.PI/2],[-19,-46,Math.PI/2],[19,52,-Math.PI/2]]){envPlace('gibbet_cage',DX+x,z,yaw,1.1,0,0);wbox(DX+x,z,0.3,0.3)}
+  for(const [x,z] of [[-4.6,-53.5],[4.6,-53.5],[-4,17.5],[4,17.5],[-4,-17.5],[4,-17.5]]){envPlace('candelabra',DX+x,z,x,1.1,0,0);wbox(DX+x,z,0.35,0.35);
+    const gs=glowSprite(0xffb050,2.4,0.75);gs.position.set(DX+x,2.85,z);scene.add(gs)}
+  if(entrance.userData.portal){for(const c of entrance.children)if(c!==entrance.userData.portal)c.visible=false;
+    const gt=envClone('dungeon_gate',1);if(gt){entrance.add(gt);for(const x of [-4.6,4.6]){const gs=glowSprite(0xb36bff,2.6,0.7);gs.position.set(x,1.2,0.9);entrance.add(gs)}
+      const sk=glowSprite(0xc080ff,1.6,0.8);sk.position.set(0,8.75,1.3);entrance.add(sk)}}
   // Campos: pedras com musgo, arbustos floridos e tufos de flores
   const free=(x,z,r)=>lakeMask(x,z)<=0.05&&Math.hypot(x,z)>24&&!obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<o.r+r)&&!inOrcs(x,z)&&!inSwamp(x,z);
   const ra=[],rb=[],bush=[],wild=[];

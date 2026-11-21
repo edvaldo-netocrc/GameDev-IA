@@ -36,4 +36,5 @@ modelagem procedural (bpy/bmesh), low-poly com flat shading:
   swamp_tree, glow_mushrooms, witch_hut (Pântano Assombrado)
   obsidian_pillar, brazier (Arena do Azgaroth)
   loot_chest (baús de loot), rock_a, rock_b, flower_bush, wildflowers (campos)
+  lich_throne, gothic_pillar, bone_pile, sarcophagus, candelabra, gibbet_cage, dungeon_gate (Masmorra Esquecida)
   Script-fonte: ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
