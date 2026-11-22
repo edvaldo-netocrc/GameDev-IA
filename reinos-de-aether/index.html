@@ -693,7 +693,8 @@ function makeHeroBox(cls){
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
 const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
 const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate'];
-for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb'; // cenário modelado no Blender
+for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb';
+for(const k of ['weapons','helms','armor'])MODEL_FILES['gear_'+k]='models/gear/gear_'+k+'.glb'; // equipamento modelado no Blender, 4 gerações // cenário modelado no Blender
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -755,6 +756,7 @@ function driveHero(g,moving,trig,dead,dt){
     if(u.emo&&moving){u.lock=0;u.emo=false}
     if(u.t>=u.lock){u.emo=false;const base=moving?'Running_A':'Idle';if(u.curName!==base)playAnim(u,base,false,moving?1.2:1)}
   }
+  if(u.gem){const a=u.t*1.5;u.gem.position.set(Math.cos(a)*0.8,1.15+Math.sin(u.t*2.3)*0.1,Math.sin(a)*0.8);u.gem.rotation.y=u.t*2.5}
   u.mixer.update(dt);return true;
 }
 const MON_MODEL={ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
@@ -1074,6 +1076,8 @@ const STN={atk:'Ataque',def:'Defesa',hp:'Vida',mp:'Mana',crit:'Crítico %'};
 const BASEN={weapon:{guerreiro:['Espada','Lâminas Gêmeas','Machado e Escudo'],mago:['Cajado','Cetro','Varinha']},armor:{guerreiro:['Peitoral de Placas','Cota de Malha','Gibão de Couro'],mago:['Manto','Túnica','Cota Arcana']},helm:{guerreiro:['Elmo','Capuz de Urso'],mago:['Chapéu Arcano','Capuz Místico'],barbaro:['Capuz de Urso','Elmo de Aço']},ring:{guerreiro:['Anel','Sinete'],mago:['Anel','Sinete'],barbaro:['Anel','Bracelete']}};
 BASEN.weapon.barbaro=['Machado de Guerra','Machados Gêmeos','Machado e Broquel'];BASEN.armor.barbaro=['Gibão','Couraça de Couro','Peitoral de Placas'];
 const MATN=[['de Ferro','de Carvalho'],['de Aço','de Freixo'],['de Mithril','de Runas'],['de Dragão','das Estrelas']];
+const GEAR_LV=[1,8,18,25]; // gerações de equipamento: ferro (1), aço (8), mithril (18), dragão (25)
+const gTier=lvl=>lvl>=25?3:lvl>=18?2:lvl>=8?1:0;
 const SUFN=[[],['do Vigor','da Força','da Sabedoria'],['do Lobo Uivante','da Tempestade','do Guardião'],['da Aurora Eterna','do Rei Caído','do Abismo']];
 let uid=1;
 function icoOf(it){return it.slot==='weapon'?(it.cls==='mago'?'🪄':it.cls==='barbaro'?'🪓':'🗡️'):it.slot==='armor'?'🛡️':it.slot==='helm'?'⛑️':'💍'}
@@ -1083,7 +1087,7 @@ function makeItem(slot,lvl,rar,cls){
   else if(slot==='armor'){st.def=Math.round(b*m*0.8);st.hp=Math.round(lvl*6*m+10)}
   else if(slot==='helm'){st.def=Math.round(b*m*0.45);st[cls==='mago'?'mp':'hp']=Math.round(lvl*4*m+6)}
   else{st.atk=Math.round(b*m*0.35);st.crit=1+rar*2;if(rar>=1)st.mp=Math.round(lvl*4*m)}
-  const tier=Math.min(3,Math.floor((lvl-1)/4)),mi=cls==='mago'?1:0;
+  const tier=gTier(lvl),mi=cls==='mago'?1:0;
   const name=pick(BASEN[slot][cls]||BASEN[slot].guerreiro)+' '+MATN[tier][mi]+(rar?' '+pick(SUFN[rar]):'');
   return{id:uid++,slot,lvl,rar,cls,name,st,val:Math.round((6+lvl*4)*[1,2.5,6,15][rar])};
 }
@@ -1133,9 +1137,9 @@ function lookOf(cls,eq){const a=eq.armor,h=eq.helm,w=eq.weapon,nat=NATIVE[cls]||
   else if(cls==='barbaro'){if(w&&has(w,'Machados Gêmeos','Machado Duplo')){main='1H_Axe';off='1H_Axe_Offhand'}else if(w&&has(w,'Machado e Broquel','Martelo')){main='1H_Axe';off='Barbarian_Round_Shield'}else main='2H_Axe'}
   else{if(w&&has(w,'Lâmina')){main='1H_Sword';off='1H_Sword_Offhand'}else if(w&&has(w,'Machado')){main='1H_Axe';off=SHIELDS[Math.min(3,wr)]}
     else if(w&&wr>=3){main='2H_Sword'}else{main='1H_Sword';off=SHIELDS[Math.min(3,w?wr:0)]}}
-  return[o,a?a.rar:-1,hs,h?h.rar:-1,main,off,w?w.rar:-1,w?(w.ref||0):0]}
+  const rg=eq.ring;return[o,a?a.rar:-1,hs,h?h.rar:-1,main,off,w?w.rar:-1,w?(w.ref||0):0,a?gTier(a.lvl):-1,h?gTier(h.lvl):-1,w?gTier(w.lvl):-1,rg?gTier(rg.lvl):-1,rg?rg.rar:-1]}
 function sanLook(L,cls){if(!Array.isArray(L)||L.length<8)return null;const nat=NATIVE[cls]||'knight',r=x=>clamp(Math.floor(num(x,-1)),-1,3);
-  return[OUTFIT_PARTS[L[0]]?L[0]:nat,r(L[1]),HAT[L[2]]?L[2]:'',r(L[3]),WPN_SRC[L[4]]?L[4]:'',WPN_SRC[L[5]]?L[5]:'',r(L[6]),clamp(Math.floor(num(L[7],0)),0,7)]}
+  return[OUTFIT_PARTS[L[0]]?L[0]:nat,r(L[1]),HAT[L[2]]?L[2]:'',r(L[3]),WPN_SRC[L[4]]?L[4]:'',WPN_SRC[L[5]]?L[5]:'',r(L[6]),clamp(Math.floor(num(L[7],0)),0,7),r(L[8]),r(L[9]),r(L[10]),r(L[11]),r(L[12])]}
 function setHue(m,h){if(!m||!m.material)return;const mt=m.material;if(!mt.userData.hueU){if(!h)return;mt.userData.hueU={value:0};
     mt.onBeforeCompile=sh=>{sh.uniforms.uHue=mt.userData.hueU;sh.fragmentShader='uniform float uHue;\nvec3 hueRot(vec3 c,float a){const vec3 k=vec3(0.57735);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.0-ca);}\n'+
       sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.rgb=max(hueRot(diffuseColor.rgb,uHue),0.0);')};mt.customProgramCacheKey=()=>'hue';mt.needsUpdate=true}
@@ -1157,6 +1161,24 @@ function outfitMeshes(u,root,src){ // corpo/braços/pernas de outro modelo, reli
     const bs=sm.skeleton.bones.map(b=>bones[b.name]);if(bs.some(b=>!b))return null;
     skel.parent.add(m);m.bind(new THREE.Skeleton(bs,sm.skeleton.boneInverses),sm.bindMatrix);out.push(m)}
   u.outfits[src]=out;return out}
+const GQ_FLIP=new THREE.Quaternion(0,-1,0,0),GQ_ID=new THREE.Quaternion();
+function gearSrc(name){for(const k of ['gear_weapons','gear_helms','gear_armor']){const g=MODELS[k];const o=g&&g.scene.getObjectByName(name);if(o)return o}return null}
+function grabGear(u,root,name,bone,pos,q,s){ // peça do Blender presa a um osso do herói (com cache)
+  u.gear=u.gear||{};const key=name+'@'+bone+'@'+s;if(u.gear[key])return u.gear[key];const src=gearSrc(name);const b=bone?root.getObjectByName(bone):root;if(!src||!b)return null;
+  const c=src.clone(true);c.position.copy(pos);c.quaternion.copy(q);c.scale.setScalar(s||1);
+  c.traverse(x=>{if(x.isMesh){x.material=x.material.clone();for(const ch of ['r','g','b'])x.material.color[ch]=Math.pow(x.material.color[ch],1.6);if(x.material.metalness!=null){x.material.metalness=Math.min(x.material.metalness,0.3);x.material.roughness=Math.max(x.material.roughness,0.45)}LIN.add(x.material);x.castShadow=true;x.frustumCulled=false;
+    x.userData.ownGlow=!!(x.material.emissive&&(x.material.emissive.r+x.material.emissive.g+x.material.emissive.b)>0.05)}});
+  b.add(c);u.gear[key]=c;return c}
+function gearGlow(o,rar,rf){if(!o)return;const g=rar>=2||rf>=5;o.traverse(x=>{if(!x.isMesh||x.userData.ownGlow||!x.material.emissive)return;if(g)x.material.emissive.copy(lin(tmpC.setHex(RAR[Math.max(2,rar)].h))).multiplyScalar(rar>=3?0.05:0.03+Math.max(0,rf-4)*0.025);else x.material.emissive.setRGB(0,0,0)})}
+const GV=(x,y,z)=>new THREE.Vector3(x,y,z);
+function gearWeapons(cls,main,off,wt){ // qual peça do Blender vai em cada mão
+  const R='handslotr',Lh='handslotl',mainP=GV(0,0.033,0),offP=GV(0,0.017,0),shP=GV(0,0.017,0.156),out=[],keep=[];
+  const sh=n=>SHIELDS.includes(n)||n==='Barbarian_Round_Shield';
+  if(cls==='mago'){if(main==='2H_Staff')out.push(['staff'+wt,R,mainP,GQ_FLIP,1]);else{out.push(['staff'+wt,R,mainP,GQ_FLIP,0.6]);if(off)keep.push(off)}}
+  else{const ax=main==='1H_Axe'||main==='2H_Axe',w=ax?'axe':'sword';
+    const sc=main==='2H_Sword'?1.08:main==='2H_Axe'?1:ax?0.72:1;out.push([w+wt,R,mainP,GQ_FLIP,sc]);
+    if(off&&sh(off))out.push(['shield'+wt,Lh,shP,GQ_ID,1]);else if(off==='1H_Sword_Offhand')out.push(['sword'+wt,Lh,offP,GQ_ID,0.9]);else if(off==='1H_Axe_Offhand')out.push(['axe'+wt,Lh,offP,GQ_ID,0.68])}
+  return{out,keep}}
 function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.root)return;u.lookKey=key;const R=u.root;const nat=NATIVE[cls]||'knight',[o,ar,hs,hr,main,off,wr,rf]=L;
   // roupa
   const natPre=OUTFIT_PARTS[nat],natParts=['Body','ArmLeft','ArmRight','LegLeft','LegRight'].map(p=>u.parts[natPre+'_'+p]).filter(Boolean);
@@ -1172,7 +1194,18 @@ function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.ro
   for(const n of Object.keys(WPN_SRC)){const p=u.parts[n]&&!u.parts[n].userData.borrowed?u.parts[n]:(u.borrow&&u.borrow[n]);if(p)p.visible=false}
   const wpal=[0,0xd8a070,0xc8dcff,0xffc93a],glow=wr>=2||rf>=5?[wr>=0?RAR[Math.max(wr,2)].h:0xffffff,0.25+Math.max(0,rf-3)*0.12]:null;
   for(const n of [main,off]){if(!n)continue;const p=grabPart(u,R,n);if(!p)continue;p.visible=true;p.traverse(x=>{if(x.isMesh)tintMesh(x,wr>0?wpal[wr]:0,AMT[Math.max(0,wr)],glow)})}
-  const mp=main&&grabPart(u,R,main);if(mp){u.weapon=mp;u.wpnOrb=mp}u.refGlow=rf}
+  const mp=main&&grabPart(u,R,main);if(mp){u.weapon=mp;u.wpnOrb=mp}u.refGlow=rf;
+  // ===== equipamento do Blender por geração (1, 8, 18, 25) =====
+  const [at,ht,wt,gt,grr]=[L[8],L[9],L[10],L[11],L[12]].map(x=>x==null?-1:x);
+  for(const k in (u.gear||{}))u.gear[k].visible=false;
+  if(wt>=0&&main){const G=gearWeapons(cls,main,off,wt);let ok=true;const made=G.out.map(a=>{const o=grabGear(u,R,...a);if(!o)ok=false;return o});
+    if(ok){for(const n of [main,off]){if(!n||G.keep.includes(n))continue;const p=grabPart(u,R,n);if(p)p.visible=false}
+      made.forEach(o=>{o.visible=true;gearGlow(o,wr,rf)});u.weapon=made[0];u.wpnOrb=made[0]}}
+  if(ht>=0&&hs){const fam={knight:'helmK',mage:'hatM',barbarian:'helmB'}[hs];const o=grabGear(u,R,fam+ht,'head',GV(0,0,0),GQ_ID,1);
+    if(o){for(const k of Object.values(HAT)){const p=u.parts[k]&&!u.parts[k].userData.borrowed?u.parts[k]:(u.borrow&&u.borrow[k]);if(p)p.visible=false}o.visible=true;gearGlow(o,hr,0)}}
+  if(at>=0){const fam={knight:'armK',mage:'armM',barbarian:'armB'}[o]||'armK';const a=grabGear(u,R,fam+at,'chest',GV(0,0,0),GQ_ID,1);if(a){a.visible=true;gearGlow(a,ar,0)}}
+  u.gem=null;if(gt>=0){const g=grabGear(u,R,'gem'+gt,'',GV(0,1.1,0),GQ_ID,1.2);if(g){g.visible=true;gearGlow(g,grr,0);u.gem=g}}
+}
 function applyLook(u,cls,ar,hr,wr){
   if(u.model&&Array.isArray(ar)){applyLookModel(u,cls,ar);return}
   if(u.model){

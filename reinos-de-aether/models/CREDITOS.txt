@@ -37,4 +37,5 @@ modelagem procedural (bpy/bmesh), low-poly com flat shading:
   obsidian_pillar, brazier (Arena do Azgaroth)
   loot_chest (baús de loot), rock_a, rock_b, flower_bush, wildflowers (campos)
   lich_throne, gothic_pillar, bone_pile, sarcophagus, candelabra, gibbet_cage, dungeon_gate (Masmorra Esquecida)
-  Script-fonte: ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
+  models/gear/gear_weapons|gear_helms|gear_armor.glb: 44 peças de equipamento em 4 gerações (Nv 1, 8, 18, 25)
+  Script-fonte: aether_gear.py e ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
