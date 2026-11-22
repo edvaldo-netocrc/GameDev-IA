@@ -41,3 +41,7 @@ modelagem procedural (bpy/bmesh), low-poly com flat shading:
   models/monsters_new.glb: Elemental de Gelo/Magma, Urso Glacial, Salamandra de Fogo, Kryos e Vulkar (peças animadas pelo jogo)
   ice_crystal, snow_pine, ice_rock, basalt, lava_rock, charred_tree (Picos Gelados e Caldeira Ardente)
   Script-fonte: aether_gear.py e ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
+
+KayKit Character Pack: Adventurers 1.0 — Rogue e Rogue_Hooded (models/rogue.glb com a biblioteca de animações, models/rogue_hooded.glb)
+  Kay Lousberg (kaylousberg.com) — CC0 1.0. Origem: github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
+  Armas das classes novas (martelo, lança, arco, azagaia, cetro) modeladas no Blender — models/gear/gear_weapons.glb
