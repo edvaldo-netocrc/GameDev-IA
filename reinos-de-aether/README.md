@@ -51,3 +51,6 @@ Para jogar localmente, basta abrir `index.html` num servidor estático.
 
 ## Protótipo visual V3
 `prototipo/` é uma página separada (não altera o jogo) com a Vila de Aether modernizada: casas modulares, chão PBR, vegetação instanciada, iluminação nova, personagens com animações novas e seletor de qualidade. Créditos em `assets/CREDITOS.txt`.
+
+## Personagens modernos (beta)
+Em Opções → Desempenho → "Personagens modernos (beta)". Troca os heróis chibi por personagens com proporção humana (Universal Base Characters + roupas Fantasy, animações UAL, armadura de placas feita no Blender), mantendo todas as armas do jogo, cores por raridade, montaria, habilidades e morte. Desligado por padrão; os arquivos (~16 MB) só baixam quando o jogador liga.

@@ -78,3 +78,8 @@ Todos CC0 (domínio público), conferidos nas páginas oficiais antes do uso:
 - Poly Haven — texturas PBR cobblestone_floor_001, aerial_grass_rock, forest_ground_04
 - Quaternius — Universal Base Characters: cabeças, olhos, sobrancelhas, cabelos (Simple Parted, Long, Beard)
 - Armadura de placas do Cavaleiro (knight_plate.glb) e Golem de Pedra (golem_pedra.glb, com 5 animações): modelados no Blender para este projeto (originais). O golem usa a textura rock_face_03 da Poly Haven (CC0).
+
+== Personagens modernos (beta) — assets/characters/modern/ (só carregam se o jogador ligar em Opções) ==
+- Quaternius — Universal Base Characters, Modular Character Outfits Fantasy (Ranger, Peasant), Universal Animation Library 1 e 2 (CC0)
+- knight_plate.glb — armadura de placas do Cavaleiro, modelada no Blender para este projeto (original)
+- Versões _lod: simplificadas automaticamente (meshoptimizer) a partir das originais

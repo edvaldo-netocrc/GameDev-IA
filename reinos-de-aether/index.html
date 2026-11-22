@@ -303,6 +303,7 @@ body.touch #detail{z-index:31}
     <div class="arow"><label><input type="checkbox" id="optAutoRes"> Resolução automática (deixa mais fluido no celular)</label></div>
     <div class="arow"><label><input type="checkbox" id="optFps"> Mostrar FPS</label></div>
     <div class="arow"><label><input type="checkbox" id="optShake"> Tremor da câmera nos golpes</label></div>
+    <div class="arow"><label><input type="checkbox" id="optModern"> Personagens modernos (beta — mais bonitos, mais pesados)</label></div>
     <div class="hint">A auto-caça ataca monstros perto de onde foi ligada e para se você andar manualmente. Itens abaixo da raridade escolhida são deixados no chão.</div>
     <div class="ph2">☁️ Seu herói em outro aparelho</div>
     <div class="hint" id="cloudSt">☁️ Ainda não salvo na nuvem</div>
@@ -781,11 +782,72 @@ function makeHeroModel(cls){
   playAnim(g.userData,'Idle');
   return g;
 }
-function makeHero(cls){return (modelsOK&&makeHeroModel(cls))||makeHeroBox(cls)}
+/* ===== Personagens modernos (beta, Prompt V3): Universal Base Characters + roupas Fantasy (Quaternius, CC0),
+   armadura de placas feita no Blender, animações da Universal Animation Library. Ligado em Opções → "Personagens modernos". */
+const MODERN={on:(()=>{try{return localStorage.getItem('aether_modern')==='1'}catch(e){return false}})(),ready:false,loading:false};
+const MOD_DIR='assets/characters/modern/',UBC_H=1.87;
+const MOD_FILES=['male_ranger','female_ranger','male_peasant','female_peasant','male_ranger_lod','female_ranger_lod','male_peasant_lod','female_peasant_lod','head_male','head_female','hair_long','hair_beard','hair_simpleparted','knight_plate','ual_game'];
+const MOD_CLS={guerreiro:{b:'male_peasant',p:['head_male','hair_beard','knight_plate']},
+  barbaro:{b:'male_ranger',p:['head_male'],tint:0xc49a78},
+  mago:{b:'male_peasant',p:['head_male','hair_simpleparted','hair_beard'],tint:0x8a78e8,hair:0xdcdce4},
+  mecanico:{b:'male_peasant',p:['head_male','hair_beard'],tint:0xe0b070,hair:0x3a2614},
+  pikeman:{b:'male_ranger',p:['head_male'],tint:0x9ab8e0},
+  arqueira:{b:'female_ranger',p:['head_female']},
+  atalanta:{b:'female_ranger',p:['head_female'],tint:0xe8d080},
+  sacerdotisa:{b:'female_peasant',p:['head_female','hair_long'],tint:0xfff6e6,hair:0xf4ead0,holy:true}};
+// nomes das animações do jogo (KayKit) → clipe equivalente da Universal Animation Library
+const MOD_ANIM={Idle:'Idle_Loop',Walking_A:'Walk_Loop',Running_A:'Jog_Fwd_Loop','1H_Melee_Attack_Chop':'Sword_Regular_A','1H_Melee_Attack_Slice_Diagonal':'Sword_Regular_B',Melee_1H_Attack_Slice_Horizontal:'Sword_Regular_C',
+  '1H_Melee_Attack_Stab':'Sword_Attack','2H_Melee_Attack_Chop':'Sword_Attack','2H_Melee_Attack_Slice':'Sword_Regular_B','2H_Melee_Attack_Stab':'Sword_Dash','2H_Melee_Attack_Spin':'Sword_Heavy_Combo',Melee_2H_Attack_Spinning:'Sword_Heavy_Combo',
+  Melee_1H_Attack_Jump_Chop:'Sword_Dash',Melee_Unarmed_Attack_Kick:'Melee_Hook',Spellcast_Shoot:'Spell_Simple_Shoot',Spellcast_Long:'Spell_Simple_Shoot',Spellcast_Raise:'Spell_Simple_Enter',Ranged_Magic_Summon:'Spell_Simple_Enter',
+  Ranged_Magic_Raise:'Spell_Simple_Enter',Ranged_Magic_Shoot:'Spell_Simple_Shoot',Ranged_Bow_Draw:'Pistol_Aim_Neutral',Ranged_Bow_Release:'Pistol_Shoot',Ranged_Bow_Draw_Up:'Pistol_Aim_Neutral',Ranged_Bow_Release_Up:'Pistol_Shoot',
+  '1H_Ranged_Shoot':'Pistol_Shoot','2H_Ranged_Shoot':'Pistol_Shoot',Throw:'OverhandThrow',Death_A:'Death01',Death_B:'Death01',Hit_A:'Hit_Chest',Hit_B:'Hit_Head',Melee_Block_Hit:'Shield_OneShot',Melee_Block:'Sword_Block',
+  PickUp:'PickUp_Table',Lie_StandUp:'LayToIdle',Sit_Chair_Idle:'Sitting_Idle_Loop',Idle_A:'Idle_FoldArms_Loop',Idle_B:'Idle_Talking_Loop',Cheer:'Yes',Dance:'Dance_Loop',Interact:'Interact'};
+const MOD_SKIN=/Regular_|Superhero|Eye|Hair|Knight_/; // pele, olhos, cabelo e armadura não recebem a cor da classe
+function loadModern(){if(MODERN.ready||MODERN.loading||!THREE.GLTFLoader)return;MODERN.loading=true;const L=new THREE.GLTFLoader();
+  Promise.all(MOD_FILES.map(f=>new Promise(r=>L.load(MOD_DIR+f+'.glb',g=>{g.scene.traverse(o=>{if(o.isMesh)LIN.add(o.material)});MODELS['mod_'+f]=g;r(1)},undefined,()=>r(0)))))
+   .then(rs=>{MODERN.loading=false;if(rs.every(Boolean)){MODERN.ready=true;if(MODERN.on&&modelsOK)rebuildHeroes()}else log('Não foi possível carregar os personagens modernos (internet?). Usando os clássicos.','sys')})}
+function modBind(m,host,k,out){const src=MODELS['mod_'+k];if(!src||!host)return;const c=THREE.SkeletonUtils.clone(src.scene);const list=[];c.traverse(o=>{if(o.isSkinnedMesh)list.push(o)});
+  for(const o of list){const bones=o.skeleton.bones.map(b=>m.getObjectByName(b.name));if(bones.some(b=>!b))continue;o.material=o.material.clone();LIN.add(o.material);
+    o.bind(new THREE.Skeleton(bones,o.skeleton.boneInverses),host.bindMatrix);o.castShadow=true;o.frustumCulled=false;o.userData.part=k;host.parent.add(o);out.push(o)}}
+function makeHeroModern(cls){const C=MOD_CLS[cls]||MOD_CLS.guerreiro,src=MODELS['mod_'+C.b],lib=MODELS.mod_ual_game;if(!src||!lib)return null;
+  const m=THREE.SkeletonUtils.clone(src.scene);m.scale.setScalar(HERO_H*((CDEF[cls]||{}).h||1)/UBC_H);
+  const parts={},body=[];m.traverse(o=>{if(o.isMesh){o.material=o.material.clone();LIN.add(o.material);o.castShadow=true;o.receiveShadow=GFX.hi;o.frustumCulled=false;body.push(o)}if(o.name&&!parts[o.name])parts[o.name]=o});
+  const host=body.find(o=>o.isSkinnedMesh),extra=[];for(const k of C.p)modBind(m,host,k,extra);
+  for(const o of body)if(C.tint&&!MOD_SKIN.test(o.material.name))o.material.color.multiply(lin(tmpC.setHex(C.tint)));
+  for(const o of extra){if(C.hair&&/hair/.test(o.userData.part)&&!/Eye/.test(o.material.name))o.material.color.copy(lin(tmpC.setHex(C.hair)));
+    if(/hair_simpleparted|hair_beard/.test(o.userData.part)&&!C.hair)o.material.color.copy(lin(tmpC.setHex(0x5a3a24)));
+    if(o.userData.part==='knight_plate'&&o.material.metalness>0.5){o.material.color.multiplyScalar(0.9);o.material.roughness=0.4;o.material.metalness=0.35}} // sem mapa de reflexo, metal puro fica escuro
+  for(const o of body)o.userData.c0=o.material.color.clone();
+  // de longe: malha simplificada (mesmo esqueleto)
+  const lod=[],low={},ls=MODELS['mod_'+C.b+'_lod'];if(ls)ls.scene.traverse(o=>{if(o.isSkinnedMesh)low[o.name]=o.geometry});for(const o of body)if(o.isSkinnedMesh&&low[o.name])lod.push({o,hi:o.geometry,lo:low[o.name]});
+  const mixer=new THREE.AnimationMixer(m),actions={},byN={};for(const c of lib.animations)byN[c.name]=c;
+  for(const [k,v] of Object.entries(MOD_ANIM))if(byN[v])actions[k]=mixer.clipAction(byN[v]);
+  const g=new THREE.Group();g.add(m);
+  g.userData={model:true,modern:true,root:m,cls,mixer,actions,parts,t:0,lock:0,cur:null,curName:null,state:'',cape:null,helmet:null,weapon:null,wpnOrb:m,headB:m.getObjectByName('Head'),body,extra,lod,lodFar:false,xLib:1};
+  if(C.holy){const hd=m.getObjectByName('Head');if(hd){const halo=new THREE.Mesh(new THREE.TorusGeometry(0.16,0.014,8,28),new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0.95}));halo.rotation.x=Math.PI/2-0.25;halo.position.set(0,0.3,0.02);hd.add(halo);g.userData.halo=halo}}
+  playAnim(g.userData,'Idle');return g}
+// armas do Blender (gear_weapons) na mão do personagem moderno: a lâmina sai do punho pelo lado do polegar
+const MQ=(x,y,z)=>new THREE.Quaternion().setFromEuler(new THREE.Euler(x,y,z,'YXZ'));
+let MOD_GRIP=null;const V3=(x,y,z)=>new THREE.Vector3(x,y,z);
+function modGrip(){return MOD_GRIP||(MOD_GRIP={R:['hand_r',V3(0,0.075,0.02),MQ(Math.PI/2,-0.66,0)],L:['hand_l',V3(0,0.075,0.02),MQ(Math.PI/2,0.66,0)],SH:['lowerarm_l',V3(-0.06,0.13,0),MQ(0,-Math.PI/2,0)]})}
+const MOD_WS={sword:0.72,axe:0.72,staff:0.75,scepter:0.7,hammer:0.72,spear:0.75,javelin:0.7,bow:0.8,shield:0.6};
+function applyLookModern(u,cls,L){const key=L.join('|');if(u.lookKey===key)return;u.lookKey=key;const [o,ar,hs,hr,main,off,wr,rf]=L;const wt=Math.max(0,L[10]==null?-1:L[10]);
+  const AMT=[0,0.22,0.3,0.45],pal=TINT[NATIVE[cls]]||TINT.knight;
+  for(const m of u.body){if(MOD_SKIN.test(m.material.name))continue;m.material.color.copy(m.userData.c0);if(ar>0)m.material.color.lerp(lin(tmpC.setHex(pal[ar])),AMT[ar]);
+    if(m.material.emissive){if(ar>=3)m.material.emissive.copy(lin(tmpC.setHex(pal[3]))).multiplyScalar(0.06);else m.material.emissive.setRGB(0,0,0)}}
+  for(const k in (u.gear||{}))u.gear[k].visible=false;
+  const G=(CDEF[cls]&&CDEF[cls].gw)?classWeapons(cls,wt):gearWeapons(cls,main||'1H_Sword',off,wt);const made=[];
+  for(const [name,slot,,,sc] of G.out){const fam=name.replace(/\d+$/,''),isSh=fam==='shield',left=slot==='handslotl';const GR=modGrip(),gp=isSh?GR.SH:left?GR.L:GR.R;
+    const ob=grabGear(u,u.root,name,gp[0],gp[1],gp[2],(MOD_WS[fam]||0.5)*(sc||1));if(ob){ob.visible=true;gearGlow(ob,wr,rf);made.push(ob)}}
+  u.weapon=made[0]||null;u.wpnOrb=made[0]||u.root;u.refGlow=rf}
+function rebuildHeroes(){if(!modelsOK)return;const mk=(cls,old)=>{const n=makeHero(cls);n.position.copy(old.position);n.rotation.y=old.rotation.y;scene.remove(old);scene.add(n);return n};
+  for(const o of others.values()){o.mesh=mk(o.cls,o.mesh);if(o.lk)applyLook(o.mesh.userData,o.cls,o.lk);else if(o.eqR)applyLook(o.mesh.userData,o.cls,...o.eqR)}
+  if(P.mesh){P.mesh=mk(P.cls,P.mesh);refreshLook()}}
+function makeHero(cls){return (MODERN.on&&MODERN.ready&&modelsOK&&makeHeroModern(cls))||(modelsOK&&makeHeroModel(cls))||makeHeroBox(cls)}
 // anima um herói com modelo: correr/parado, ataque, habilidade, morte
 // ===== controlador de animação do herói: locomoção por velocidade, tronco independente e golpes por camadas
 // pernas (quadril para baixo) e tronco (coluna para cima) tocam clipes separados; assim dá para atacar correndo
-const LOWER_RE=/^(root|hips|upperleg|lowerleg|foot|toes|kneeIK|heelIK|IK-|control-)/;
+const LOWER_RE=/^(root|hips|upperleg|lowerleg|foot|toes|kneeIK|heelIK|IK-|control-|pelvis|thigh_|calf_|ball_)/; // KayKit + Universal Base Characters
 const SPLIT=new Map();
 function splitClip(c){let s=SPLIT.get(c);if(s)return s;const lo=[],up=[];
   for(const t of c.tracks)(LOWER_RE.test(t.name.split('.')[0])?lo:up).push(t);
@@ -860,6 +922,7 @@ function driveHero(g,moving,trig,dead,dt){
   if(u.halo){u.halo.material.opacity=0.7+Math.sin(u.t*2.4)*0.2;u.halo.visible=!dead}
   if(u.gem){const a=u.t*1.5;u.gem.position.set(Math.cos(a)*0.8,1.15+Math.sin(u.t*2.3)*0.1,Math.sin(a)*0.8);u.gem.rotation.y=u.t*2.5}
   u.mixer.update(now<(u.hs||0)?dt*0.04:dt);
+  if(u.lod&&u.lod.length){const far=camera.position.distanceTo(g.position)>(GFX.hi?24:GFX.lo?11:16);if(far!==u.lodFar){u.lodFar=far;for(const x of u.lod)x.o.geometry=far?x.lo:x.hi}}
   // olhar: a cabeça vira para o alvo (herói local no Médio/Alto)
   {let want=0;if(u.look&&!dead&&!GFX.lo){const a=Math.atan2(u.look.x-g.position.x,u.look.z-g.position.z);want=clamp(Math.atan2(Math.sin(a-g.rotation.y),Math.cos(a-g.rotation.y)),-1.1,1.1)*0.75}
    u.lookY=(u.lookY||0)+(want-(u.lookY||0))*Math.min(1,dt*6);if(Math.abs(u.lookY)>0.01){const hd=u.headB||(u.headB=u.root&&u.root.getObjectByName('head'));if(hd)hd.rotateY(u.lookY)}}
@@ -1435,7 +1498,7 @@ function holyLook(u,R,body){for(const m of body)holyMap(m);for(const n of ['Rogu
     const belt=new THREE.Mesh(new THREE.TorusGeometry(0.31,0.03,6,20),hem.material);belt.rotation.x=Math.PI/2;belt.position.y=0.03;hips.add(belt);u.robe=robe}
   if(head){const halo=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.03,8,28),new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0.95}));
     halo.rotation.x=Math.PI/2-0.25;halo.position.set(0,1.02,-0.06);head.add(halo);u.halo=halo}}
-function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.root)return;u.lookKey=key;const R=u.root;const nat=NATIVE[cls]||'knight',[o,ar,hs,hr,main,off,wr,rf]=L;
+function applyLookModel(u,cls,L){if(u.modern){applyLookModern(u,cls,L);return}const key=L.join('|');if(u.lookKey===key||!u.root)return;u.lookKey=key;const R=u.root;const nat=NATIVE[cls]||'knight',[o,ar,hs,hr,main,off,wr,rf]=L;
   // roupa
   const natPre=OUTFIT_PARTS[nat],natParts=['Body','ArmLeft','ArmRight','LegLeft','LegRight'].map(p=>u.parts[natPre+'_'+p]).filter(Boolean);
   for(const k in (u.outfits||{}))for(const m of u.outfits[k])m.visible=false;
@@ -3270,6 +3333,8 @@ function autoRes(dt){ // resolução automática: baixa a nitidez quando o apare
   const min=Math.max(0.5,PERF.base*0.55);let pr=PERF.pr;
   if(PERF.ft>30&&pr>min)pr=Math.max(min,pr-0.1);else if(PERF.ft<19&&pr<PERF.base)pr=Math.min(PERF.base,pr+0.05);
   if(Math.abs(pr-PERF.pr)>0.001){PERF.pr=pr;renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight)}}
+{const mo=$('optModern');mo.checked=MODERN.on;mo.addEventListener('change',()=>{MODERN.on=mo.checked;try{localStorage.setItem('aether_modern',mo.checked?'1':'0')}catch(e){}
+  if(MODERN.on){if(MODERN.ready)rebuildHeroes();else{log('Carregando personagens modernos…','sys');loadModern()}}else rebuildHeroes()});}
 {const sk=$('optShake');sk.checked=SHAKE.on;sk.addEventListener('change',()=>{SHAKE.on=sk.checked;try{localStorage.setItem('aether_shake',sk.checked?'1':'0')}catch(e){}});}
 {const g=$('optGfx'),a=$('optAutoRes'),f=$('optFps');g.value=GFX.q;a.checked=PERF.auto;f.checked=localStorage.getItem('aether_fps')==='1';$('fpsBox').classList.toggle('hidden',!f.checked);
   g.addEventListener('change',()=>{try{localStorage.setItem('aether_gfx',g.value)}catch(e){}log('Qualidade alterada. O jogo vai recarregar…','sys');save();setTimeout(()=>location.reload(),600)});
@@ -3432,7 +3497,7 @@ function npcGesture(npc,name){const u=npc.userData.npc;if(!u)return;u.lock=u.t+p
 function modelsArrived(ok){ // modelos prontos: troca os bonecos simples pelos animados
   buildVillage();decorateDungeon();upgradeNPCs();try{buildEnv()}catch(e){console.warn('env',e)}try{upgradeNewMonsters()}catch(e){console.warn('mon',e)}try{eliteAuras()}catch(e){}
   ok=!!(MODELS.knight&&MODELS.mage);
-  modelsOK=ok;if(ok){upgradeMonsterModels();setTimeout(()=>new THREE.GLTFLoader().load('assets/characters/anim_extra.glb',g=>{MODELS.anim_extra=g},undefined,()=>{}),1500); // animações extras sob demanda
+  modelsOK=ok;if(ok){upgradeMonsterModels();if(MODERN.on)loadModern();setTimeout(()=>new THREE.GLTFLoader().load('assets/characters/anim_extra.glb',g=>{MODELS.anim_extra=g},undefined,()=>{}),1500); // animações extras sob demanda
     
     for(const o of others.values()){if(o.mesh.userData.model)continue;const n=makeHero(o.cls);n.position.copy(o.mesh.position);n.rotation.y=o.mesh.rotation.y;scene.remove(o.mesh);o.mesh=n;scene.add(n);if(o.lk)applyLook(n.userData,o.cls,o.lk);else if(o.eqR)applyLook(n.userData,o.cls,...o.eqR)}
     if(P.mesh&&!P.mesh.userData.model){const n=makeHero(P.cls);n.position.copy(P.mesh.position);scene.remove(P.mesh);P.mesh=n;scene.add(n);refreshLook()}}
