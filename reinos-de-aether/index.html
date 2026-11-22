@@ -134,15 +134,15 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 .slot{width:40px;height:44px}.slot b{font-size:17px}.slot small{font-size:7px}#joy{bottom:100px}
 #inv{right:50%;transform:translate(50%,-50%);width:96vw;max-width:410px}.invwrap{gap:8px;padding:10px}.eqcol{width:104px}.bag{grid-template-columns:repeat(5,1fr);gap:4px;flex:1}.bag .cell{width:auto;aspect-ratio:1;height:auto;font-size:20px}#detail{right:50%;top:auto;bottom:8px;transform:translateX(50%);z-index:5}#shop{top:auto;bottom:90px;left:50%;transform:translateX(-50%);width:94vw;max-width:300px;z-index:4}}
 #start{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:radial-gradient(ellipse at center,rgba(30,22,12,.6),rgba(5,5,8,.92));z-index:10}
-.card{width:min(560px,92vw);padding:28px 30px;text-align:center}
+.card{width:min(620px,94vw);padding:24px 26px;text-align:center}
 .card h1{font-family:Cinzel,serif;font-weight:800;font-size:40px;color:#f2d38a;text-shadow:0 0 20px rgba(242,180,80,.4)}
 .card .sub{color:#cbbd9c;font-size:13px;margin:4px 0 20px}
 .card input{width:100%;padding:11px 12px;background:#0c0a08;border:1px solid #6b5630;border-radius:6px;color:#fff;font:inherit;font-size:15px;text-align:center;outline:none}
-.classes{display:flex;gap:12px;margin:16px 0}
-.cls{flex:1;padding:14px 10px;border:1px solid #4a3b22;border-radius:8px;background:#15110c;cursor:pointer;transition:.15s}
+.classes{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:14px 0}
+.cls{padding:8px 6px;border:1px solid #4a3b22;border-radius:8px;background:#15110c;cursor:pointer;transition:.15s}
 .cls:hover{border-color:#a8894e}
 .cls.on{border-color:#f2d38a;box-shadow:0 0 0 1px #f2d38a,0 0 18px rgba(242,211,138,.25);background:#221a10}
-.cls b{display:block;font-size:30px}
+.cls b{display:block;font-size:24px}
 .cls strong{display:block;font-family:Cinzel,serif;color:#f2d38a;margin:4px 0}
 .cls span{font-size:11px;color:#bcae8d;line-height:1.4}
 .btn{width:100%;padding:13px;border:0;border-radius:6px;background:linear-gradient(#d9a84a,#9c6f22);color:#1a1006;font-family:Cinzel,serif;font-weight:800;font-size:17px;cursor:pointer}
@@ -318,9 +318,14 @@ body.touch #detail{z-index:31}
     <div class="sub">MMORPG 3D de navegador · protótipo jogável</div>
     <input id="nameIn" maxlength="14" placeholder="Nome do seu personagem">
     <div class="classes">
-      <div class="cls on" data-c="guerreiro"><b>🗡️</b><strong>Guerreiro</strong><span>Corpo a corpo, muita vida.<br>Habilidade: Golpe Giratório</span></div>
-      <div class="cls" data-c="mago"><b>🔮</b><strong>Mago</strong><span>Ataque à distância, muita mana.<br>Habilidade: Explosão Arcana</span></div>
-      <div class="cls" data-c="barbaro"><b>🪓</b><strong>Bárbaro</strong><span>Machado de duas mãos, vida enorme.<br>Habilidade: Investida</span></div>
+      <div class="cls on" data-c="guerreiro"><b>🛡️</b><strong>Cavaleiro</strong><span>Espada e escudo.<br>Golpe Giratório</span></div>
+      <div class="cls" data-c="barbaro"><b>🪓</b><strong>Guerreiro</strong><span>Machado, vida enorme.<br>Investida</span></div>
+      <div class="cls" data-c="mecanico"><b>⚙️</b><strong>Mecânico</strong><span>Martelo e escudo.<br>Bomba Mecânica</span></div>
+      <div class="cls" data-c="pikeman"><b>🔱</b><strong>Pikeman</strong><span>Lança longa.<br>Lança Terrestre</span></div>
+      <div class="cls" data-c="arqueira"><b>🏹</b><strong>Arqueira</strong><span>Arco, longo alcance.<br>Flecha Múltipla</span></div>
+      <div class="cls" data-c="atalanta"><b>🎯</b><strong>Atalanta</strong><span>Azagaias.<br>Lança Tripla</span></div>
+      <div class="cls" data-c="mago"><b>🔮</b><strong>Mago</strong><span>Magia à distância.<br>Explosão Arcana</span></div>
+      <div class="cls" data-c="sacerdotisa"><b>✨</b><strong>Sacerdotisa</strong><span>Luz sagrada e cura.<br>Cura Sagrada</span></div>
     </div>
     <div class="gfx">Gráficos: <span data-g="alto">Alto</span><span data-g="medio">Médio</span><span data-g="baixo">Baixo</span></div>
     <button class="btn" id="go">Entrar no mundo</button>
@@ -671,7 +676,7 @@ const entrance=new THREE.Group();
 /* ============ personagens ============ */
 function part(w,h,d,col,x,y,z,mat){const m=new THREE.Mesh(new THREE.BoxGeometry(w,h,d),mat||Lam(col));m.position.set(x,y,z);m.castShadow=true;return m}
 function makeHeroBox(cls){
-  const g=new THREE.Group();const main=cls==='mago'?0x3b4fb8:cls==='barbaro'?0x6a4a2a:0x9b2f2f,trim=cls==='mago'?0xd8c06a:cls==='barbaro'?0x8a6a3a:0x8a8f99,skin=0xf1c9a5;
+  const g=new THREE.Group();const main={mago:0x3b4fb8,barbaro:0x6a4a2a,mecanico:0x8a6a3a,pikeman:0x4a6a8a,arqueira:0x4a7a3a,atalanta:0x7a8a4a,sacerdotisa:0xe8e0d0}[cls]||0x9b2f2f,trim=cls==='mago'||cls==='sacerdotisa'?0xd8c06a:cls==='barbaro'?0x8a6a3a:0x8a8f99,skin=0xf1c9a5;cls=cls==='sacerdotisa'?'mago':cls;
   const torsoMat=Lam(main),armMat=Lam(main);
   g.add(part(0.82,0.95,0.46,0,0,1.38,0,torsoMat));
   g.add(part(0.86,0.16,0.5,trim,0,0.98,0));
@@ -705,7 +710,7 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
+const MODEL_FILES={rogue:'models/rogue.glb',rogue_hooded:'models/rogue_hooded.glb',knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
 const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate','ice_crystal','snow_pine','ice_rock','basalt','lava_rock','charred_tree'];
 for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb';
 MODEL_FILES.mon_new='models/monsters_new.glb'; // monstros dos mapas novos (Blender)
@@ -741,12 +746,19 @@ function playAnim(u,name,once,speed){ // troca de animação com transição sua
   return a.getClip().duration/(speed||1);
 }
 const HERO_H=2.3;
+const HERO_HIDE=['1H_Axe_Offhand','Barbarian_Round_Shield','1H_Axe','Mug','2H_Axe','Spellbook','Spellbook_open','1H_Wand','2H_Staff','1H_Sword_Offhand','Badge_Shield','Rectangle_Shield','Spike_Shield','Round_Shield','2H_Sword','1H_Sword','Knife','Knife_Offhand','1H_Crossbow','2H_Crossbow','Throwable'];
+function addAnimLib(r){const L=MODELS.rogue;if(!L)return;for(const c of L.animations){if(r.actions[c.name])continue;r.actions[c.name]=r.mixer.clipAction(c)}} // animações extras (mesmo esqueleto KayKit)
 function makeHeroModel(cls){
+  const D=CDEF[cls]||CDEF.guerreiro;
+  if(D.gw){if(!MODELS[D.model])return null;const r=cloneModel(D.model,HERO_H*(D.h||1));if(!r)return null;addAnimLib(r);const g=new THREE.Group();g.add(r.m);
+    for(const n of HERO_HIDE)if(r.parts[n])r.parts[n].visible=false;const pp=r.parts,pre=D.model==='knight'?'Knight':D.model==='barbarian'?'Barbarian':D.model==='mage'?'Mage':'Rogue';
+    g.userData={model:true,root:r.m,cls,mixer:r.mixer,actions:r.actions,parts:pp,t:0,lock:0,cur:null,curName:null,state:'',cape:pp[pre+'_Cape'],helmet:pp[pre+'_Helmet']||pp[pre+'_Hat'],weapon:null,wpnOrb:r.m};
+    playAnim(g.userData,'Idle');return g}
   const mage=cls==='mago',barb=cls==='barbaro';
   const K=barb?{m:'barbarian',hide:['1H_Axe_Offhand','Barbarian_Round_Shield','1H_Axe','Mug'],w:'2H_Axe',cape:'Barbarian_Cape',hat:'Barbarian_Hat'}
     :mage?{m:'mage',hide:['Spellbook','Spellbook_open','1H_Wand'],w:'2H_Staff',cape:'Mage_Cape',hat:'Mage_Hat'}
     :{m:'knight',hide:['1H_Sword_Offhand','Badge_Shield','Rectangle_Shield','Spike_Shield','2H_Sword'],w:'1H_Sword',cape:'Knight_Cape',hat:'Knight_Helmet'};
-  if(!MODELS[K.m])return null;const r=cloneModel(K.m,barb?HERO_H*1.05:HERO_H);if(!r)return null;
+  if(!MODELS[K.m])return null;const r=cloneModel(K.m,barb?HERO_H*1.05:HERO_H);if(!r)return null;addAnimLib(r);
   const g=new THREE.Group();g.add(r.m);
   for(const n of K.hide)if(r.parts[n])r.parts[n].visible=false;
   const pp=r.parts,wpn=pp[K.w];if(wpn)wpn.visible=true;
@@ -763,10 +775,8 @@ function driveHero(g,moving,trig,dead,dt){
   else{
     if(u.state==='dead'){u.state='';u.curName=null;u.lock=0}
     if(trig&&trig.startsWith('emo:')){const E=EMOTES[trig.slice(4)];if(E&&u.actions[E.a]){const d=playAnim(u,E.a,!E.loop,E.sp);u.lock=u.t+(E.hold||d*(E.rep||1));u.emo=true}trig=null}
-    if(trig){u.emo=false;const mage=u.cls==='mago',barb=u.cls==='barbaro';let n,sp;
-      if(trig==='skill'){n=mage?'Spellcast_Long':barb?'2H_Melee_Attack_Chop':'2H_Melee_Attack_Spin';sp=mage?1.7:barb?1.6:1.35}
-      else if(barb){n=Math.random()<0.5?'2H_Melee_Attack_Chop':'2H_Melee_Attack_Slice';sp=1.5}
-      else{n=mage?'Spellcast_Shoot':(Math.random()<0.5?'1H_Melee_Attack_Chop':'1H_Melee_Attack_Slice_Diagonal');sp=1.4}
+    if(trig){u.emo=false;const D=CDEF[u.cls]||CDEF.guerreiro;let n,sp;
+      if(trig==='skill'){n=D.sk;sp=D.ssp}else{n=D.atk[Math.floor(Math.random()*D.atk.length)];sp=D.asp}
       u.lock=u.t+playAnim(u,n,true,sp)*0.85}
     if(u.emo&&moving){u.lock=0;u.emo=false}
     if(u.t>=u.lock){u.emo=false;const base=moving?'Running_A':'Idle';if(u.curName!==base)playAnim(u,base,false,moving?1.2:1)}
@@ -1156,19 +1166,23 @@ const SLOTN={weapon:'Arma',armor:'Armadura',helm:'Elmo',ring:'Anel'};
 const STN={atk:'Ataque',def:'Defesa',hp:'Vida',mp:'Mana',crit:'Crítico %'};
 const BASEN={weapon:{guerreiro:['Espada','Lâminas Gêmeas','Machado e Escudo'],mago:['Cajado','Cetro','Varinha']},armor:{guerreiro:['Peitoral de Placas','Cota de Malha','Gibão de Couro'],mago:['Manto','Túnica','Cota Arcana']},helm:{guerreiro:['Elmo','Capuz de Urso'],mago:['Chapéu Arcano','Capuz Místico'],barbaro:['Capuz de Urso','Elmo de Aço']},ring:{guerreiro:['Anel','Sinete'],mago:['Anel','Sinete'],barbaro:['Anel','Bracelete']}};
 BASEN.weapon.barbaro=['Machado de Guerra','Machados Gêmeos','Machado e Broquel'];BASEN.armor.barbaro=['Gibão','Couraça de Couro','Peitoral de Placas'];
+Object.assign(BASEN.weapon,{mecanico:['Martelo de Guerra','Martelo e Escudo','Marreta'],pikeman:['Lança','Alabarda','Pique'],arqueira:['Arco','Arco Longo','Arco Composto'],atalanta:['Azagaia','Dardo de Caça','Lança de Arremesso'],sacerdotisa:['Cetro Sagrado','Bastão Bento','Relicário']});
+Object.assign(BASEN.armor,{mecanico:['Armadura Mecânica','Cota de Malha','Peitoral de Placas'],pikeman:['Couraça de Couro','Gibão','Cota de Malha'],arqueira:['Veste de Caçadora','Couraça Leve','Gibão de Couro'],atalanta:['Veste de Caçadora','Couraça Leve','Cota de Malha'],sacerdotisa:['Manto Sagrado','Túnica Sagrada','Veste Sagrada']});
+Object.assign(BASEN.helm,{mecanico:['Elmo de Aço','Elmo'],pikeman:['Elmo','Capuz de Urso'],arqueira:['Tiara','Capuz de Caçadora'],atalanta:['Tiara','Elmo'],sacerdotisa:['Mitra','Chapéu Sagrado']});
+for(const c of ['mecanico','pikeman','arqueira','atalanta','sacerdotisa'])BASEN.ring[c]=['Anel','Sinete'];
 const MATN=[['de Ferro','de Carvalho'],['de Aço','de Freixo'],['de Mithril','de Runas'],['de Dragão','das Estrelas']];
 const GEAR_LV=[1,8,18,25]; // gerações de equipamento: ferro (1), aço (8), mithril (18), dragão (25)
 const gTier=lvl=>lvl>=25?3:lvl>=18?2:lvl>=8?1:0;
 const SUFN=[[],['do Vigor','da Força','da Sabedoria'],['do Lobo Uivante','da Tempestade','do Guardião'],['da Aurora Eterna','do Rei Caído','do Abismo']];
 let uid=1;
-function icoOf(it){return it.slot==='weapon'?(it.cls==='mago'?'🪄':it.cls==='barbaro'?'🪓':'🗡️'):it.slot==='armor'?'🛡️':it.slot==='helm'?'⛑️':'💍'}
+function icoOf(it){return it.slot==='weapon'?({mago:'🪄',barbaro:'🪓',mecanico:'🔨',pikeman:'🔱',arqueira:'🏹',atalanta:'🎯',sacerdotisa:'✨'}[it.cls]||'🗡️'):it.slot==='armor'?'🛡️':it.slot==='helm'?'⛑️':'💍'}
 function makeItem(slot,lvl,rar,cls){
   lvl=Math.max(1,lvl);const m=[1,1.35,1.8,2.5][rar],b=2+lvl*1.6,st={};
-  if(slot==='weapon'){st.atk=Math.round(b*m*1.1);if(rar>=1)st.crit=2+rar*2;if(rar>=2)st[cls==='mago'?'mp':'hp']=Math.round(lvl*5*m)}
+  if(slot==='weapon'){st.atk=Math.round(b*m*1.1);if(rar>=1)st.crit=2+rar*2;if(rar>=2)st[cls==='mago'||cls==='sacerdotisa'?'mp':'hp']=Math.round(lvl*5*m)}
   else if(slot==='armor'){st.def=Math.round(b*m*0.8);st.hp=Math.round(lvl*6*m+10)}
-  else if(slot==='helm'){st.def=Math.round(b*m*0.45);st[cls==='mago'?'mp':'hp']=Math.round(lvl*4*m+6)}
+  else if(slot==='helm'){st.def=Math.round(b*m*0.45);st[cls==='mago'||cls==='sacerdotisa'?'mp':'hp']=Math.round(lvl*4*m+6)}
   else{st.atk=Math.round(b*m*0.35);st.crit=1+rar*2;if(rar>=1)st.mp=Math.round(lvl*4*m)}
-  const tier=gTier(lvl),mi=cls==='mago'?1:0;
+  const tier=gTier(lvl),mi=cls==='mago'||cls==='sacerdotisa'||cls==='arqueira'?1:0;
   const name=pick(BASEN[slot][cls]||BASEN[slot].guerreiro)+' '+MATN[tier][mi]+(rar?' '+pick(SUFN[rar]):'');
   return{id:uid++,slot,lvl,rar,cls,name,st,val:Math.round((6+lvl*4)*[1,2.5,6,15][rar])};
 }
@@ -1182,7 +1196,25 @@ const CLS={
 };
 const EMOTES={comemorar:{ico:'🎉',t:'Comemorar',a:'Cheer',sp:1},girar:{ico:'🌀',t:'Girar',a:'2H_Melee_Attack_Spin',sp:0.9,loop:true,rep:3},
   magia:{ico:'✨',t:'Fazer mágica',a:'Spellcast_Long',sp:1},morto:{ico:'💀',t:'Fingir de morto',a:'Death_A',sp:1,hold:4},susto:{ico:'😱',t:'Levar susto',a:'Hit_A',sp:0.8}};
-const CLSICO={guerreiro:'🛡️',mago:'🧙',barbaro:'🪓'};const okCls=c=>Object.prototype.hasOwnProperty.call(CLS,c)?c:'guerreiro';
+Object.assign(CLS,{
+  mecanico:{hp:125,mp:55,atk:12,range:2.8,cd:0.9,hpL:23,mpL:5,atkL:3.2,skill:'Bomba Mecânica',skIco:'💣',skCost:18,skCd:7,atkIco:'🔨',fx:0xffb060},
+  pikeman:{hp:120,mp:50,atk:13,range:3.7,cd:1.0,hpL:21,mpL:5,atkL:3.4,skill:'Lança Terrestre',skIco:'🔱',skCost:18,skCd:7,atkIco:'🔱',fx:0x6ad0ff},
+  arqueira:{hp:95,mp:70,atk:13,range:16,cd:0.95,hpL:15,mpL:7,atkL:3.6,skill:'Flecha Múltipla',skIco:'🏹',skCost:16,skCd:6,atkIco:'🏹',fx:0xa8ff6a},
+  atalanta:{hp:105,mp:65,atk:14,range:13,cd:1.1,hpL:17,mpL:6,atkL:3.7,skill:'Lança Tripla',skIco:'🎯',skCost:18,skCd:6,atkIco:'🎯',fx:0xffd04a},
+  sacerdotisa:{hp:90,mp:120,atk:12,range:15,cd:1.05,hpL:14,mpL:12,atkL:3.3,skill:'Cura Sagrada',skIco:'✚',skCost:30,skCd:9,atkIco:'✨',fx:0xfff0a0}});
+/* Registro das 8 classes do Priston Tale: modelo 3D, visual, animações e arma de cada uma.
+   Para trocar o modelo de uma classe basta mudar "model" (todos usam o mesmo esqueleto KayKit). */
+const CDEF={
+  guerreiro:{n:'Cavaleiro',en:'Knight',ico:'🛡️',model:'knight',look:'knight',lh:2.8,ranged:false,atk:['1H_Melee_Attack_Chop','1H_Melee_Attack_Slice_Diagonal'],asp:1.4,sk:'2H_Melee_Attack_Spin',ssp:1.35,d:'Espada e escudo, muita defesa'},
+  barbaro:{n:'Guerreiro',en:'Fighter',ico:'🪓',model:'barbarian',look:'barbarian',lh:3.0,h:1.05,ranged:false,atk:['2H_Melee_Attack_Chop','2H_Melee_Attack_Slice'],asp:1.5,sk:'2H_Melee_Attack_Chop',ssp:1.6,d:'Machado de duas mãos, vida enorme'},
+  mago:{n:'Mago',en:'Magician',ico:'🔮',model:'mage',look:'mage',lh:3.3,ranged:true,bolt:'arcane',atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Long',ssp:1.7,d:'Magia à distância, muita mana'},
+  mecanico:{n:'Mecânico',en:'Mechanician',ico:'⚙️',model:'knight',look:'knight',lh:2.8,ranged:false,gw:'hammer',sh:true,tint:0xd9a868,atk:['1H_Melee_Attack_Chop'],asp:1.4,sk:'2H_Melee_Attack_Chop',ssp:1.5,d:'Martelo, escudo e bombas'},
+  pikeman:{n:'Pikeman',en:'Pikeman',ico:'🔱',model:'barbarian',look:'barbarian',lh:3.0,h:1.05,ranged:false,gw:'spear',tint:0x8fb0d8,atk:['2H_Melee_Attack_Stab','2H_Melee_Attack_Slice'],asp:1.4,sk:'2H_Melee_Attack_Spin',ssp:1.3,d:'Lança longa, ataques em área'},
+  arqueira:{n:'Arqueira',en:'Archer',ico:'🏹',model:'rogue',look:'rogue',lh:2.8,ranged:true,bolt:'arrow',gw:'bow',atk:['1H_Ranged_Shoot'],asp:1.6,sk:'2H_Ranged_Shoot',ssp:1.6,d:'Arco de longo alcance'},
+  atalanta:{n:'Atalanta',en:'Atalanta',ico:'🎯',model:'rogue_hooded',look:'rogue',lh:2.8,ranged:true,bolt:'javelin',gw:'javelin',tint:0xc8d8a0,atk:['Throw'],asp:1.5,sk:'Throw',ssp:1.8,d:'Arremessa azagaias'},
+  sacerdotisa:{n:'Sacerdotisa',en:'Priestess',ico:'✨',model:'mage',look:'mage',lh:3.3,ranged:true,bolt:'holy',gw:'scepter',holy:true,atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Raise',ssp:1.4,d:'Cura e luz sagrada'}};
+const CLSICO=Object.fromEntries(Object.entries(CDEF).map(([k,v])=>[k,v.ico]));
+const CLSN=k=>(CDEF[k]||CDEF.guerreiro).n;const okCls=c=>Object.prototype.hasOwnProperty.call(CLS,c)?c:'guerreiro';
 const BAG_MAX=25;
 const SPAWN={x:-3,z:9.6,yaw:-0.3}; // vão entre as casas, câmera olhando para a praça
 const P={name:'Herói',cls:'guerreiro',lvl:1,xp:0,gold:0,pots:5,scrolls:1,ultCd:0,mounted:false,pets:[],pet:'',friends:[],daily:{last:'',streak:0},bloodT:0,dash:null,stats:{k:{},deaths:0,refMax:0},ach:[],title:'',furyT:0,recallT:0,hp:1,mp:1,maxHp:1,maxMp:1,atk:1,def:0,crit:8,inv:[],eq:{weapon:null,armor:null,helm:null,ring:null},
@@ -1198,33 +1230,34 @@ function recalc(){
 }
 // visual do herói conforme a raridade de armadura/elmo/arma (-1 = nada equipado)
 /* ===== visual do equipamento: roupa, chapéu e arma mudam conforme o item ===== */
-const NATIVE={guerreiro:'knight',mago:'mage',barbaro:'barbarian'};
-const OUTFIT_PARTS={knight:'Knight',mage:'Mage',barbarian:'Barbarian'};
+const NATIVE=new Proxy({},{get:(o,k)=>(CDEF[k]||CDEF.guerreiro).look});
+const OUTFIT_PARTS={knight:'Knight',mage:'Mage',barbarian:'Barbarian',rogue:'Rogue'};
 const WPN_SRC={'1H_Sword':'knight','2H_Sword':'knight','1H_Sword_Offhand':'knight',Round_Shield:'knight',Badge_Shield:'knight',Rectangle_Shield:'knight',Spike_Shield:'knight',
   '1H_Wand':'mage','2H_Staff':'mage',Spellbook:'mage',Spellbook_open:'mage','1H_Axe':'barbarian','2H_Axe':'barbarian','1H_Axe_Offhand':'barbarian',Barbarian_Round_Shield:'barbarian'};
 const HAT={knight:'Knight_Helmet',mage:'Mage_Hat',barbarian:'Barbarian_Hat'};
 const SHIELDS=['Round_Shield','Badge_Shield','Rectangle_Shield','Spike_Shield'];
-const TINT={knight:[0,0xe0b080,0xb4cfff,0xffc93a],barbarian:[0,0xd8b08a,0x8a7a6a,0xd9a030],mage:[0,0x9fe0a6,0x8fb0ff,0xc89bff],cape:[0,0x6ab04c,0x3d7bd9,0x9b4dd9]};
+const TINT={rogue:[0,0xb8d8a0,0x9fb8ff,0xd8a0ff],knight:[0,0xe0b080,0xb4cfff,0xffc93a],barbarian:[0,0xd8b08a,0x8a7a6a,0xd9a030],mage:[0,0x9fe0a6,0x8fb0ff,0xc89bff],cape:[0,0x6ab04c,0x3d7bd9,0x9b4dd9]};
 const bn=it=>it?String(it.name).replace(/^\+\d+\s/,''):'';
 const has=(it,...k)=>{const n=bn(it);return k.some(x=>n.startsWith(x))};
 function lookOf(cls,eq){const a=eq.armor,h=eq.helm,w=eq.weapon,nat=NATIVE[cls]||'knight';
   // roupa
-  let o=nat;if(a){if(has(a,'Peitoral','Cota de Malha','Cota Arcana'))o='knight';else if(has(a,'Gibão','Couraça de Couro'))o='barbarian';else if(has(a,'Manto','Túnica'))o='mage';else if(has(a,'Cota'))o='knight'}
+  let o=nat;if(a){if(has(a,'Veste de Caçadora','Couraça Leve')||(nat==='rogue'&&has(a,'Gibão','Couraça','Veste')))o='rogue';else if(has(a,'Peitoral','Cota de Malha','Cota Arcana','Armadura Mecânica'))o='knight';else if(has(a,'Gibão','Couraça de Couro'))o='barbarian';else if(has(a,'Manto','Túnica','Veste Sagrada'))o='mage';else if(has(a,'Cota'))o='knight'}
   // chapéu
-  let hs='';if(h){if(has(h,'Capuz de Urso','Elmo de Chifres','Capuz de Pele','Capacete com Chifres'))hs='barbarian';else if(has(h,'Elmo de Aço','Elmo','Capacete'))hs='knight';else hs='mage'}
+  let hs='';if(h){if(has(h,'Tiara','Capuz de Caçadora'))hs='knight';else if(has(h,'Capuz de Urso','Elmo de Chifres','Capuz de Pele','Capacete com Chifres'))hs='barbarian';else if(has(h,'Elmo de Aço','Elmo','Capacete'))hs='knight';else hs='mage'}
   // arma
   const wr=w?w.rar:0;let main,off='';
-  if(cls==='mago'){if(!w||has(w,'Cajado'))main='2H_Staff';else if(has(w,'Cetro')){main='1H_Wand';off=wr>=2?'Spellbook_open':'Spellbook'}else main='1H_Wand'}
+  if(CDEF[cls]&&CDEF[cls].gw){main='';off=''}
+  else if(cls==='mago'){if(!w||has(w,'Cajado'))main='2H_Staff';else if(has(w,'Cetro')){main='1H_Wand';off=wr>=2?'Spellbook_open':'Spellbook'}else main='1H_Wand'}
   else if(cls==='barbaro'){if(w&&has(w,'Machados Gêmeos','Machado Duplo')){main='1H_Axe';off='1H_Axe_Offhand'}else if(w&&has(w,'Machado e Broquel','Martelo')){main='1H_Axe';off='Barbarian_Round_Shield'}else main='2H_Axe'}
   else{if(w&&has(w,'Lâmina')){main='1H_Sword';off='1H_Sword_Offhand'}else if(w&&has(w,'Machado')){main='1H_Axe';off=SHIELDS[Math.min(3,wr)]}
     else if(w&&wr>=3){main='2H_Sword'}else{main='1H_Sword';off=SHIELDS[Math.min(3,w?wr:0)]}}
   const rg=eq.ring;return[o,a?a.rar:-1,hs,h?h.rar:-1,main,off,w?w.rar:-1,w?(w.ref||0):0,a?gTier(a.lvl):-1,h?gTier(h.lvl):-1,w?gTier(w.lvl):-1,rg?gTier(rg.lvl):-1,rg?rg.rar:-1]}
 function sanLook(L,cls){if(!Array.isArray(L)||L.length<8)return null;const nat=NATIVE[cls]||'knight',r=x=>clamp(Math.floor(num(x,-1)),-1,3);
   return[OUTFIT_PARTS[L[0]]?L[0]:nat,r(L[1]),HAT[L[2]]?L[2]:'',r(L[3]),WPN_SRC[L[4]]?L[4]:'',WPN_SRC[L[5]]?L[5]:'',r(L[6]),clamp(Math.floor(num(L[7],0)),0,7),r(L[8]),r(L[9]),r(L[10]),r(L[11]),r(L[12])]}
-function setHue(m,h){if(!m||!m.material)return;const mt=m.material;if(!mt.userData.hueU){if(!h)return;mt.userData.hueU={value:0};
-    mt.onBeforeCompile=sh=>{sh.uniforms.uHue=mt.userData.hueU;sh.fragmentShader='uniform float uHue;\nvec3 hueRot(vec3 c,float a){const vec3 k=vec3(0.57735);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.0-ca);}\n'+
-      sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.rgb=max(hueRot(diffuseColor.rgb,uHue),0.0);')};mt.customProgramCacheKey=()=>'hue';mt.needsUpdate=true}
-  mt.userData.hueU.value=h||0}
+function setHue(m,h,sat,br){if(!m||!m.material)return;const mt=m.material;sat=sat==null?1:sat;br=br||1;if(!mt.userData.hueU){if(!h&&sat===1&&br===1)return;mt.userData.hueU={value:0};mt.userData.satU={value:1};mt.userData.brU={value:1};
+    mt.onBeforeCompile=sh=>{sh.uniforms.uHue=mt.userData.hueU;sh.uniforms.uSat=mt.userData.satU;sh.uniforms.uBr=mt.userData.brU;sh.fragmentShader='uniform float uHue;uniform float uSat;uniform float uBr;\nvec3 hueRot(vec3 c,float a){const vec3 k=vec3(0.57735);float ca=cos(a);return c*ca+cross(k,c)*sin(a)+k*dot(k,c)*(1.0-ca);}\n'+
+      sh.fragmentShader.replace('#include <map_fragment>','#include <map_fragment>\n  diffuseColor.rgb=max(hueRot(diffuseColor.rgb,uHue),0.0);diffuseColor.rgb=min(mix(vec3(dot(diffuseColor.rgb,vec3(0.299,0.587,0.114))),diffuseColor.rgb,uSat)*uBr,1.0);')};mt.customProgramCacheKey=()=>'hue';mt.needsUpdate=true}
+  mt.userData.hueU.value=h||0;mt.userData.satU.value=sat;mt.userData.brU.value=br}
 const ROBE_HUE=[0,-1.75,2.1,0.95]; // incomum verde, raro carmesim, épico violeta
 function tintMesh(m,hex,amt,glow){if(!m||!m.material)return;m.material.color.setRGB(1,1,1);if(hex)m.material.color.lerp(lin(tmpC.setHex(hex)),amt);
   if(m.material.emissive){if(glow)m.material.emissive.copy(lin(tmpC.setHex(glow[0]))).multiplyScalar(glow[1]);else m.material.emissive.setRGB(0,0,0)}}
@@ -1252,6 +1285,11 @@ function grabGear(u,root,name,bone,pos,q,s){ // peça do Blender presa a um osso
   b.add(c);u.gear[key]=c;return c}
 function gearGlow(o,rar,rf){if(!o)return;const g=rar>=2||rf>=5;o.traverse(x=>{if(!x.isMesh||x.userData.ownGlow||!x.material.emissive)return;if(g)x.material.emissive.copy(lin(tmpC.setHex(RAR[Math.max(2,rar)].h))).multiplyScalar(rar>=3?0.05:0.03+Math.max(0,rf-4)*0.025);else x.material.emissive.setRGB(0,0,0)})}
 const GV=(x,y,z)=>new THREE.Vector3(x,y,z);
+function classWeapons(cls,t){const D=CDEF[cls],R='handslotr',Lh='handslotl',out=[];
+  if(D.gw==='bow')out.push(['bow'+t,Lh,GV(0,0.03,0),GQ_ID,1]);
+  else out.push([D.gw+t,R,GV(0,0.033,0),GQ_FLIP,D.gw==='spear'?1.05:1]);
+  if(D.sh)out.push(['shield'+t,Lh,GV(0,0.017,0.156),GQ_ID,0.9]);
+  return{out,keep:[]}}
 function gearWeapons(cls,main,off,wt){ // qual peça do Blender vai em cada mão
   const R='handslotr',Lh='handslotl',mainP=GV(0,0.033,0),offP=GV(0,0.017,0),shP=GV(0,0.017,0.156),out=[],keep=[];
   const sh=n=>SHIELDS.includes(n)||n==='Barbarian_Round_Shield';
@@ -1266,7 +1304,8 @@ function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.ro
   for(const k in (u.outfits||{}))for(const m of u.outfits[k])m.visible=false;
   let body=natParts;if(o!==nat){const om=outfitMeshes(u,R,o);if(om&&om.length){natParts.forEach(m=>m.visible=false);body=om;om.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true);
   const AMT=[0,0.45,0.55,0.85],pal=TINT[o]||TINT.knight;for(const m of body){if(o==='mage'){setHue(m,ar>0?ROBE_HUE[ar]:0);tintMesh(m,0,0,ar>=3?[0xb070ff,0.12]:null)}else{setHue(m,0);tintMesh(m,ar>0?pal[ar]:0,AMT[Math.max(0,ar)],ar>=3?[pal[3],0.1]:null)}}
-  tintMesh(u.cape,ar>0?TINT.cape[ar]:0,0.6,null);
+  {const D=CDEF[cls];if(D&&D.tint)for(const m of body)m.material.color.multiply(lin(tmpC.setHex(D.tint)));if(D&&D.holy){for(const m of body){setHue(m,0,0.05,2.3);m.material.color.multiply(lin(tmpC.setHex(0xfff2d8)))}}}
+  tintMesh(u.cape,ar>0?TINT.cape[ar]:0,0.6,null);if(CDEF[cls]&&CDEF[cls].holy&&u.cape)u.cape.material.color.multiply(lin(tmpC.setHex(0xf5d36a)));
   // chapéu
   for(const k of Object.values(HAT)){const p=u.parts[k]&&!u.parts[k].userData.borrowed?u.parts[k]:(u.borrow&&u.borrow[k]);if(p)p.visible=false}
   if(cls!=='mago'||hs){const hn=hs?HAT[hs]:'';if(hn){const hp=grabPart(u,R,hn);if(hp){hp.visible=true;const hpal=TINT[hs]||TINT.knight;hp.traverse(x=>{if(x.isMesh)tintMesh(x,hr>0?hpal[hr]:0,AMT[Math.max(0,hr)],hr>=3?[hpal[3],0.12]:null)})}}}
@@ -1279,7 +1318,8 @@ function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.ro
   // ===== equipamento do Blender por geração (1, 8, 18, 25) =====
   const [at,ht,wt,gt,grr]=[L[8],L[9],L[10],L[11],L[12]].map(x=>x==null?-1:x);
   for(const k in (u.gear||{}))u.gear[k].visible=false;
-  if(wt>=0&&main){const G=gearWeapons(cls,main,off,wt);let ok=true;const made=G.out.map(a=>{const o=grabGear(u,R,...a);if(!o)ok=false;return o});
+  const GW=CDEF[cls]&&CDEF[cls].gw;
+  if(GW||(wt>=0&&main)){const G=GW?classWeapons(cls,Math.max(0,wt)):gearWeapons(cls,main,off,wt);let ok=true;const made=G.out.map(a=>{const o=grabGear(u,R,...a);if(!o)ok=false;return o});
     if(ok){for(const n of [main,off]){if(!n||G.keep.includes(n))continue;const p=grabPart(u,R,n);if(p)p.visible=false}
       made.forEach(o=>{o.visible=true;gearGlow(o,wr,rf)});u.weapon=made[0];u.wpnOrb=made[0]}}
   if(ht>=0&&hs){const fam={knight:'helmK',mage:'hatM',barbarian:'helmB'}[hs];const o=grabGear(u,R,fam+ht,'head',GV(0,0,0),GQ_ID,1);
@@ -1341,7 +1381,7 @@ function cellHTML(it,attr){return `<div class="cell" ${attr} style="border-color
 function renderInv(){
   if(shopOpen)try{renderSell()}catch(e){}
   if($('inv').classList.contains('hidden'))return;
-  const ph={weapon:P.cls==='mago'?'🪄':P.cls==='barbaro'?'🪓':'🗡️',armor:'🛡️',helm:'⛑️',ring:'💍'};
+  const ph={weapon:icoOf({slot:'weapon',cls:P.cls}),armor:'🛡️',helm:'⛑️',ring:'💍'};
   $('eqSlots').innerHTML=Object.keys(SLOTN).map(s=>{const it=P.eq[s];return `<div class="eqrow">${it?cellHTML(it,`data-eq="${s}"`):`<div class="cell empty">${ph[s]}</div>`}<span>${SLOTN[s]}</span></div>`}).join('');
   let h='';for(let i=0;i<BAG_MAX;i++){const it=P.inv[i];h+=it?cellHTML(it,`data-bag="${i}"`):'<div class="cell empty"></div>'}
   $('bag').innerHTML=h;
@@ -1516,9 +1556,12 @@ function pillarFx(pos,color){
   for(let i=0;i<4;i++)setTimeout(()=>emit(pos.clone().setY(pos.y+0.5),color,30,2,6,1.4,1,2),i*150);
 }
 const bolts=[],ebolts=[],teles=[];
-function shootBolt(target,dmg,crit){
-  const m=new THREE.Mesh(new THREE.SphereGeometry(0.28,10,8),new THREE.MeshBasicMaterial({color:0x8fe3ff}));
-  m.add(glowSprite(0x8fe3ff,2.2,0.9));m.position.copy(P.pos);m.position.y+=1.8;scene.add(m);bolts.push({m,target,dmg,crit});
+const BOLT={arcane:{c:0x8fe3ff,spd:28},arrow:{c:0xb8ff7a,spd:40},javelin:{c:0xffd04a,spd:34},holy:{c:0xfff0a0,spd:30}};
+function shootBolt(target,dmg,crit,kind){kind=kind||'arcane';const B=BOLT[kind]||BOLT.arcane;let m;
+  if(kind==='arrow'||kind==='javelin'){m=new THREE.Group();const L=kind==='arrow'?1.1:1.6,sh=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,L,5),new THREE.MeshBasicMaterial({color:kind==='arrow'?0x8a6a3a:0x6a4a2a}));sh.rotation.x=Math.PI/2;m.add(sh);
+    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.25,4),new THREE.MeshBasicMaterial({color:0xdde4ee}));tip.rotation.x=Math.PI/2;tip.position.z=L/2;m.add(tip);m.add(glowSprite(B.c,0.9,0.6))}
+  else{m=new THREE.Mesh(new THREE.SphereGeometry(kind==='holy'?0.24:0.28,10,8),new THREE.MeshBasicMaterial({color:B.c}));m.add(glowSprite(B.c,kind==='holy'?2.8:2.2,0.9))}
+  m.position.copy(P.pos);m.position.y+=1.8;scene.add(m);bolts.push({m,target,dmg,crit,c:B.c,spd:B.spd});
 }
 function enemyBolt(m,dmg){SFX.play('zap',m.g.position,0.1);
   const big=m.T.lich||m.T.dragon;const b=new THREE.Mesh(new THREE.SphereGeometry(m.T.dragon?0.7:big?0.45:0.2,8,6),new THREE.MeshBasicMaterial({color:m.T.ranged}));
@@ -1676,6 +1719,7 @@ function hurtPlayer(d){
   if(P.dead)return;
   d=Math.max(1,Math.round(d*100/(100+P.def*2)));
   if(P.furyT>0)d=Math.max(1,Math.round(d*0.65));
+  if(P.metalT>0)d=Math.max(1,Math.round(d*0.5));
   dismount('Você foi atacado e caiu da montaria!');
   if(P.recallT>0){P.recallT=0;log('Pergaminho interrompido pelo ataque!','bad')}
   P.hp-=d;P.lastHurt=now;SFX.play('hurt',null,0.2);
@@ -1705,6 +1749,7 @@ function actSkill(){
     let hit=0;for(const m of monsters){if(m.dead)continue;if(d2(m.g.position,P.pos)<5.5+m.T.size*0.5){const cr=crit();damageMon(m,Math.round(P.atk*2.1*(0.9+rnd()*0.2)*(cr?1.8:1)),cr);hit++}}
     if(inDuel()){const o=others.get(DUEL.with);if(o&&Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)<5.5){duelAoe(P.pos,5.5,2.1);hit++}}
     if(!hit)log('O golpe não acertou ninguém.','sys');
+  }else if(CLASS_SKILL[P.cls]){CLASS_SKILL[P.cls](C,crit);
   }else if(P.cls==='barbaro'){
     let t=P.target;if(!t||t.dead)t=nearestMon(16);
     if(!t||d2(t.g.position,P.pos)>16){log('Escolha um alvo a até 16 m para a Investida.','sys');return}
@@ -1720,6 +1765,28 @@ function actSkill(){
     if(!t.duel)duelAoe(c,6.5,2.4);else duelAoe(c,99,2.4);
   }
 }
+// ===== habilidades das classes novas =====
+function pickTarget(maxD,msg){let t=P.target;if(!t||t.dead)t=nearestMon(maxD);if(!t||d2(t.g.position,P.pos)>maxD){log(msg||`Escolha um alvo a até ${maxD} m.`,'sys');return null}setTarget(t);return t}
+const hitAround=(c,r,mult,max)=>{let n=0;const L=monsters.filter(m=>!m.dead&&areaId(m.g.position.x)===areaId(c.x)&&d2(m.g.position,c)<r+m.T.size*0.4).sort((a,b)=>d2(a.g.position,c)-d2(b.g.position,c));
+  for(const m of L.slice(0,max||99)){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*mult*(0.9+rnd()*0.2)*(cr?1.8:1)),cr);n++}return n};
+function healParty(frac){const h=Math.round(P.maxHp*frac);P.hp=Math.min(P.maxHp,P.hp+h);floatText(P.pos.clone().setY(P.pos.y+2.6),'+'+h,'heal');ringFx(P.pos,5,0xfff0a0);emit(P.pos.clone().setY(P.pos.y+0.5),0xfff0a0,30,1.5,4,1.2,0,1.2);
+  let n=0;for(const [id,o] of others)if(inParty(id)&&Math.hypot(o.tx-P.pos.x,o.tz-P.pos.z)<14){netEmit('heal',{t:id,f:frac});n++}return n}
+const CLASS_SKILL={
+  mecanico(C){const t=pickTarget(12);if(!t)return;P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';const c=t.g.position.clone();burstFx(c,0xffb060);ringFx(c,6,0xffb060);SFX.play('boom',c);
+    hitAround(c,5,2.3);duelAoe(c,5,2.3)},
+  pikeman(C){P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';SFX.play('whirl');const fx=Math.sin(P.rot),fz=Math.cos(P.rot);let n=0;
+    for(let k=1;k<=6;k++){const p=new THREE.Vector3(P.pos.x+fx*k*1.6,0,P.pos.z+fz*k*1.6);p.y=H(p.x,p.z);setTimeout(()=>{ringFx(p,1.8,0x6ad0ff);emit(p.clone().setY(p.y+0.6),0x9fe0ff,8,3,3,0.5,4)},k*60)}
+    for(const m of monsters){if(m.dead||areaId(m.g.position.x)!==areaId(P.pos.x))continue;const dx=m.g.position.x-P.pos.x,dz=m.g.position.z-P.pos.z,along=dx*fx+dz*fz,side=Math.abs(dx*fz-dz*fx);
+      if(along>0&&along<10.5&&side<2.2+m.T.size*0.4){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*2.2*(0.9+rnd()*0.2)*(cr?1.8:1)),cr);n++}}
+    duelAoe(new THREE.Vector3(P.pos.x+fx*5,0,P.pos.z+fz*5),5,2.2);if(!n)log('A Lança Terrestre não acertou ninguém.','sys')},
+  arqueira(C,crit){const t=pickTarget(18);if(!t)return;P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';
+    const L=monsters.filter(m=>!m.dead&&areaId(m.g.position.x)===areaId(P.pos.x)&&d2(m.g.position,t.g.position)<9).sort((a,b)=>d2(a.g.position,t.g.position)-d2(b.g.position,t.g.position)).slice(0,5);
+    L.forEach((m,i)=>setTimeout(()=>{if(!m.dead){const cr=crit();shootBolt(m,Math.round(P.atk*1.5*(0.9+rnd()*0.2)*(cr?1.8:1)),cr,'arrow')}},i*70));SFX.play('swing');if(t.duel)duelAoe(t.g.position,3,1.5)},
+  atalanta(C,crit){const t=pickTarget(15);if(!t)return;P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';
+    const L=monsters.filter(m=>!m.dead&&areaId(m.g.position.x)===areaId(P.pos.x)&&d2(m.g.position,t.g.position)<7).sort((a,b)=>d2(a.g.position,t.g.position)-d2(b.g.position,t.g.position)).slice(0,3);
+    L.forEach((m,i)=>setTimeout(()=>{if(!m.dead){const cr=crit();shootBolt(m,Math.round(P.atk*2.0*(0.9+rnd()*0.2)*(cr?1.8:1)),cr,'javelin')}},i*110));SFX.play('swing');if(t.duel)duelAoe(t.g.position,3,2)},
+  sacerdotisa(C){P.mp-=C.skCost;P.skCd=C.skCd;P.atkAnim=1;P.trig='skill';SFX.play('heal');pillarFx(P.pos,0xfff0a0);const n=healParty(0.35);
+    log(`✚ Cura Sagrada: +35% de vida${n?` em você e em ${n} ${n>1?'aliados':'aliado'} do grupo`:''}.`,'xp')}};
 function updDash(dt){const D=P.dash;if(!D)return;D.t+=dt;const k=Math.min(1,D.t/D.dur);
   P.pos.x=D.fx+(D.tx-D.fx)*k;P.pos.z=D.fz+(D.tz-D.fz)*k;if(rnd()<0.9)emit(P.pos.clone().setY(H(P.pos.x,P.pos.z)+0.6),0xc9a070,2,2,1.5,0.5,2);
   if(k<1)return;P.dash=null;P.atkAnim=1;P.trig='skill';const c=P.pos.clone();ringFx(c,4,0xff6040);burstFx(D.tgt.g.position.clone(),0xff6040);SFX.play('crit',c);
@@ -1742,7 +1809,8 @@ function actPotion(){
   P.pots--;P.potCd=3;SFX.play('potion');const h=Math.round(P.maxHp*0.5);P.hp=Math.min(P.maxHp,P.hp+h);
   floatText(P.pos.clone().setY(P.pos.y+2.6),'+'+h,'heal');ringFx(P.pos,3,0x5dff7a);emit(P.pos.clone().setY(P.pos.y+0.5),0x5dff7a,30,1.5,4,1,0,1.2);
 }
-const ULT={guerreiro:{name:'Fúria',ico:'🔥',cost:30,cd:40,dur:10},mago:{name:'Meteoros',ico:'☄️',cost:55,cd:25},barbaro:{name:'Sede de Sangue',ico:'🩸',cost:25,cd:40,dur:10}};
+const ULT={mecanico:{name:'Armadura Metálica',ico:'🛡️',cost:30,cd:40,dur:12},pikeman:{name:'Tornado',ico:'🌪️',cost:40,cd:22},arqueira:{name:'Chuva de Flechas',ico:'🌧️',cost:45,cd:24},atalanta:{name:'Tempestade de Raios',ico:'⚡',cost:45,cd:24},sacerdotisa:{name:'Raios Celestiais',ico:'☀️',cost:55,cd:28},
+  guerreiro:{name:'Fúria',ico:'🔥',cost:30,cd:40,dur:10},mago:{name:'Meteoros',ico:'☄️',cost:55,cd:25},barbaro:{name:'Sede de Sangue',ico:'🩸',cost:25,cd:40,dur:10}};
 function actUlt(){
   if(P.dead)return;const U=ULT[P.cls];
   if(P.lvl<10){log(`🔒 ${U.name} é liberada no nível 10.`,'sys');return}
@@ -1752,6 +1820,7 @@ function actUlt(){
     P.mp-=U.cost;P.ultCd=U.cd;P.furyT=U.dur;recalc();P.trig='skill';P.atkAnim=1;SFX.play('crit');
     pillarFx(P.pos,0xff5a2a);ringFx(P.pos,6,0xff5a2a);floatText(P.pos.clone().setY(P.pos.y+3),'FÚRIA!','xp');
     log('🔥 Fúria! +50% de ataque e −35% de dano recebido por 10 segundos.','xp');netEmit('ufx',{k:'f',x:+P.pos.x.toFixed(1),z:+P.pos.z.toFixed(1)});
+  }else if(CLASS_ULT[P.cls]){CLASS_ULT[P.cls](U);
   }else if(P.cls==='barbaro'){
     P.mp-=U.cost;P.ultCd=U.cd;P.bloodT=U.dur;P.trig='skill';P.atkAnim=1;SFX.play('crit');
     pillarFx(P.pos,0xc01020);ringFx(P.pos,6,0xc01020);floatText(P.pos.clone().setY(P.pos.y+3),'SEDE DE SANGUE!','crit');
@@ -1764,6 +1833,26 @@ function actUlt(){
     netEmit('ufx',{k:'m',x:+c.x.toFixed(1),z:+c.z.toFixed(1)});log('☄️ Chuva de Meteoros!','xp');
   }
 }
+const CLASS_ULT={
+  mecanico(U){P.mp-=U.cost;P.ultCd=U.cd;P.metalT=U.dur;P.trig='skill';P.atkAnim=1;SFX.play('crit');pillarFx(P.pos,0xffb060);ringFx(P.pos,6,0xffb060);floatText(P.pos.clone().setY(P.pos.y+3),'ARMADURA METÁLICA!','xp');
+    log('🛡️ Armadura Metálica! −50% de dano recebido por 12 segundos.','xp');netEmit('ufx',{k:'p',x:+P.pos.x.toFixed(1),z:+P.pos.z.toFixed(1)})},
+  pikeman(U){P.mp-=U.cost;P.ultCd=U.cd;P.trig='skill';P.atkAnim=1;P.spin=0.8;SFX.play('whirl');const c=P.pos.clone();ringFx(c,9,0x6ad0ff);
+    for(let i=0;i<36;i++){const a=i/36*6.283;emit(new THREE.Vector3(c.x+Math.cos(a)*4,c.y+1+rnd()*2,c.z+Math.sin(a)*4),0x9fe0ff,1,5,2,0.7,2)}
+    hitAround(c,8,2.6);setTimeout(()=>{if(!P.dead){hitAround(P.pos.clone(),8,1.6);ringFx(P.pos,8,0x6ad0ff)}},450);duelAoe(c,8,2.6);log('🌪️ Tornado!','xp');netEmit('ufx',{k:'t',x:+c.x.toFixed(1),z:+c.z.toFixed(1)})},
+  arqueira(U){const t=pickTarget(24);if(!t)return;P.mp-=U.cost;P.ultCd=U.cd;P.trig='skill';P.atkAnim=1;const c=t.g.position.clone();arrowRain(c.x,c.z,true);
+    log('🌧️ Chuva de Flechas!','xp');netEmit('ufx',{k:'a',x:+c.x.toFixed(1),z:+c.z.toFixed(1)})},
+  atalanta(U){const t=pickTarget(20);if(!t)return;P.mp-=U.cost;P.ultCd=U.cd;P.trig='skill';P.atkAnim=1;let prev=P.pos.clone().setY(P.pos.y+1.8);
+    const L=monsters.filter(m=>!m.dead&&areaId(m.g.position.x)===areaId(P.pos.x)&&d2(m.g.position,t.g.position)<12).sort((a,b)=>d2(a.g.position,t.g.position)-d2(b.g.position,t.g.position)).slice(0,6);
+    L.forEach((m,i)=>{const p=m.g.position.clone().setY(m.g.position.y+1.2);boltLine(prev,p,0xffe066);prev=p;setTimeout(()=>{if(!m.dead){const cr=rnd()<P.crit/100;damageMon(m,Math.round(P.atk*(3-i*0.25)*(0.9+rnd()*0.2)*(cr?1.8:1)),cr);burstFx(m.g.position.clone(),0xffe066)}},i*90)});
+    SFX.play('zap');if(t.duel)duelAoe(t.g.position,3,3);log('⚡ Tempestade de Raios!','xp');netEmit('ufx',{k:'l',x:+t.g.position.x.toFixed(1),z:+t.g.position.z.toFixed(1)})},
+  sacerdotisa(U){const t=pickTarget(22);if(!t)return;P.mp-=U.cost;P.ultCd=U.cd;P.trig='skill';P.atkAnim=1;const c=t.g.position.clone();
+    for(let i=0;i<5;i++){const a=rnd()*6.28,r=i?rnd()*4:0,p=new THREE.Vector3(c.x+Math.cos(a)*r,0,c.z+Math.sin(a)*r);p.y=H(p.x,p.z);setTimeout(()=>{pillarFx(p,0xfff0a0);ringFx(p,3,0xfff0a0)},i*120)}
+    hitAround(c,7,3.2);duelAoe(c,7,3.2);healParty(0.5);SFX.play('heal');log('☀️ Raios Celestiais! Dano sagrado em área e +50% de vida.','xp');netEmit('ufx',{k:'h',x:+c.x.toFixed(1),z:+c.z.toFixed(1)})}};
+function boltLine(a,b,col){const g=new THREE.BufferGeometry().setFromPoints([a,b]),l=new THREE.Line(g,new THREE.LineBasicMaterial({color:col,transparent:true,opacity:1}));scene.add(l);
+  let t=0;const f=()=>{t+=0.05;l.material.opacity=1-t*2;if(t<0.5)requestAnimationFrame(f);else{scene.remove(l);g.dispose()}};f();for(let i=0;i<6;i++){const k=i/5;emit(a.clone().lerp(b,k),col,1,1,0.5,0.3,0)}}
+function arrowRain(x0,z0,mine){const c=new THREE.Vector3(x0,H(x0,z0),z0);ringFx(c,7,0xb8ff7a);
+  for(let w=0;w<5;w++)setTimeout(()=>{for(let i=0;i<6;i++){const a=rnd()*6.28,r=rnd()*6;emit(new THREE.Vector3(x0+Math.cos(a)*r,H(x0,z0)+6,z0+Math.sin(a)*r),0xb8ff7a,1,0.5,-14,0.5,0)}
+    if(mine){hitAround(c,7,0.9);duelAoe(c,7,0.9)}SFX.play('swing',c,0.1)},w*450)}
 const meteors=[];
 function meteorRain(x0,z0,mine){ringFx(new THREE.Vector3(x0,H(x0,z0),z0),7,0xff7a2a);
   for(let i=0;i<6;i++){const a=rnd()*6.28,r=i?1.5+rnd()*4:0;meteors.push({x:x0+Math.cos(a)*r,z:z0+Math.sin(a)*r,t:0.35+i*0.28,mine})}}
@@ -2160,10 +2249,10 @@ function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando
   const t=P.target;
   if(AUTO.skill&&t&&!t.dead&&P.skCd<=0&&P.mp>=C.skCost&&!zoneOf(P.pos.x,P.pos.z).safe){
     const dt_=d2(t.g.position,P.pos);
-    if(P.cls==='guerreiro'?dt_<4.5+t.T.size*0.5:P.cls==='barbaro'?(dt_>5&&dt_<15)||(dt_<4&&t.T.lvl>=P.lvl):dt_<18)actSkill();
+    if(P.cls==='sacerdotisa'?P.hp<P.maxHp*0.6:P.cls==='guerreiro'||P.cls==='pikeman'?dt_<4.5+t.T.size*0.5:P.cls==='mecanico'?dt_<10:P.cls==='barbaro'?(dt_>5&&dt_<15)||(dt_<4&&t.T.lvl>=P.lvl):dt_<18)actSkill();
   }
   if(AUTO.skill&&t&&!t.dead&&P.lvl>=10&&P.ultCd<=0&&P.mp>=ULT[P.cls].cost&&!zoneOf(P.pos.x,P.pos.z).safe){
-    const dt_=d2(t.g.position,P.pos);if(P.cls==='guerreiro'?(dt_<6&&(t.T.boss||t.T.lvl>=P.lvl-2)):P.cls==='barbaro'?(dt_<6&&(t.T.boss||P.hp<P.maxHp*0.6)):dt_<20)actUlt()}
+    const dt_=d2(t.g.position,P.pos);if(P.cls==='guerreiro'?(dt_<6&&(t.T.boss||t.T.lvl>=P.lvl-2)):P.cls==='barbaro'||P.cls==='mecanico'?(dt_<6&&(t.T.boss||P.hp<P.maxHp*0.6)):P.cls==='pikeman'?dt_<6:dt_<20)actUlt()}
   // travado indo até o alvo? troca de alvo
   if(P.auto&&t&&!t.dead){
     const d=d2(t.g.position,P.pos);
@@ -2299,6 +2388,7 @@ function netEmit(e,d){if(netEmitFn)netEmitFn(e,d)}
 // anfitrião = quem está há mais tempo no mundo (desempate pelo id); ele simula os monstros
 function hostId(){let hid=myId,hj=myJoin;for(const [k,o] of others){if(o.j<hj||(o.j===hj&&k<hid)){hid=k;hj=o.j}}return hid}
 const NET={
+  heal(d,from){if(!d||d.t!==myId||!inParty(from)||P.dead)return;const h=Math.round(P.maxHp*clamp(num(d.f,0),0,0.5));if(h<=0)return;P.hp=Math.min(P.maxHp,P.hp+h);floatText(P.pos.clone().setY(P.pos.y+2.6),'+'+h,'heal');ringFx(P.pos,3,0xfff0a0);const o=others.get(from);log(`✚ ${o?o.name:'Uma aliada'} curou você (+${h}).`,'xp')},
   tinv(d,from){if(!d||d.to!==myId||!others.has(from))return;if(TRADE.with||tradeInv||DUEL.with){netEmit('tno',{to:from,busy:1});return}
     tradeInv={from,n:String(d.n||'').slice(0,16)};tradeInvT=20;$('tinviteTxt').textContent=`🔁 ${tradeInv.n} quer trocar itens com você.`;$('tinvite').classList.remove('hidden');SFX.play('msg')},
   tno(d,from){if(!d||d.to!==myId)return;const o=others.get(from);log(`🔁 ${o?o.name:'O jogador'} ${d.busy?'está ocupado':'recusou a troca'}.`,'sys')},
@@ -2333,7 +2423,7 @@ const NET={
   hit(d,from){if(!amHost||!others.has(from))return;const m=monsters[d&&d.m];if(!m)return;const dmg=clamp(num(d.d,0),0,5000);m.flash=0.15;applyDamage(m,dmg,from)},
   mh(d){if(!d||d.t!==myId||P.dead)return;const m=monsters[d.m];const dmg=clamp(num(d.d,0),0,2000);if(m&&m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)},
   ufx(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z)||d2({x,z},P.pos)>90)return;
-    if(d.k==='m')meteorRain(x,z,false);else{const p=new THREE.Vector3(x,H(x,z),z),c=d.k==='b'?0xc01020:0xff5a2a;pillarFx(p,c);ringFx(p,6,c)}},
+    if(d.k==='m')meteorRain(x,z,false);else if(d.k==='a')arrowRain(x,z,false);else{const p=new THREE.Vector3(x,H(x,z),z),c={b:0xc01020,p:0xffb060,t:0x6ad0ff,l:0xffe066,h:0xfff0a0}[d.k]||0xff5a2a;pillarFx(p,c);ringFx(p,6,c)}},
   tl(d){if(!d)return;const x=num(d.x,NaN),z=num(d.z,NaN);if(!Number.isFinite(x)||!Number.isFinite(z))return;
     if(d.k==='s'){const r=clamp(num(d.r,4),3,7);if(inSwamp(x,z)&&Math.hypot(P.pos.x-x,P.pos.z-z)<60)telegraph(new THREE.Vector3(x,0,z),r,TYPES.mushking.atk*1.1,0x7dff6a);return}
     if(d.k==='w'){const r=clamp(num(d.r,4.5),3,8);if(Math.hypot(P.pos.x-x,P.pos.z-z)<70)telegraph(new THREE.Vector3(x,0,z),r,TYPES.demon.atk*1.15,0xb040ff);return}
@@ -2457,7 +2547,7 @@ function updateOthers(dt){
 function positionOthers(){
   for(const o of others.values()){
     const g=o.mesh,dd=d2(g.position,P.pos);
-    const s=dd<70?toScreen(tmp.copy(g.position).setY(g.position.y+(o.cls==='mago'?3.3:o.cls==='barbaro'?3.0:2.8))):null;
+    const s=dd<70?toScreen(tmp.copy(g.position).setY(g.position.y+((CDEF[o.cls]||CDEF.guerreiro).lh))):null;
     if(!s){o.lbl.style.display='none';o.bub.style.display='none';continue}
     o.lbl.style.display='';o.lbl.style.left=s.x+'px';o.lbl.style.top=s.y+'px';
     if(o.bubT>0){o.bub.style.display='';o.bub.style.left=s.x+'px';o.bub.style.top=(s.y-30)+'px'}else o.bub.style.display='none';
@@ -2720,6 +2810,7 @@ function update(dt){
   now+=dt;const C=CLS[P.cls];
   P.cd=Math.max(0,P.cd-dt);P.skCd=Math.max(0,P.skCd-dt);P.potCd=Math.max(0,P.potCd-dt);P.ultCd=Math.max(0,P.ultCd-dt);
   if(P.furyT>0){P.furyT-=dt;if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xff5a2a,1,0.8,1.2,0.6,-1,1.2);if(P.furyT<=0){P.furyT=0;recalc();log('A Fúria passou.','sys')}}
+  if(P.metalT>0){P.metalT-=dt;if(rnd()<0.4)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xffb060,1,0.8,1.2,0.6,-1,1.2);if(P.metalT<=0){P.metalT=0;log('A Armadura Metálica se desfez.','sys')}}
   if(P.bloodT>0){P.bloodT-=dt;if(rnd()<0.4)emit(P.pos.clone().setY(P.pos.y+0.3+rnd()*1.8),0xc01020,1,0.8,1.2,0.6,-1,1.2);if(P.bloodT<=0){P.bloodT=0;log('A Sede de Sangue passou.','sys')}}
   updDash(dt);updDuel(dt);updTrade(dt);updRecall(dt);updMeteors(dt);if(ptyInv&&(ptyInvT-=dt)<=0)ptyAnswer(false);if((ptyT-=dt)<=0){ptyT=1;if(PTY.m.length>1)renderParty();if(profOpen&&(profTab==='friends'||profTab==='party')&&!(document.activeElement&&document.activeElement.id==='frIn'))renderProfile()}if((wbT-=dt)<=0){wbT=1;wbTick()}if(mapOpen&&(mapT-=dt)<=0){mapT=0.1;drawMap()}
   const zone=zoneOf(P.pos.x,P.pos.z),inD=!!zone.dun;
@@ -2748,7 +2839,7 @@ function update(dt){
         if(P.cd<=0){
           if(zone.safe){if(AUTO.on)moving=moveP(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z,spd,dt);else{log('Não é possível atacar dentro da vila.','sys');P.auto=false}}
           else{dismount();P.cd=C.cd*(P.bloodT>0?0.65:1);P.atkAnim=1;P.trig='atk';const cr=rnd()<P.crit/100,dmg=Math.round(P.atk*(0.85+rnd()*0.3)*(cr?1.8:1));
-            if(P.cls==='mago'){SFX.play('cast');shootBolt(t,dmg,cr)}else{SFX.play('swing');damageMon(t,dmg,cr)}}
+            const CD=CDEF[P.cls]||CDEF.guerreiro;if(CD.ranged){SFX.play(CD.bolt==='arcane'||CD.bolt==='holy'?'cast':'swing');shootBolt(t,dmg,cr,CD.bolt)}else{SFX.play('swing');damageMon(t,dmg,cr)}}
         }
       }
     }else if(P.moveTo){
@@ -2798,9 +2889,9 @@ function update(dt){
     if(t.dead){scene.remove(b.m);bolts.splice(i,1);continue}
     tmp.copy(t.g.position);tmp.y+=1+t.T.size*0.4;
     const d=tmp.clone().sub(b.m.position),l=d.length();
-    if(rnd()<0.6)emit(b.m.position,0x8fe3ff,1,0.5,0,0.3,0,0.2);
-    if(l<0.8){damageMon(t,b.dmg,b.crit);burstFx(b.m.position.clone().setY(b.m.position.y-1),0x8fe3ff);scene.remove(b.m);bolts.splice(i,1)}
-    else b.m.position.addScaledVector(d,Math.min(1,28*dt/l));
+    if(rnd()<0.6)emit(b.m.position,b.c||0x8fe3ff,1,0.5,0,0.3,0,0.2);
+    if(l<0.8){damageMon(t,b.dmg,b.crit);burstFx(b.m.position.clone().setY(b.m.position.y-1),b.c||0x8fe3ff);scene.remove(b.m);bolts.splice(i,1)}
+    else{b.m.lookAt(tmp);b.m.position.addScaledVector(d,Math.min(1,(b.spd||28)*dt/l))}
   }
   // projéteis inimigos
   for(let i=ebolts.length-1;i>=0;i--){
@@ -2883,7 +2974,7 @@ function update(dt){
   for(const L of staticLabels){L.o.getWorldPosition(tmp);const dd=tmp.distanceTo(P.pos);tmp.y+=L.h;const s=dd<L.far?toScreen(tmp):null;if(s){L.el.style.display='';L.el.style.left=s.x+'px';L.el.style.top=s.y+'px'}else L.el.style.display='none'}
   for(const d of drops){const dd=d.g.position.distanceTo(P.pos);const s=dd<40?toScreen(tmp.copy(d.g.position).setY(d.g.position.y+1.3)):null;if(s){d.lbl.style.display='';d.lbl.style.left=s.x+'px';d.lbl.style.top=s.y+'px'}else d.lbl.style.display='none'}
   positionOthers();
-  {const s=toScreen(tmp.copy(P.pos).setY(P.pos.y+(P.cls==='mago'?3.3:P.cls==='barbaro'?3.0:2.8)));if(s){P.lbl.style.left=s.x+'px';P.lbl.style.top=s.y+'px'}}
+  {const s=toScreen(tmp.copy(P.pos).setY(P.pos.y+((CDEF[P.cls]||CDEF.guerreiro).lh)));if(s){P.lbl.style.left=s.x+'px';P.lbl.style.top=s.y+'px'}}
 
   $('zone').innerHTML=`${zone.n}<br><span style="font-family:Inter;font-size:10px;color:#cbbd9c">${zone.s} · ${clockTxt}${room?` · 👥 ${others.size+1} online`:''}</span><br><span style="font-family:Inter;font-size:10px;color:#d9a6ff">${wbStatus()}</span>`;
   if(bannerT>0){bannerT-=dt;if(bannerT<=0)$('banner').style.opacity=0}
@@ -3082,6 +3173,7 @@ function start(){
   log('Na vila: Curandeira Lia cura, Ferreiro Borin vende equipamentos e o Capitão Aldric (o ! dourado) dá missões. Aperte E perto deles.','sys');
   if(P.cls==='mago')log('Dica: magos atacam de longe — mantenha distância dos lobos.','sys');
   if(P.cls==='barbaro')log('Dica: use a Investida (2) para avançar sobre os inimigos. No nível 10 você libera a Sede de Sangue (3).','sys');
+  {const tip={mecanico:'Dica: a Bomba Mecânica (2) explode em área. No nível 10, a Armadura Metálica (3) corta o dano pela metade.',pikeman:'Dica: a Lança Terrestre (2) acerta todos em linha à sua frente. No nível 10, o Tornado (3).',arqueira:'Dica: a Flecha Múltipla (2) acerta até 5 inimigos. No nível 10, a Chuva de Flechas (3).',atalanta:'Dica: a Lança Tripla (2) acerta 3 inimigos. No nível 10, a Tempestade de Raios (3) salta entre 6 inimigos.',sacerdotisa:'Dica: a Cura Sagrada (2) cura você e o seu grupo. No nível 10, os Raios Celestiais (3) causam dano e curam.'}[P.cls];if(tip)log(tip,'sys')}
   banner('Vila de Aether','Zona segura');
 }
 $('go').addEventListener('click',start);
