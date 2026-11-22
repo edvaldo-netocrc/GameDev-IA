@@ -38,4 +38,6 @@ modelagem procedural (bpy/bmesh), low-poly com flat shading:
   loot_chest (baús de loot), rock_a, rock_b, flower_bush, wildflowers (campos)
   lich_throne, gothic_pillar, bone_pile, sarcophagus, candelabra, gibbet_cage, dungeon_gate (Masmorra Esquecida)
   models/gear/gear_weapons|gear_helms|gear_armor.glb: 44 peças de equipamento em 4 gerações (Nv 1, 8, 18, 25)
+  models/monsters_new.glb: Elemental de Gelo/Magma, Urso Glacial, Salamandra de Fogo, Kryos e Vulkar (peças animadas pelo jogo)
+  ice_crystal, snow_pine, ice_rock, basalt, lava_rock, charred_tree (Picos Gelados e Caldeira Ardente)
   Script-fonte: aether_gear.py e ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
