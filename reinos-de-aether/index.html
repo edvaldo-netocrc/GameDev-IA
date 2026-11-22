@@ -718,11 +718,15 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={glub:'models/glub.glb',armabee:'models/armabee.glb',dino:'models/dino.glb',wizard:'models/wizard.glb',bluedemon:'models/bluedemon.glb',greenblob:'models/greenblob.glb',squidle:'models/squidle.glb',hywirl:'models/hywirl.glb',spikyblob:'models/spikyblob.glb',dragonevo:'models/dragonevolved.glb',rogue:'models/rogue.glb',rogue_hooded:'models/rogue_hooded.glb',knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
+// arquivos 3D organizados em assets/ (personagens, monstros comuns/chefes, equipamento, cenário)
+const A_DIR={characters:['knight','barbarian','mage','rogue','rogue_hooded'],'monsters/common':['glub','armabee','dino','wizard','bluedemon','greenblob','squidle','hywirl','spikyblob','wolf','spider','slime','ghost','skullf','orc','troll','skeleton_warrior','skeleton_rogue','monsters_new'],
+  'monsters/bosses':['mushking','demon','dragon','dragonevolved','skeleton_mage'],environment:['village','dungeon']};
+const A_PATH={};for(const [d,l] of Object.entries(A_DIR))for(const n of l)A_PATH[n]='assets/'+d+'/'+n+'.glb';
+const MODEL_FILES=Object.fromEntries(Object.entries({glub:'glub',armabee:'armabee',dino:'dino',wizard:'wizard',bluedemon:'bluedemon',greenblob:'greenblob',squidle:'squidle',hywirl:'hywirl',spikyblob:'spikyblob',dragonevo:'dragonevolved',rogue:'rogue',rogue_hooded:'rogue_hooded',knight:'knight',mage:'mage',skel:'skeleton_warrior',archer:'skeleton_rogue',lich:'skeleton_mage',village:'village',dungeon:'dungeon',barbarian:'barbarian',wolfm:'wolf',spiderm:'spider',slimem:'slime',ghost:'ghost',skullf:'skullf',mushking:'mushking',demon:'demon',orc:'orc',troll:'troll',dragon:'dragon'}).map(([k,f])=>[k,A_PATH[f]]));
 const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate','ice_crystal','snow_pine','ice_rock','basalt','lava_rock','charred_tree'];
-for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb';
-MODEL_FILES.mon_new='models/monsters_new.glb'; // monstros dos mapas novos (Blender)
-for(const k of ['weapons','helms','armor'])MODEL_FILES['gear_'+k]='models/gear/gear_'+k+'.glb'; // equipamento modelado no Blender, 4 gerações // cenário modelado no Blender
+for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='assets/environment/props/'+k+'.glb';
+MODEL_FILES.mon_new=A_PATH.monsters_new; // monstros dos mapas novos (Blender)
+for(const k of ['weapons','helms','armor'])MODEL_FILES['gear_'+k]='assets/equipment/gear_'+k+'.glb'; // equipamento modelado no Blender, 4 gerações // cenário modelado no Blender
 function loadModels(onProg){
   if(!THREE.GLTFLoader||!THREE.SkeletonUtils||location.protocol==='file:')return Promise.resolve(false);
   const loader=new THREE.GLTFLoader(),keys=Object.keys(MODEL_FILES);let done=0;
@@ -779,9 +783,11 @@ function makeHero(cls){return (modelsOK&&makeHeroModel(cls))||makeHeroBox(cls)}
 // anima um herói com modelo: correr/parado, ataque, habilidade, morte
 function driveHero(g,moving,trig,dead,dt){
   const u=g.userData;if(!u.model)return false;u.t+=dt;
-  if(dead){if(u.state!=='dead'){playAnim(u,'Death_A',true);u.state='dead'}}
+  if(dead){if(u.state!=='dead'){playAnim(u,u.actions.Death_B&&Math.random()<0.5?'Death_B':'Death_A',true);u.state='dead'}}
   else{
-    if(u.state==='dead'){u.state='';u.curName=null;u.lock=0}
+    if(u.state==='dead'){u.state='';u.curName=null;u.lock=0; // renasceu: levanta do chão
+      if(u.actions.Lie_StandUp){u.lock=u.t+playAnim(u,'Lie_StandUp',true,1.25)*0.92;u.emo=true}}
+    if(trig==='pick'||trig==='hit'){const n=trig==='pick'?'PickUp':'Hit_A';if(u.t>=u.lock&&u.actions[n]){u.lock=u.t+playAnim(u,n,true,trig==='pick'?1.8:1.4)*0.8;u.emo=true}trig=null}
     if(trig&&trig.startsWith('emo:')){const E=EMOTES[trig.slice(4)];if(E&&u.actions[E.a]){const d=playAnim(u,E.a,!E.loop,E.sp);u.lock=u.t+(E.hold||d*(E.rep||1));u.emo=true}trig=null}
     if(trig){u.emo=false;const D=CDEF[u.cls]||CDEF.guerreiro;let n,sp;
       if(trig==='skill'){n=D.sk;sp=D.ssp}else{n=D.atk[Math.floor(Math.random()*D.atk.length)];sp=D.asp}
@@ -789,22 +795,23 @@ function driveHero(g,moving,trig,dead,dt){
     if(u.emo&&moving){u.lock=0;u.emo=false}
     if(u.t>=u.lock){u.emo=false;const base=moving?'Running_A':'Idle';if(u.curName!==base)playAnim(u,base,false,moving?1.2:1)}
   }
+  if(u.halo){u.halo.material.opacity=0.7+Math.sin(u.t*2.4)*0.2;u.halo.visible=!dead}
   if(u.gem){const a=u.t*1.5;u.gem.position.set(Math.cos(a)*0.8,1.15+Math.sin(u.t*2.3)*0.1,Math.sin(a)*0.8);u.gem.rotation.y=u.t*2.5}
   u.mixer.update(dt);return true;
 }
 const MON_MODEL={glub:['glub',1.7],armabee:['armabee',1.9],dino:['dino',2.7],wizard:['wizard',2.3],bluedemon:['bluedemon',3.6],greenblob:['greenblob',1.6],squidle:['squidle',2.6],hywirl:['hywirl',2.8],spikyblob:['spikyblob',1.9],dragonevo:['dragonevo',5.2],ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
-const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons'};
+const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons',hit:'Hit_A'};
 const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw'},lich:{...SK,atk:'Spellcast_Shoot'},
-  wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death'},
+  wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death',hit:'Idle_HitReact_Left'},
   spider:{idle:'Spider_Idle',walk:'Spider_Walk',run:'Spider_Walk',runSpeed:1.8,atk:'Spider_Attack',death:'Spider_Death'},
-  slime:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death'},
-  orc:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death'},
-  demon:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death'},
-  ghost:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death'},
-  skullf:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Punch',death:'Death'},
-  mushking:{idle:'Idle',walk:'Walk',run:'Run',atk:'Punch',death:'Death'},
-  troll:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.5,atk:'Bite_Front',death:'Death'},
-  dragon:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death'}};
+  slime:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death',hit:'HitRecieve'},
+  orc:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death',hit:'HitReact'},
+  demon:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death',hit:'HitReact'},
+  ghost:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death',hit:'HitReact'},
+  skullf:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Punch',death:'Death',hit:'HitReact'},
+  mushking:{idle:'Idle',walk:'Walk',run:'Run',atk:'Punch',death:'Death',hit:'HitReact'},
+  troll:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.5,atk:'Bite_Front',death:'Death',hit:'HitRecieve'},
+  dragon:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death',hit:'HitReact'}};
 {const FLY={idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death',hit:'HitReact'},HUM={idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death',hit:'HitReact'},BLOB={idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death',hit:'HitRecieve'};
   Object.assign(MON_ANIM,{glub:FLY,armabee:{...FLY,atk:'Punch'},hywirl:FLY,squidle:{...FLY,atk:'Punch'},dragonevo:FLY,dino:{...HUM,atk:'Punch'},bluedemon:HUM,wizard:BLOB,greenblob:BLOB,spikyblob:BLOB})}
 const FLYERS={glub:0.8,armabee:1.0,hywirl:1.2,squidle:0.9,dragonevo:2.6}; // altura do voo
@@ -823,7 +830,7 @@ function upgradeMonsterModels(){
     g.traverse(o=>{o.userData.mon=m});
   }
 }
-// ===== monstros novos montados com as peças do Blender (models/monsters_new.glb)
+// ===== monstros novos montados com as peças do Blender (assets/monsters/common/monsters_new.glb)
 function monPart(name,parent,x,y,z,s){const src=MODELS.mon_new&&MODELS.mon_new.scene.getObjectByName(name);if(!src)return null;
   const c=src.clone(true);c.position.set(0,0,0);if(s)c.scale.setScalar(s);
   c.traverse(o=>{if(o.isMesh){o.material=o.material.clone();if(o.material.metalness!=null){o.material.metalness=Math.min(o.material.metalness,0.3);o.material.roughness=Math.max(o.material.roughness,0.35)}LIN.add(o.material);o.castShadow=true}});
@@ -1251,7 +1258,7 @@ const CDEF={
   pikeman:{n:'Pikeman',en:'Pikeman',ico:'🔱',model:'barbarian',look:'barbarian',lh:3.0,h:1.05,ranged:false,gw:'spear',tint:0x8fb0d8,atk:['2H_Melee_Attack_Stab','2H_Melee_Attack_Slice'],asp:1.4,sk:'2H_Melee_Attack_Spin',ssp:1.3,d:'Lança longa, ataques em área'},
   arqueira:{n:'Arqueira',en:'Archer',ico:'🏹',model:'rogue',look:'rogue',lh:2.8,ranged:true,bolt:'arrow',gw:'bow',atk:['1H_Ranged_Shoot'],asp:1.6,sk:'2H_Ranged_Shoot',ssp:1.6,d:'Arco de longo alcance'},
   atalanta:{n:'Atalanta',en:'Atalanta',ico:'🎯',model:'rogue_hooded',look:'rogue',lh:2.8,ranged:true,bolt:'javelin',gw:'javelin',tint:0xc8d8a0,atk:['Throw'],asp:1.5,sk:'Throw',ssp:1.8,d:'Arremessa azagaias'},
-  sacerdotisa:{n:'Sacerdotisa',en:'Priestess',ico:'✨',model:'mage',look:'mage',lh:3.3,ranged:true,bolt:'holy',gw:'scepter',holy:true,atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Raise',ssp:1.4,d:'Cura e luz sagrada'}};
+  sacerdotisa:{n:'Sacerdotisa',en:'Priestess',ico:'✨',model:'rogue_hooded',look:'rogue',lh:2.9,ranged:true,bolt:'holy',gw:'scepter',holy:true,atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Raise',ssp:1.4,d:'Cura e luz sagrada'}};
 const CLSICO=Object.fromEntries(Object.entries(CDEF).map(([k,v])=>[k,v.ico]));
 const CLSN=k=>(CDEF[k]||CDEF.guerreiro).n;const okCls=c=>Object.prototype.hasOwnProperty.call(CLS,c)?c:'guerreiro';
 const BAG_MAX=25;
@@ -1280,7 +1287,7 @@ const bn=it=>it?String(it.name).replace(/^\+\d+\s/,''):'';
 const has=(it,...k)=>{const n=bn(it);return k.some(x=>n.startsWith(x))};
 function lookOf(cls,eq){const a=eq.armor,h=eq.helm,w=eq.weapon,nat=NATIVE[cls]||'knight';
   // roupa
-  let o=nat;if(a){if(has(a,'Veste de Caçadora','Couraça Leve')||(nat==='rogue'&&has(a,'Gibão','Couraça','Veste')))o='rogue';else if(has(a,'Peitoral','Cota de Malha','Cota Arcana','Armadura Mecânica'))o='knight';else if(has(a,'Gibão','Couraça de Couro'))o='barbarian';else if(has(a,'Manto','Túnica','Veste Sagrada'))o='mage';else if(has(a,'Cota'))o='knight'}
+  let o=nat;if(a){if(has(a,'Veste de Caçadora','Couraça Leve')||(nat==='rogue'&&has(a,'Gibão','Couraça','Veste')))o='rogue';else if(has(a,'Peitoral','Cota de Malha','Cota Arcana','Armadura Mecânica'))o='knight';else if(has(a,'Gibão','Couraça de Couro'))o='barbarian';else if(has(a,'Manto','Túnica','Veste Sagrada'))o=cls==='sacerdotisa'?'rogue':'mage';else if(has(a,'Cota'))o='knight'}
   // chapéu
   let hs='';if(h){if(has(h,'Tiara','Capuz de Caçadora'))hs='knight';else if(has(h,'Capuz de Urso','Elmo de Chifres','Capuz de Pele','Capacete com Chifres'))hs='barbarian';else if(has(h,'Elmo de Aço','Elmo','Capacete'))hs='knight';else hs='mage'}
   // arma
@@ -1338,14 +1345,35 @@ function gearWeapons(cls,main,off,wt){ // qual peça do Blender vai em cada mão
     const sc=main==='2H_Sword'?1.08:main==='2H_Axe'?1:ax?0.72:1;out.push([w+wt,R,mainP,GQ_FLIP,sc]);
     if(off&&sh(off))out.push(['shield'+wt,Lh,shP,GQ_ID,1]);else if(off==='1H_Sword_Offhand')out.push(['sword'+wt,Lh,offP,GQ_ID,0.9]);else if(off==='1H_Axe_Offhand')out.push(['axe'+wt,Lh,offP,GQ_ID,0.68])}
   return{out,keep}}
+// ===== Sacerdotisa: textura da Rogue recolorida (verde → branco, couro → dourado) + saia longa e auréola
+const HOLY_TEX=new Map();
+function holyTexOf(t){if(!t||!t.image)return t;if(HOLY_TEX.has(t))return HOLY_TEX.get(t);const im=t.image,w=im.width,h=im.height;if(!w||!h)return t;
+  const cv=document.createElement('canvas');cv.width=w;cv.height=h;const cx=cv.getContext('2d');cx.drawImage(im,0,0);let d;try{d=cx.getImageData(0,0,w,h)}catch(e){return t}const a=d.data;
+  for(let i=0;i<a.length;i+=4){const r=a[i]/255,g=a[i+1]/255,b=a[i+2]/255,mx=Math.max(r,g,b),mn=Math.min(r,g,b),v=mx,sat=mx?(mx-mn)/mx:0;let hu=0;
+    if(mx!==mn){hu=mx===r?((g-b)/(mx-mn))%6:mx===g?(b-r)/(mx-mn)+2:(r-g)/(mx-mn)+4;hu*=60;if(hu<0)hu+=360}
+    let o=null;if(hu>70&&hu<200&&sat>0.2){const l=0.62+v*0.42;o=[l*1.0,l*0.97,l*0.9]}           // verde → branco perolado
+    else if(hu<=48&&sat>0.42&&v<0.8&&v>0.12){const l=0.4+v*0.75;o=[l*0.98,l*0.76,l*0.32]}         // couro marrom → dourado
+    else if(sat<0.18&&v<0.75&&v>0.2){const l=0.55+v*0.5;o=[l*0.98,l*0.96,l*0.92]}                 // cinza/metal → prata clara
+    if(o){a[i]=Math.min(255,o[0]*255);a[i+1]=Math.min(255,o[1]*255);a[i+2]=Math.min(255,o[2]*255)}}
+  cx.putImageData(d,0,0);const nt=new THREE.CanvasTexture(cv);nt.flipY=t.flipY;nt.encoding=t.encoding;nt.wrapS=t.wrapS;nt.wrapT=t.wrapT;nt.magFilter=t.magFilter;nt.minFilter=t.minFilter;
+  HOLY_TEX.set(t,nt);return nt}
+function holyMap(m){if(!m||!m.material||!m.material.map)return;if(!m.userData.holy){m.material.map=holyTexOf(m.material.map);m.material.needsUpdate=true;m.userData.holy=1}setHue(m,0)}
+function holyLook(u,R,body){for(const m of body)holyMap(m);for(const n of ['Rogue_Head_Hooded','Rogue_Head','Rogue_Cape'])if(u.parts[n])holyMap(u.parts[n]);
+  if(u.holyX)return;u.holyX=1;const hips=R.getObjectByName('hips'),head=R.getObjectByName('head');
+  if(hips){const robe=new THREE.Mesh(new THREE.CylinderGeometry(0.3,0.5,0.46,14,1,true),new THREE.MeshStandardMaterial({color:0xfaf5ea,roughness:0.8,side:THREE.DoubleSide}));
+    robe.position.set(0,-0.2,0);robe.castShadow=true;robe.frustumCulled=false;LIN.add(robe.material);hips.add(robe);
+    const hem=new THREE.Mesh(new THREE.TorusGeometry(0.5,0.028,6,24),new THREE.MeshStandardMaterial({color:0xe8b84a,metalness:0.3,roughness:0.45}));hem.rotation.x=Math.PI/2;hem.position.y=-0.43;LIN.add(hem.material);hips.add(hem);
+    const belt=new THREE.Mesh(new THREE.TorusGeometry(0.31,0.03,6,20),hem.material);belt.rotation.x=Math.PI/2;belt.position.y=0.03;hips.add(belt);u.robe=robe}
+  if(head){const halo=new THREE.Mesh(new THREE.TorusGeometry(0.3,0.03,8,28),new THREE.MeshBasicMaterial({color:0xffe9a0,transparent:true,opacity:0.95}));
+    halo.rotation.x=Math.PI/2-0.25;halo.position.set(0,1.02,-0.06);head.add(halo);u.halo=halo}}
 function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.root)return;u.lookKey=key;const R=u.root;const nat=NATIVE[cls]||'knight',[o,ar,hs,hr,main,off,wr,rf]=L;
   // roupa
   const natPre=OUTFIT_PARTS[nat],natParts=['Body','ArmLeft','ArmRight','LegLeft','LegRight'].map(p=>u.parts[natPre+'_'+p]).filter(Boolean);
   for(const k in (u.outfits||{}))for(const m of u.outfits[k])m.visible=false;
   let body=natParts;if(o!==nat){const om=outfitMeshes(u,R,o);if(om&&om.length){natParts.forEach(m=>m.visible=false);body=om;om.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true)}else natParts.forEach(m=>m.visible=true);
   const AMT=[0,0.45,0.55,0.85],pal=TINT[o]||TINT.knight;for(const m of body){if(o==='mage'){setHue(m,ar>0?ROBE_HUE[ar]:0);tintMesh(m,0,0,ar>=3?[0xb070ff,0.12]:null)}else{setHue(m,0);tintMesh(m,ar>0?pal[ar]:0,AMT[Math.max(0,ar)],ar>=3?[pal[3],0.1]:null)}}
-  {const D=CDEF[cls];if(D&&D.tint)for(const m of body)m.material.color.multiply(lin(tmpC.setHex(D.tint)));if(D&&D.holy){for(const m of body){setHue(m,0,0.05,4.2);m.material.color.multiply(lin(tmpC.setHex(0xfff2d8)))}}}
-  tintMesh(u.cape,ar>0?TINT.cape[ar]:0,0.6,null);if(CDEF[cls]&&CDEF[cls].holy&&u.cape)u.cape.material.color.multiply(lin(tmpC.setHex(0xf5d36a)));
+  {const D=CDEF[cls];if(D&&D.tint)for(const m of body)m.material.color.multiply(lin(tmpC.setHex(D.tint)));if(D&&D.holy)holyLook(u,R,body)}
+  tintMesh(u.cape,ar>0?TINT.cape[ar]:0,0.6,null);if(CDEF[cls]&&CDEF[cls].holy&&u.cape){holyMap(u.cape);u.cape.material.color.multiply(lin(tmpC.setHex(0xfff0c8)))}
   // chapéu
   for(const k of Object.values(HAT)){const p=u.parts[k]&&!u.parts[k].userData.borrowed?u.parts[k]:(u.borrow&&u.borrow[k]);if(p)p.visible=false}
   if(cls!=='mago'||hs){const hn=hs?HAT[hs]:'';if(hn){const hp=grabPart(u,R,hn);if(hp){hp.visible=true;const hpal=TINT[hs]||TINT.knight;hp.traverse(x=>{if(x.isMesh)tintMesh(x,hr>0?hpal[hr]:0,AMT[Math.max(0,hr)],hr>=3?[hpal[3],0.12]:null)})}}}
@@ -1364,7 +1392,7 @@ function applyLookModel(u,cls,L){const key=L.join('|');if(u.lookKey===key||!u.ro
       made.forEach(o=>{o.visible=true;gearGlow(o,wr,rf)});u.weapon=made[0];u.wpnOrb=made[0]}}
   if(ht>=0&&hs){const fam={knight:'helmK',mage:'hatM',barbarian:'helmB'}[hs];const o=grabGear(u,R,fam+ht,'head',GV(0,0,0),GQ_ID,1);
     if(o){for(const k of Object.values(HAT)){const p=u.parts[k]&&!u.parts[k].userData.borrowed?u.parts[k]:(u.borrow&&u.borrow[k]);if(p)p.visible=false}o.visible=true;gearGlow(o,hr,0)}}
-  if(at>=0){const fam={knight:'armK',mage:'armM',barbarian:'armB'}[o]||'armK';const a=grabGear(u,R,fam+at,'chest',GV(0,0,0),GQ_ID,1);if(a){a.visible=true;gearGlow(a,ar,0)}}
+  if(at>=0){const fam={knight:'armK',mage:'armM',barbarian:'armB'}[o]||'armK';const a=grabGear(u,R,fam+at,'chest',GV(0,0,0),GQ_ID,1);if(a){a.visible=true;if(CDEF[cls]&&CDEF[cls].holy)a.traverse(x=>{if(x.isMesh&&!x.userData.hol){x.userData.hol=1;const c=x.material.color,l=(c.r+c.g+c.b)/3;x.material.color.copy(lin(tmpC.setHex(l>0.2?0xfff6e6:0xe0b048)))}});gearGlow(a,ar,0)}}
   u.gem=null;if(gt>=0){const g=grabGear(u,R,'gem'+gt,'',GV(0,1.1,0),GQ_ID,1.2);if(g){g.visible=true;gearGlow(g,grr,0);u.gem=g}}
 }
 function applyLook(u,cls,ar,hr,wr){
@@ -1707,7 +1735,7 @@ function damageMon(m,dmg,crit){
   if(m.duel){duelHit(dmg,crit);return}
   if(m.dead)return;
   if(dmg>0&&m.T.def)dmg=Math.max(1,Math.round(dmg*(1-m.T.def/(m.T.def+220)))); // defesa do monstro
-  {const ud=m.g.userData,A=MON_ANIM[m.type];if(ud.model&&A&&A.hit&&ud.t>=ud.lock&&m.hp>dmg)ud.lock=ud.t+playAnim(ud,A.hit,true,1.8)*0.5}
+  {const ud=m.g.userData,A=MON_ANIM[m.type];if(ud.model&&A&&A.hit&&ud.t>=ud.lock&&m.hp>dmg&&(!m.T.boss||dmg>m.max*0.03||Math.random()<0.15))ud.lock=ud.t+playAnim(ud,A.hit,true,1.8)*0.5}
   if(P.bloodT>0&&dmg>0&&!P.dead){const h=Math.round(dmg*0.3);P.hp=Math.min(P.maxHp,P.hp+h);if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+1.2),0xc01020,3,1.5,1.2,0.5,0)}
   m.flash=0.15;
   const at=m.g.position.clone().setY(m.g.position.y+1+m.T.size*0.5);
@@ -1764,7 +1792,7 @@ function hurtPlayer(d){
   if(P.metalT>0)d=Math.max(1,Math.round(d*0.5));
   dismount('Você foi atacado e caiu da montaria!');
   if(P.recallT>0){P.recallT=0;log('Pergaminho interrompido pelo ataque!','bad')}
-  P.hp-=d;P.lastHurt=now;SFX.play('hurt',null,0.2);
+  P.hp-=d;P.lastHurt=now;SFX.play('hurt',null,0.2);if(d>P.maxHp*0.06&&!P.trig&&!P.moving&&now-(P.flinchT||0)>3){P.flinchT=now;P.trig='hit'}
   floatText(P.pos.clone().setY(P.pos.y+2.6),'-'+d,'hurt');
   emit(P.pos.clone().setY(P.pos.y+1.3),0xff3030,6,3,1,0.4,6);
   if(P.hp<=0){P.hp=0;P.dead=true;P.deadT=4;P.auto=false;setTarget(null);if(AUTO.on)setAuto(false,'Auto-caça desligada porque você caiu em batalha.');$('dead').classList.remove('hidden');
@@ -2897,7 +2925,7 @@ function update(dt){
   const zone=zoneOf(P.pos.x,P.pos.z),inD=!!zone.dun;
   if(P.dead){
     P.deadT-=dt;
-    if(P.deadT<=0){P.dead=false;P.hp=P.maxHp;P.mp=P.maxMp;P.pos.set(SPAWN.x,0,SPAWN.z);P.rot=SPAWN.yaw+Math.PI;cam.yaw=SPAWN.yaw;P.moveTo=null;$('dead').classList.add('hidden');save()}
+    if(P.deadT<=0){P.dead=false;P.hp=P.maxHp;P.mp=P.maxMp;P.pos.set(SPAWN.x,0,SPAWN.z);P.rot=SPAWN.yaw+Math.PI;cam.yaw=SPAWN.yaw;P.moveTo=null;$('dead').classList.add('hidden');pillarFx(P.pos,0xfff0a0);SFX.play('heal');save()}
   }else{
     let ix=0,iz=0;
     if(keys.w||keys.arrowup)iz+=1;if(keys.s||keys.arrowdown)iz-=1;if(keys.a||keys.arrowleft)ix-=1;if(keys.d||keys.arrowright)ix+=1;
@@ -3005,7 +3033,7 @@ function update(dt){
     if(AUTO.loot&&!lootOK(d))continue; // abaixo da raridade escolhida: fica no chão
     if(!P.dead&&pd<2){
       if(P.inv.length>=BAG_MAX){if(now>fullWarnT){fullWarnT=now+(AUTO.on?20:4);log('Mochila cheia! Venda ou descarte itens (tecla I)'+(AUTO.loot?' — o auto-loot vai ignorar itens até liberar espaço.':'.'),'bad')}}
-      else{if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);logItem('Você pegou',d.it);SFX.play(d.it.rar>=3?'epic':'loot');emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.lbl.remove();drops.splice(i,1);renderInv();save()}
+      else{if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);if(!P.trig)P.trig='pick';logItem('Você pegou',d.it);SFX.play(d.it.rar>=3?'epic':'loot');emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.lbl.remove();drops.splice(i,1);renderInv();save()}
     }
   }
   for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.t+=dt;const k=e.t/e.dur;if(k>=1){scene.remove(e.m);effects.splice(i,1)}else e.upd(e,k)}
@@ -3110,7 +3138,7 @@ function placeProp(lib,name,scale,x,z,yaw,parent,solidK,occ){
   if(solidK){g.updateMatrixWorld(true);_bx.setFromObject(g).getSize(_bv);const r=Math.max(_bv.x,_bv.z)/2*solidK;solids.push({x,z,r})}
   return g}
 const VILLAGE_FACE=Math.PI;
-/* ============ cenário modelado no Blender (models/env) ============ */
+/* ============ cenário modelado no Blender (assets/environment/props) ============ */
 const ENV_CACHE={};const ENV_RAW=new Set(['basalt','lava_rock','charred_tree','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate']); // pedra escura: cores já no tom certo
 function envParts(k){ // geometria de cada material, já sem o deslocamento da vitrine do Blender
   if(ENV_CACHE[k])return ENV_CACHE[k];const g=MODELS['env_'+k];if(!g)return null;

@@ -1,3 +1,11 @@
+ORGANIZAÇÃO DAS PASTAS
+  assets/characters/        modelos das classes (KayKit) — rogue.glb também guarda a biblioteca de animações compartilhada
+  assets/monsters/common/   monstros comuns (os Elites ★ usam os mesmos modelos, com aura e tamanho maiores)
+  assets/monsters/bosses/   chefes
+  assets/equipment/         armas, elmos e armaduras do Blender (4 gerações)
+  assets/environment/       vila, masmorra e (props/) cenário do Blender
+  audio/                    sons
+
 Modelos 3D dos personagens (com animações reduzidas às usadas pelo jogo):
 
 - knight.glb, mage.glb
@@ -22,7 +30,7 @@ Modelos 3D dos personagens (com animações reduzidas às usadas pelo jogo):
 - wolf.glb, spider.glb, slime.glb, orc.glb, troll.glb (Yeti), dragon.glb (Ignarok), demon.glb (Azgaroth), ghost.glb, skullf.glb (GhostSkull), mushking.glb (MushroomKing), com animações
   Quaternius — Animated Animal Pack e Ultimate Monsters (https://quaternius.com)
   Obtidos via a pasta de assets do projeto vibeage (github.com/samoylenkodmitry/vibeage),
-  que os lista como CC0 em public/models/ASSET_MANIFEST.md. Nenhum código desse projeto foi usado.
+  que os lista como CC0 em public/assets/ASSET_MANIFEST.md. Nenhum código desse projeto foi usado.
 
 Sons (pasta audio/): efeitos da Kenney (kenney.nl — Impact Sounds, Sci-Fi Sounds, RPG Audio)
 e ambientes de floresta/grilos do OpenGameArt.org, todos CC0. Detalhes em audio/*/CREDITS.txt.
@@ -30,21 +38,25 @@ e ambientes de floresta/grilos do OpenGameArt.org, todos CC0. Detalhes em audio/
 Licença: Creative Commons Zero (CC0) — http://creativecommons.org/publicdomain/zero/1.0/
 Uso livre em projetos pessoais, educacionais e comerciais. Crédito não obrigatório, mas agradecido.
 
-Cenário modelado no Blender (models/env/*.glb) — criado para Reinos de Aether via Blender MCP,
+Cenário modelado no Blender (assets/environment/props/*.glb) — criado para Reinos de Aether via Blender MCP,
 modelagem procedural (bpy/bmesh), low-poly com flat shading:
   orc_tent, orc_totem, orc_palisade, campfire (Desfiladeiro dos Orcs)
   swamp_tree, glow_mushrooms, witch_hut (Pântano Assombrado)
   obsidian_pillar, brazier (Arena do Azgaroth)
   loot_chest (baús de loot), rock_a, rock_b, flower_bush, wildflowers (campos)
   lich_throne, gothic_pillar, bone_pile, sarcophagus, candelabra, gibbet_cage, dungeon_gate (Masmorra Esquecida)
-  models/gear/gear_weapons|gear_helms|gear_armor.glb: 44 peças de equipamento em 4 gerações (Nv 1, 8, 18, 25)
-  models/monsters_new.glb: Elemental de Gelo/Magma, Urso Glacial, Salamandra de Fogo, Kryos e Vulkar (peças animadas pelo jogo)
+  assets/equipment/gear_weapons|gear_helms|gear_armor.glb: 44 peças de equipamento em 4 gerações (Nv 1, 8, 18, 25)
+  assets/monsters/common/monsters_new.glb: Elemental de Gelo/Magma, Urso Glacial, Salamandra de Fogo, Kryos e Vulkar (peças animadas pelo jogo)
   ice_crystal, snow_pine, ice_rock, basalt, lava_rock, charred_tree (Picos Gelados e Caldeira Ardente)
   Script-fonte: aether_gear.py e ReinosDeAether-Blender/aether_kit.py. Licença: própria do projeto.
 
-KayKit Character Pack: Adventurers 1.0 — Rogue e Rogue_Hooded (models/rogue.glb com a biblioteca de animações, models/rogue_hooded.glb)
+KayKit Character Pack: Adventurers 1.0 — Rogue e Rogue_Hooded (assets/characters/rogue.glb com a biblioteca de animações, assets/characters/rogue_hooded.glb)
   Kay Lousberg (kaylousberg.com) — CC0 1.0. Origem: github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
-  Armas das classes novas (martelo, lança, arco, azagaia, cetro) modeladas no Blender — models/gear/gear_weapons.glb
+  Armas das classes novas (martelo, lança, arco, azagaia, cetro) modeladas no Blender — assets/equipment/gear_weapons.glb
 
-Quaternius Ultimate Monsters — Armabee, BlueDemon, Dino, DragonEvolved, Glub, GreenBlob, Hywirl, SpikyBlob, Squidle, Wizard (models/*.glb, animações reduzidas)
-  Quaternius (quaternius.com) — CC0 1.0. Origem: github.com/samoylenkodmitry/vibeage (public/models/monsters)
+Quaternius Ultimate Monsters — Armabee, BlueDemon, Dino, DragonEvolved, Glub, GreenBlob, Hywirl, SpikyBlob, Squidle, Wizard (assets/monsters/*/, animações reduzidas)
+  Quaternius (quaternius.com) — CC0 1.0. Origem: github.com/samoylenkodmitry/vibeage (public/assets/monsters)
+
+Animação de dano dos monstros antigos (HitReact/HitRecieve) e animações extras do herói (levantar ao renascer,
+pegar item, 2ª morte) reextraídas dos mesmos pacotes CC0 (Quaternius e KayKit Adventurers).
+Sacerdotisa: corpo Rogue_Hooded (KayKit) com textura recolorida pelo jogo (branco/dourado), saia e auréola feitas no código.
