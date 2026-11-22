@@ -867,7 +867,7 @@ function kitMerge(src){ // junta as peças por material: poucas chamadas de dese
     const mg=THREE.BufferGeometryUtils?THREE.BufferGeometryUtils.mergeBufferGeometries(geos):null;geos.forEach(x=>x!==mg&&x.dispose());if(!mg)continue;
     const mesh=new THREE.Mesh(mg,m);mesh.castShadow=true;mesh.receiveShadow=true;out.add(mesh)}
   return out}
-const MV_PROP={barrel:['Barrel',1.3],crate:['Crate_Wooden',1.25],crate_s:['Crate_Wooden',0.85],weaponrack:['WeaponStand',1.3],tent:['Stall_Empty',1.45],flag:['Banner_1',1.4],wheelbarrow:['Prop_Wagon',0.9]};
+const MV_PROP={barrel:['Barrel',1.3],crate:['Crate_Wooden',1.25],crate_s:['Crate_Wooden',0.85],weaponrack:['WeaponStand',1.3],tent:['Stall_Empty',1.45],flag:['Banner_1',1.4],wheelbarrow:['Prop_Wagon',0.9],lumber:['Crate_Wooden',1.6],sack:['Barrel',1.0]};
 function buildModernVillage(){if(MV.g||!MODELS.mod_kit||!town.userData.built)return;const G=new THREE.Group();G.visible=false;town.add(G);MV.g=G;const HS=0.85;
   for(const k of ['Lantern_Wall','Torch_Metal'])kitPiece(k); // (aquece o cache)
   houses.forEach((hs,i)=>{const raw=kitHouse();const extra=[];
@@ -879,12 +879,26 @@ function buildModernVillage(){if(MV.g||!MODELS.mod_kit||!town.userData.built)ret
   // praça de pedra
   const plaza=town.children.find(o=>o.isMesh&&o.geometry.type==='CylinderGeometry'&&o.geometry.parameters.radiusTop===22);
   if(plaza){const TL=new THREE.TextureLoader(),T=(f,srgb)=>{const t=TL.load(MOD_ENV+f);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(11,11);if(srgb)t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t};
+    MV.stone=[];{const st=new THREE.MeshStandardMaterial({map:T('ph_cobblestone_floor_001_diff_1k.jpg',1),roughness:0.9,metalness:0,color:0xd8d2c8});st.map.repeat.set(3,1);LIN.add(st);
+      for(const o of town.children)if(o.isMesh&&o.geometry.type==='CylinderGeometry'&&[3.2,0.35].includes(o.geometry.parameters.radiusTop))MV.stone.push([o,o.material,st])}
     MV.plaza=plaza;MV.plazaOld=plaza.material;MV.plazaMat=new THREE.MeshStandardMaterial({map:T('ph_cobblestone_floor_001_diff_1k.jpg',1),normalMap:GFX.lo?null:T('ph_cobblestone_floor_001_nor_gl_1k.jpg'),roughnessMap:T('ph_cobblestone_floor_001_rough_1k.jpg'),roughness:1,metalness:0});LIN.add(MV.plazaMat)}}
-function modernVillage(on){if(on)buildModernVillage();if(!MV.g)return;MV.g.visible=on;
+function modernVillage(on){try{modernNPCs(on)}catch(e){console.warn('npc',e)}if(on)buildModernVillage();if(!MV.g)return;MV.g.visible=on;
   const occ=(o,add)=>o.traverse(m=>{if(!m.isMesh)return;const k=occluders.indexOf(m);if(add&&k<0)occluders.push(m);if(!add&&k>=0)occluders.splice(k,1)});
   for(const {hs,h,r} of MV.houses){if(hs.vb){hs.vb.visible=!on;occ(hs.vb,!on)}occ(h,on);hs.sol.r=on?r:(hs.vr||hs.sol.r)}
   for(const [c,g] of MV.pairs)c.visible=!on;
-  if(MV.plaza)MV.plaza.material=on?MV.plazaMat:MV.plazaOld}
+  if(MV.plaza)MV.plaza.material=on?MV.plazaMat:MV.plazaOld;for(const [o,a,b] of (MV.stone||[]))o.material=on?b:a}
+// NPCs da vila no mesmo estilo dos heróis modernos (Capitão = cavaleiro de placas, Ferreiro = artesão com martelo, Curandeira = sacerdotisa verde)
+const MNPC={list:[]};
+function modernNPCs(on){
+  if(on&&!MNPC.list.length&&MODERN.ready){const EQ={weapon:null,armor:null,helm:null,ring:null};
+    for(const [npc,cls,tint] of [[captain,'guerreiro',0x2f5fb8],[smith,'mecanico',0x9a6a40],[healer,'sacerdotisa',0x9dffb0]]){const old=npc.userData.npc;if(!old)continue;
+      const g=makeHeroModern(cls);if(!g)continue;const u=g.userData;applyLookModern(u,cls,lookOf(cls,EQ));
+      if(tint)for(const m of u.body)if(!MOD_SKIN.test(m.material.name)){m.material.color.copy(m.userData.c0).lerp(lin(tmpC.setHex(tint)),0.35);m.userData.c0=m.material.color.clone()}
+      const nu={mixer:u.mixer,actions:u.actions,t:0,lock:0,cur:null,curName:null,idle:'Idle'};playAnim(nu,'Idle');
+      MNPC.list.push({npc,oldKids:[...npc.children],oldU:old,g,nu})}}
+  for(const e of MNPC.list){const want=on?e.nu:e.oldU;if(e.npc.userData.npc===want)continue;
+    for(const c of [...e.npc.children])e.npc.remove(c);if(on)e.npc.add(e.g);else for(const c of e.oldKids)e.npc.add(c);
+    e.npc.userData.npc=want;const k=npcAnims.indexOf(on?e.oldU:e.nu);if(k>=0)npcAnims[k]=want;else npcAnims.push(want)}}
 function rebuildHeroes(){if(!modelsOK)return;const mk=(cls,old)=>{const n=makeHero(cls);n.position.copy(old.position);n.rotation.y=old.rotation.y;scene.remove(old);scene.add(n);return n};
   for(const o of others.values()){o.mesh=mk(o.cls,o.mesh);if(o.lk)applyLook(o.mesh.userData,o.cls,o.lk);else if(o.eqR)applyLook(o.mesh.userData,o.cls,...o.eqR)}
   if(P.mesh){P.mesh=mk(P.cls,P.mesh);refreshLook()}}
