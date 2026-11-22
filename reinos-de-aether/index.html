@@ -2402,13 +2402,16 @@ function syncAutoUI(){
 function setAuto(on,why){
   if(on&&P.dead)return;SFX.play('click');
   AUTO.on=on;
-  if(on){AUTO.anchor.copy(P.pos);AUTO.ban.clear();AUTO.lowWarn=false;AUTO.stuckT=0;
+  if(on){AUTO.anchor.copy(P.pos);AUTO.ban.clear();AUTO.lowWarn=false;AUTO.stuckT=0;AUTO.tick=0;AUTO.reT=0;
+    if(P.target&&!(P.target.dead)&&d2(P.target.g.position,P.pos)>(CLS[P.cls].range+P.target.T.size*0.6+0.5)){setTarget(null);P.auto=false} // alvo antigo longe: escolhe o mais perto
     log(`🤖 Auto-caça ligada (raio de ${AUTO.radius} m). Ande manualmente ou aperte H para parar.`,'sys')}
   else{P.auto=false;P.moveTo=null;if(why)log(why,'sys')}
   syncAutoUI();
 }
 function setLoot(on){AUTO.loot=on;saveAuto();syncAutoUI();log(on?`🧲 Auto-loot ligado (a partir de ${RAR[AUTO.minRar].n}).`:'🧲 Auto-loot desligado.','sys')}
 const lootOK=d=>d.it.rar>=AUTO.minRar;
+function preyScore(m){const me=myKey();return d2(m.g.position,P.pos)-(m.state==='chase'&&m.tgtId===me&&!m.dead?3:0)}
+function nearestPrey(skip){let best=null,bs=1e9;for(const m of monsters){if(m===skip||!goodPrey(m))continue;const sc=preyScore(m);if(sc<bs){bs=sc;best=m}}return best}
 function goodPrey(m){ // monstro que vale a pena atacar sozinho
   if(m.dead||areaId(m.g.position.x)!==areaId(P.pos.x))return false;
   if(AUTO.ban.has(m)&&AUTO.ban.get(m)>now)return false;
@@ -2435,6 +2438,8 @@ function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando
   if(P.auto&&t&&!t.dead){
     const d=d2(t.g.position,P.pos);
     if(AUTO.stT!==t){AUTO.stT=t;AUTO.bestD=d;AUTO.stuckT=0}
+    if(d>C.range+t.T.size*0.6+0.3&&(AUTO.reT=(AUTO.reT||0)-dt)<=0){AUTO.reT=0.4; // ainda indo até o alvo: apareceu um mais perto?
+      const n=nearestPrey(t);if(n&&preyScore(n)<Math.min(d-2.5,d*0.7)){setTarget(n);P.auto=true;P.moveTo=null;AUTO.stT=null;return}}
     if(d>C.range+t.T.size*0.6+0.3){const mv=AUTO.lp?Math.hypot(P.pos.x-AUTO.lp.x,P.pos.z-AUTO.lp.z)/Math.max(dt,1e-3):0;AUTO.lp=P.pos.clone();AUTO.mvS=(AUTO.mvS||0)+(mv-(AUTO.mvS||0))*Math.min(1,dt*2);
       if(d<AUTO.bestD-0.5){AUTO.bestD=d;AUTO.stuckT=0}else{AUTO.stuckT+=dt;if(AUTO.stuckT>(AUTO.mvS>1.5?10:4)){ // parado de verdade: 4 s; contornando obstáculo: até 10 s
         AUTO.ban.set(t,now+20);setTarget(null);P.auto=false;AUTO.stuckT=0;AUTO.stT=null}}}else{AUTO.stuckT=0;AUTO.bestD=d}
@@ -2449,9 +2454,8 @@ function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando
       if(best){AUTO.lootDrop=best;AUTO.lootT=now}}
     if(AUTO.lootDrop){P.moveTo=AUTO.lootDrop.g.position.clone();P.auto=false;return}
   }
-  // 2) próximo monstro (prioriza quem está perto de você)
-  let best=null,bs=1e9;
-  for(const m of monsters){if(!goodPrey(m))continue;const sc=d2(m.g.position,P.pos)-(m.T.boss?0:0);if(sc<bs){bs=sc;best=m}}
+  // 2) próximo monstro: o mais perto de você (quem já está te atacando conta como mais perto)
+  const best=nearestPrey();
   if(best){setTarget(best);P.auto=true;P.moveTo=null;AUTO.lastD=d2(best.g.position,P.pos);return}
   // 3) nada para caçar: volta ao ponto de partida
   if(d2(P.pos,AUTO.anchor)>4&&!P.moveTo)P.moveTo=AUTO.anchor.clone();
