@@ -45,3 +45,6 @@ modelagem procedural (bpy/bmesh), low-poly com flat shading:
 KayKit Character Pack: Adventurers 1.0 — Rogue e Rogue_Hooded (models/rogue.glb com a biblioteca de animações, models/rogue_hooded.glb)
   Kay Lousberg (kaylousberg.com) — CC0 1.0. Origem: github.com/KayKit-Game-Assets/KayKit-Character-Pack-Adventures-1.0
   Armas das classes novas (martelo, lança, arco, azagaia, cetro) modeladas no Blender — models/gear/gear_weapons.glb
+
+Quaternius Ultimate Monsters — Armabee, BlueDemon, Dino, DragonEvolved, Glub, GreenBlob, Hywirl, SpikyBlob, Squidle, Wizard (models/*.glb, animações reduzidas)
+  Quaternius (quaternius.com) — CC0 1.0. Origem: github.com/samoylenkodmitry/vibeage (public/models/monsters)

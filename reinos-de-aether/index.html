@@ -17,7 +17,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 .lbl{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap}
 .lbl .hb{width:54px;height:5px;background:#300;border:1px solid #000;margin:2px auto 0;border-radius:2px;overflow:hidden}
 .lbl .hb i{display:block;height:100%;background:#e33}
-.lbl.sel{color:#ffd76a}.lbl.npc{color:#c9a6ff}.lbl.me{color:#8fe3ff}.lbl.boss{color:#ff8b5c;font-size:13px}.lbl.loot{font-size:11px}.lbl.portal{color:#d9a8ff}
+.lbl.sel{color:#ffd76a}.lbl.npc{color:#c9a6ff}.lbl.me{color:#8fe3ff}.lbl.elite{color:#ffd76a;text-shadow:0 0 6px rgba(255,190,60,.8),0 1px 2px #000}
+.lbl.boss{color:#ff8b5c;font-size:13px}.lbl.loot{font-size:11px}.lbl.portal{color:#d9a8ff}
 .ft{position:absolute;font-weight:800;font-size:18px;text-shadow:0 2px 3px #000;pointer-events:none;animation:up 1s ease-out forwards;transform:translate(-50%,-50%)}
 .ft.dmg{color:#fff}.ft.crit{color:#ffcf3a;font-size:24px}.ft.hurt{color:#ff5050}.ft.heal{color:#5dff7a}.ft.xp{color:#c58bff;font-size:15px}.ft.gold{color:#ffd76a;font-size:14px}
 @keyframes up{0%{opacity:1;margin-top:0}100%{opacity:0;margin-top:-60px}}
@@ -711,7 +712,7 @@ function makeHeroBox(cls){
 }
 /* ============ personagens 3D animados (modelos KayKit, licença CC0) ============ */
 const MODELS={};let modelsOK=false,assetsReady=false,loadPct=0;
-const MODEL_FILES={rogue:'models/rogue.glb',rogue_hooded:'models/rogue_hooded.glb',knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
+const MODEL_FILES={glub:'models/glub.glb',armabee:'models/armabee.glb',dino:'models/dino.glb',wizard:'models/wizard.glb',bluedemon:'models/bluedemon.glb',greenblob:'models/greenblob.glb',squidle:'models/squidle.glb',hywirl:'models/hywirl.glb',spikyblob:'models/spikyblob.glb',dragonevo:'models/dragonevolved.glb',rogue:'models/rogue.glb',rogue_hooded:'models/rogue_hooded.glb',knight:'models/knight.glb',mage:'models/mage.glb',skel:'models/skeleton_warrior.glb',archer:'models/skeleton_rogue.glb',lich:'models/skeleton_mage.glb',village:'models/village.glb',dungeon:'models/dungeon.glb',barbarian:'models/barbarian.glb',wolfm:'models/wolf.glb',spiderm:'models/spider.glb',slimem:'models/slime.glb',ghost:'models/ghost.glb',skullf:'models/skullf.glb',mushking:'models/mushking.glb',demon:'models/demon.glb',orc:'models/orc.glb',troll:'models/troll.glb',dragon:'models/dragon.glb'};
 const ENV_KEYS=['brazier','campfire','flower_bush','glow_mushrooms','loot_chest','obsidian_pillar','orc_palisade','orc_tent','orc_totem','rock_a','rock_b','swamp_tree','wildflowers','witch_hut','lich_throne','gothic_pillar','bone_pile','sarcophagus','candelabra','gibbet_cage','dungeon_gate','ice_crystal','snow_pine','ice_rock','basalt','lava_rock','charred_tree'];
 for(const k of ENV_KEYS)MODEL_FILES['env_'+k]='models/env/'+k+'.glb';
 MODEL_FILES.mon_new='models/monsters_new.glb'; // monstros dos mapas novos (Blender)
@@ -785,7 +786,7 @@ function driveHero(g,moving,trig,dead,dt){
   if(u.gem){const a=u.t*1.5;u.gem.position.set(Math.cos(a)*0.8,1.15+Math.sin(u.t*2.3)*0.1,Math.sin(a)*0.8);u.gem.rotation.y=u.t*2.5}
   u.mixer.update(dt);return true;
 }
-const MON_MODEL={ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
+const MON_MODEL={glub:['glub',1.7],armabee:['armabee',1.9],dino:['dino',2.7],wizard:['wizard',2.3],bluedemon:['bluedemon',3.6],greenblob:['greenblob',1.6],squidle:['squidle',2.6],hywirl:['hywirl',2.8],spikyblob:['spikyblob',1.9],dragonevo:['dragonevo',5.2],ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
 const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons'};
 const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw'},lich:{...SK,atk:'Spellcast_Shoot'},
   wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death'},
@@ -798,16 +799,20 @@ const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw
   mushking:{idle:'Idle',walk:'Walk',run:'Run',atk:'Punch',death:'Death'},
   troll:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.5,atk:'Bite_Front',death:'Death'},
   dragon:{idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death'}};
+{const FLY={idle:'Flying_Idle',walk:'Flying_Idle',run:'Fast_Flying',atk:'Headbutt',death:'Death',hit:'HitReact'},HUM={idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death',hit:'HitReact'},BLOB={idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death',hit:'HitRecieve'};
+  Object.assign(MON_ANIM,{glub:FLY,armabee:{...FLY,atk:'Punch'},hywirl:FLY,squidle:{...FLY,atk:'Punch'},dragonevo:FLY,dino:{...HUM,atk:'Punch'},bluedemon:HUM,wizard:BLOB,greenblob:BLOB,spikyblob:BLOB})}
+const FLYERS={glub:0.8,armabee:1.0,hywirl:1.2,squidle:0.9,dragonevo:2.6}; // altura do voo
 function upgradeMonsterModels(){
   for(const m of monsters){const mm=MON_MODEL[m.type];if(!mm||m.g.userData.model)continue;const r=cloneModel(mm[0],mm[1]);if(!r)continue;
     const g=m.g,tint=g.userData.body&&g.userData.body.material.color.clone();for(const c of [...g.children])g.remove(c);g.add(r.m);
     if(m.type==='ghost')r.m.traverse(o=>{if(o.isMesh&&/Ghost_Main/.test(o.material.name)){o.material=o.material.clone();o.material.color.copy(lin(new THREE.Color(0xdcefff)));o.material.emissive=lin(new THREE.Color(0x5a8ab8));o.material.emissiveIntensity=0.55;o.material.transparent=true;o.material.opacity=0.82;o.material.depthWrite=false}});
     if(m.type==='skullf')r.m.traverse(o=>{if(o.isMesh&&/Ghost_Main/.test(o.material.name)){o.material=o.material.clone();o.material.emissive=lin(new THREE.Color(0x6a2ab8));o.material.emissiveIntensity=0.7}});
     if(m.type==='slime'&&tint)r.m.traverse(o=>{if(o.isMesh&&/Pink_Main/.test(o.material.name))o.material.color.copy(tint);if(o.isMesh&&/Pink_Secondary/.test(o.material.name))o.material.color.copy(tint).multiplyScalar(0.6)});
+    if(m.type==='spikyblob')r.m.traverse(o=>{if(o.isMesh&&o.material){o.material=o.material.clone();o.material.color.multiply(lin(new THREE.Color(0xff9a50)));o.material.emissive=lin(new THREE.Color(0x802000));o.material.emissiveIntensity=0.6}});
     if(m.type==='skel')attachFrom('knight',['1H_Sword','Round_Shield'],r);
     if(m.type==='lich')attachFrom('mage',['2H_Staff'],r);
     for(const [n,o] of Object.entries(r.parts))if(/Eyes/.test(n)&&o.material){o.material.emissive=lin(new THREE.Color(m.type==='lich'?0x7dff9a:0xff6a2a));o.material.emissiveIntensity=2.5}
-    g.userData={model:true,mixer:r.mixer,actions:r.actions,parts:r.parts,t:0,lock:0,cur:null,curName:null,float:m.type==='lich'||m.type==='dragon'||m.type==='ghost'||m.type==='skullf',lastAtk:m.atkN,px:g.position.x,pz:g.position.z,spd:0};
+    g.userData={model:true,mixer:r.mixer,actions:r.actions,parts:r.parts,t:0,lock:0,cur:null,curName:null,float:m.type==='lich'||m.type==='dragon'||m.type==='ghost'||m.type==='skullf'||!!FLYERS[m.type],lastAtk:m.atkN,px:g.position.x,pz:g.position.z,spd:0};
     playAnim(g.userData,MON_ANIM[m.type].idle);
     g.traverse(o=>{o.userData.mon=m});
   }
@@ -866,7 +871,20 @@ const TYPES={
   salam:{name:'Salamandra de Fogo',lvl:29,hp:2700,atk:80,xp:1350,gold:[100,180],spd:5.0,aggro:15,range:12,cd:2.0,respawn:34,size:1.6,lh:2.6,pc:0xffa040,dc:0.4,ranged:0xff7a2a},
   vulkar:{name:'Vulkar, o Senhor das Chamas',lvl:32,hp:24000,atk:100,xp:15000,gold:[1500,2300],spd:4.4,aggro:22,range:4.6,cd:1.9,respawn:180,size:3.6,lh:7.8,pc:0xff5a10,dc:1,boss:true,epic:true,rain:{every:6.5,n:4,r:5,col:0xff5a10,k:'v',mult:1.25}}
 };
+Object.assign(TYPES,{ // monstros Quaternius (CC0) espalhados pelas regiões
+  glub:{name:'Baiacu Glub',lvl:3,hp:70,atk:6,xp:22,gold:[3,7],spd:3.2,aggro:7,range:2.2,cd:1.6,respawn:15,size:1.0,lh:2.4,pc:0x7ad8ff,dc:0.12},
+  armabee:{name:'Abelha Couraçada',lvl:5,hp:120,atk:11,xp:42,gold:[6,12],spd:5.2,aggro:11,range:2.2,cd:1.2,respawn:18,size:1.0,lh:2.6,pc:0xffd040,dc:0.15},
+  dino:{name:'Raptor das Pedras',lvl:9,hp:320,atk:22,xp:120,gold:[14,26],spd:6.0,aggro:12,range:2.6,cd:1.3,respawn:22,size:1.3,lh:3.2,pc:0x8acb5a,dc:0.2},
+  wizard:{name:'Necromante',lvl:13,hp:520,atk:30,xp:230,gold:[25,45],spd:3.6,aggro:15,range:12,cd:2.0,respawn:30,size:1.1,lh:2.8,pc:0xb06bff,dc:0.25,ranged:0xb06bff},
+  bluedemon:{name:'Demônio Azul',lvl:14,hp:760,atk:36,xp:300,gold:[30,55],spd:4.8,aggro:13,range:2.8,cd:1.4,respawn:28,size:1.5,lh:4.0,pc:0x5a8aff,dc:0.25},
+  greenblob:{name:'Gosma Tóxica',lvl:16,hp:820,atk:38,xp:360,gold:[30,60],spd:3.6,aggro:10,range:2.4,cd:1.5,respawn:26,size:1.2,lh:2.2,pc:0x8aff5a,dc:0.25},
+  squidle:{name:'Lula do Pântano',lvl:18,hp:980,atk:44,xp:450,gold:[40,70],spd:4.2,aggro:13,range:11,cd:1.9,respawn:30,size:1.3,lh:3.2,pc:0xd07aff,dc:0.28,ranged:0xd07aff},
+  hywirl:{name:'Espírito Gélido',lvl:22,hp:1500,atk:58,xp:780,gold:[60,110],spd:4.6,aggro:14,range:12,cd:1.8,respawn:30,size:1.4,lh:3.4,pc:0xbfe8ff,dc:0.34,ranged:0x9fe6ff},
+  spikyblob:{name:'Gosma de Lava',lvl:28,hp:2500,atk:76,xp:1200,gold:[90,160],spd:3.8,aggro:12,range:2.6,cd:1.5,respawn:32,size:1.4,lh:2.6,pc:0xff7a2a,dc:0.38},
+  dragonevo:{name:'Dragão Ancestral',lvl:31,hp:9000,atk:92,xp:6000,gold:[700,1100],spd:4.6,aggro:18,range:13,cd:2.1,respawn:120,size:3.0,lh:6.6,pc:0xff5a2a,dc:1,boss:true,epic:true,ranged:0xff7a2a}});
+for(const k in TYPES)if(TYPES[k].def==null)TYPES[k].def=Math.round(TYPES[k].lvl*(TYPES[k].boss?2.2:1.4)); // defesa dos monstros
 const NEWMON={iceel:1,bear:1,kryos:1,magel:1,salam:1,vulkar:1};
+const QMON={glub:1,armabee:1,dino:1,wizard:1,bluedemon:1,greenblob:1,squidle:1,hywirl:1,spikyblob:1,dragonevo:1};
 function makeSkeleton(archer){
   const g=new THREE.Group(),bone=Lam(0xe8e2cc),dark=new THREE.MeshBasicMaterial({color:0xff3020});
   g.add(part(0.5,0.12,0.3,0,0,1.0,0,bone));
@@ -890,7 +908,7 @@ function rock(r,mat,x,y,z,sx,sy,sz){const g=new THREE.DodecahedronGeometry(r,1),
   const m=new THREE.Mesh(g,mat);m.position.set(x||0,y||0,z||0);m.scale.set(sx||1,sy||1,sz||1);m.rotation.set(Math.random(),Math.random()*6,Math.random()*0.5);m.castShadow=true;return m}
 function makeMonsterMesh(type){
   const g=new THREE.Group();
-  if(NEWMON[type]){const T=TYPES[type],b=ell(T.size*0.6,T.lh*0.35,T.size*0.6,stdM(T.pc,0.6),0,T.lh*0.4,0);g.add(b);g.userData.body=b;return g}
+  if(NEWMON[type]||QMON[type]){const T=TYPES[type],b=ell(T.size*0.6,T.lh*0.35,T.size*0.6,stdM(T.pc,0.6),0,T.lh*0.4,0);g.add(b);g.userData.body=b;return g}
   if(type==='slime'){
     const c=[0x5cdc5c,0x6ac8ff,0xffa04a][Math.floor(MR()*3)];
     const mat=GFX.lo?new THREE.MeshLambertMaterial({color:c,transparent:true,opacity:0.86,emissive:c,emissiveIntensity:0.15})
@@ -1100,6 +1118,20 @@ function realmSpawn(type,n,R,d0,d1,a0=0,a1=Math.PI*2){
       ok=(R.key==='gelo'?iceLake(lx,lz)<0.3:lavaRiver(lx,lz)<0.1&&realmH(R,x,z)>LAVA_Y+0.6)&&!obstacles.some(o=>Math.hypot(o.x-x,o.z-z)<o.r+1.5);t++}while(!ok&&t<40);spawnMonster(type,x,z)}}
 realmSpawn('iceel',10,REALMS[0],22,80);realmSpawn('bear',8,REALMS[0],30,82);spawnMonster('kryos',REALMS[0].cx,REALMS[0].cz-62);
 realmSpawn('magel',10,REALMS[1],22,80);realmSpawn('salam',8,REALMS[1],30,82);spawnMonster('vulkar',REALMS[1].cx,REALMS[1].cz-62);
+// monstros Quaternius pelas regiões
+ringSpawn('glub',6,40,66,-0.95,-0.35,(x,z)=>lakeMask(x,z)<0.15);
+ringSpawn('armabee',8,74,112);
+ringSpawn('dino',8,126,178,0,Math.PI*2,(x,z)=>!inOrcs(x,z)&&!inSwamp(x,z));
+ringSpawn('bluedemon',5,130,172,Math.PI*0.86,Math.PI*1.14,inOrcs);
+ringSpawn('greenblob',5,128,170,Math.PI*0.38,Math.PI*0.62,inSwamp);ringSpawn('squidle',4,138,178,Math.PI*0.4,Math.PI*0.6,inSwamp);
+for(const [x,z] of [[-8,24],[9,-18],[-10,-36],[11,40]])spawnMonster('wizard',DX+x,z);
+realmSpawn('hywirl',6,REALMS[0],26,84);realmSpawn('spikyblob',7,REALMS[1],24,84);spawnMonster('dragonevo',REALMS[1].cx+48,REALMS[1].cz+30);
+// ★ Elites: ~8% dos monstros comuns, sempre os mesmos para todos os jogadores
+function makeElite(m){const T=m.T;m.elite=true;m.sc=1.3;
+  m.T=Object.assign({},T,{name:'★ '+T.name,hp:T.hp*3,atk:Math.round(T.atk*1.5),xp:T.xp*3,gold:[T.gold[0]*3,T.gold[1]*3],dc:Math.min(1,T.dc*2.5),size:T.size*1.3,lh:T.lh*1.3,def:Math.round(T.def*1.5),elite:true});
+  m.hp=m.max=m.T.hp;m.lbl.classList.add('elite');m.lbl.innerHTML=`★ ${T.name} <span style="opacity:.75">Nv${T.lvl} · Elite</span><div class="hb"><i></i></div>`;m.hpI=m.lbl.querySelector('i')}
+for(const m of monsters)if(!m.T.boss&&!m.T.world&&((Math.imul(m.id+1,2654435761)>>>0)%100)<8)makeElite(m);
+function eliteAuras(){for(const m of monsters){if(!m.elite||m.g.userData.aura)continue;const a=glowSprite(0xffc040,m.T.size*2.6,0.55);a.position.y=0.25;m.g.add(a);m.g.userData.aura=a}}
 // neve e brasas caindo perto do jogador
 const realmPts=(()=>{const n=GFX.lo?220:520,pos=new Float32Array(n*3),base=[];for(let i=0;i<n;i++){base.push({x:(Math.random()-0.5)*70,y:Math.random()*22,z:(Math.random()-0.5)*70,s:0.6+Math.random()})}
   const g=new THREE.BufferGeometry();g.setAttribute('position',new THREE.BufferAttribute(pos,3));const m=new THREE.PointsMaterial({color:0xffffff,map:GLOW,size:0.5,transparent:true,opacity:0.9,depthWrite:false,blending:THREE.AdditiveBlending});
@@ -1668,6 +1700,8 @@ function ambient(dt,inD){ // floresta de dia, grilos à noite
 function damageMon(m,dmg,crit){
   if(m.duel){duelHit(dmg,crit);return}
   if(m.dead)return;
+  if(dmg>0&&m.T.def)dmg=Math.max(1,Math.round(dmg*(1-m.T.def/(m.T.def+220)))); // defesa do monstro
+  {const ud=m.g.userData,A=MON_ANIM[m.type];if(ud.model&&A&&A.hit&&ud.t>=ud.lock&&m.hp>dmg)ud.lock=ud.t+playAnim(ud,A.hit,true,1.8)*0.5}
   if(P.bloodT>0&&dmg>0&&!P.dead){const h=Math.round(dmg*0.3);P.hp=Math.min(P.maxHp,P.hp+h);if(rnd()<0.5)emit(P.pos.clone().setY(P.pos.y+1.2),0xc01020,3,1.5,1.2,0.5,0)}
   m.flash=0.15;
   const at=m.g.position.clone().setY(m.g.position.y+1+m.T.size*0.5);
@@ -1703,7 +1737,7 @@ function killMon(m,rewarded){
   if(rnd()<(m.T.boss?1:0.2)){const n=m.T.boss?5:1;P.pots+=n;lootTxt+=`, +${n} poção`}
   log(`Você derrotou ${m.T.name}! (${lootTxt})`,'loot');
   const nDrops=m.T.boss?2:1;
-  for(let i=0;i<nDrops;i++)if(rnd()<m.T.dc){const lv=m.T.lvl+Math.floor(rnd()*3)-1;dropItem(makeItem(pick(['weapon','armor','helm','ring']),lv,i===0?rollRarity(m.T.epic):rollRarity(false),P.cls),m.g.position)}
+  for(let i=0;i<nDrops;i++)if(rnd()<m.T.dc){const lv=m.T.lvl+Math.floor(rnd()*3)-1;dropItem(makeItem(pick(['weapon','armor','helm','ring']),lv,i===0?rollRarity(m.T.epic||m.T.elite):rollRarity(false),P.cls),m.g.position)}
   if(m.T.boss){log(`⭐ ${P.name} derrotou ${m.T.name}!`,'sys');banner(`${m.T.name} foi derrotado!`,'Um tesouro épico caiu no chão')}
   recentRew[m.id]=performance.now();ptyShareKill(m,xp);
   P.stats.k[m.type]=(P.stats.k[m.type]||0)+1;qKill(m.type);gainXp(xp);achCheck();
@@ -2765,8 +2799,8 @@ function spawnFx(m){emit(m.g.position.clone().setY(m.g.position.y+0.4),m.T.pc,18
 function updDying(dt){ // monstros derrotados: animação de queda antes de sumir
   for(const m of monsters){if(!(m.dyingT>0))continue;m.dyingT-=dt;const g=m.g,ud=g.userData,k=Math.max(0,m.dyingT/m.dyingMax);
     if(ud.model){ud.mixer.update(dt);if(k<0.3)g.position.y-=dt*1.6}
-    else{g.scale.setScalar(0.25+0.75*k);g.position.y-=dt*0.9;g.rotation.z+=dt*(m.type==='slime'?0:1.3)}
-    if(m.dyingT<=0){g.visible=false;g.scale.setScalar(1);g.rotation.z=0}}
+    else{g.scale.setScalar((0.25+0.75*k)*(m.sc||1));g.position.y-=dt*0.9;g.rotation.z+=dt*(m.type==='slime'?0:1.3)}
+    if(m.dyingT<=0){g.visible=false;g.scale.setScalar(m.sc||1);g.rotation.z=0}}
 }
 function animMonster(m,walking,dt){
   const g=m.g;
@@ -2778,9 +2812,9 @@ function animMonster(m,walking,dt){
     if(m.atkN!==ud.lastAtk){ud.lastAtk=m.atkN;ud.lock=ud.t+playAnim(ud,A.atk,true,1.4)*0.85}
     if(ud.t>=ud.lock){const run=ud.spd>3,base=ud.spd<0.4||m.type==='lich'?A.idle:run?A.run:A.walk;if(ud.curName!==base)playAnim(ud,base,false,run?(A.runSpeed||1):1)}
     if(d2(g.position,P.pos)<90)ud.mixer.update(dt);
-    if(ud.float){if(m.type==='ghost'||m.type==='skullf'){g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;if(rnd()<0.2)emit(g.position.clone().setY(g.position.y+1.2),m.T.pc,1,0.8,0.5,0.9,0,1.4)}else if(m.type==='dragon'){if(!m.dead||m.dyingT>0.9){g.position.y+=3.2+Math.sin(m.anim*1.6)*0.5}if(rnd()<0.25)emit(g.position.clone().setY(g.position.y+1.5),0xff8a2a,1,1.2,0.8,1,-1,2.5)}
+    if(ud.float){if(FLYERS[m.type]){if(!m.dead||m.dyingT>0.9)g.position.y+=FLYERS[m.type]+Math.sin(m.anim*2)*0.2}else if(m.type==='ghost'||m.type==='skullf'){g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;if(rnd()<0.2)emit(g.position.clone().setY(g.position.y+1.2),m.T.pc,1,0.8,0.5,0.9,0,1.4)}else if(m.type==='dragon'){if(!m.dead||m.dyingT>0.9){g.position.y+=3.2+Math.sin(m.anim*1.6)*0.5}if(rnd()<0.25)emit(g.position.clone().setY(g.position.y+1.5),0xff8a2a,1,1.2,0.8,1,-1,2.5)}
       else{g.position.y+=0.5+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}}
-    if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.4)}else g.scale.setScalar(1);
+    if(m.flash>0){m.flash-=dt;g.scale.setScalar((m.sc||1)*(1+m.flash*0.4))}else g.scale.setScalar(m.sc||1);
     return;
   }
   if(ud.kind){const t=m.anim,w=walking,atk=m.atkAnim>0?Math.sin(m.atkAnim*Math.PI):0;
@@ -2794,7 +2828,7 @@ function animMonster(m,walking,dt){
       ud.nhead.rotation.x=-atk*0.45+Math.sin(t*1.4)*0.08;if(rnd()<0.3)emit(g.position.clone().setY(g.position.y+4),0xcfefff,1,1.5,0.6,1.2,-1,2.5)}
     else if(ud.kind==='vul'){const sp=w?Math.sin(t*5)*0.45:0;ud.legs.forEach((l,i)=>l.rotation.x=i?sp:-sp);ud.arms[0].rotation.x=-atk*2.3+(w?-sp*0.5:Math.sin(t*1.5)*0.05);ud.arms[1].rotation.x=w?sp*0.5:-atk*0.6;
       ud.torso.rotation.y=Math.sin(t*0.8)*0.05;ud.nhead.rotation.y=Math.sin(t*0.6)*0.15;if(rnd()<0.35)emit(g.position.clone().setY(g.position.y+2+rnd()*3),0xff6a1a,1,1.2,1.6,0.8,-1,1.5)}
-    if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.4)}else g.scale.setScalar(1);return}
+    if(m.flash>0){m.flash-=dt;g.scale.setScalar((m.sc||1)*(1+m.flash*0.4))}else g.scale.setScalar(m.sc||1);return}
   if(m.type==='slime'){const b=Math.abs(Math.sin(m.anim*(walking?7:3)));ud.body.position.y=0.55+b*(walking?0.5:0.12);ud.body.scale.set(1+(1-b)*0.12,0.75-(1-b)*0.1+m.atkAnim*0.3,1+(1-b)*0.12)}
   if(ud.legs){const s=walking?Math.sin(m.anim*(m.type==='wolf'?12:m.type==='skel'||m.type==='archer'?9:5))*0.6:0;ud.legs.forEach((l,i)=>l.rotation.x=(i%2?s:-s)*(m.type==='wolf'&&i>1?-1:1))}
   if(ud.tail)ud.tail.rotation.y=Math.sin(m.anim*(walking?14:5))*(walking?0.25:0.4);
@@ -2805,7 +2839,7 @@ function animMonster(m,walking,dt){
   if(ud.float&&m.type==='dragon')g.position.y+=1+Math.sin(m.anim*1.6)*0.5;
   else if(ud.float&&(m.type==='ghost'||m.type==='skullf'))g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;
   else if(ud.float){g.position.y+=0.6+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
-  if(m.flash>0){m.flash-=dt;g.scale.setScalar(1+m.flash*0.6)}else g.scale.setScalar(1);
+  if(m.flash>0){m.flash-=dt;g.scale.setScalar((m.sc||1)*(1+m.flash*0.6))}else g.scale.setScalar(m.sc||1);
 }
 function moveP(dx,dz,spd,dt){const ok=moveEnt(P.pos,dx,dz,spd,dt,0.4);P.rot=angLerp(P.rot,Math.atan2(dx,dz),Math.min(1,dt*12));return ok}
 function update(dt){
@@ -3132,7 +3166,7 @@ function upgradeNPCs(){
 }
 function npcGesture(npc,name){const u=npc.userData.npc;if(!u)return;u.lock=u.t+playAnim(u,name,true,1.1)*0.95}
 function modelsArrived(ok){ // modelos prontos: troca os bonecos simples pelos animados
-  buildVillage();decorateDungeon();upgradeNPCs();try{buildEnv()}catch(e){console.warn('env',e)}try{upgradeNewMonsters()}catch(e){console.warn('mon',e)}
+  buildVillage();decorateDungeon();upgradeNPCs();try{buildEnv()}catch(e){console.warn('env',e)}try{upgradeNewMonsters()}catch(e){console.warn('mon',e)}try{eliteAuras()}catch(e){}
   ok=!!(MODELS.knight&&MODELS.mage);
   modelsOK=ok;if(ok){upgradeMonsterModels();
     for(const o of others.values()){if(o.mesh.userData.model)continue;const n=makeHero(o.cls);n.position.copy(o.mesh.position);n.rotation.y=o.mesh.rotation.y;scene.remove(o.mesh);o.mesh=n;scene.add(n);if(o.lk)applyLook(n.userData,o.cls,o.lk);else if(o.eqR)applyLook(n.userData,o.cls,...o.eqR)}
