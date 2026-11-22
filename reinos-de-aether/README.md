@@ -11,6 +11,7 @@ MMORPG 3D de navegador (protótipo), feito com three.js.
 - Missões: o Capitão Aldric (o ! dourado na vila) dá uma campanha de 12 missões, das Geleias até o dragão Ignarok, com XP, ouro, poções e itens. Depois dela, caçadas repetíveis.
 - Habilidade suprema no nível 10 (tecla 3): Fúria do Guerreiro (+50% ataque, −35% dano recebido) e Chuva de Meteoros do Mago.
 - Pergaminho de Retorno (tecla R) volta à vila em 3 s; mapa-múndi na tecla M (som passou para a tecla N).
+- Venda no Ferreiro Borin (aba 💰 Vender): marque itens da mochila um a um ou use a venda rápida por raridade (Comuns, Incomuns, Raros). Itens melhores que o equipado (⬆) e refinados ficam fora da venda rápida; vender épicos, refinados ou melhores pede confirmação. Itens refinados valem +50% por nível de refino.
 - Refinamento no Ferreiro Borin: itens equipados de +1 a +7 (+12% nos atributos por nível; chance cai a cada nível e, de +5 em diante, a falha volta 1 nível).
 - Perfil (tecla P): 13 conquistas que liberam títulos exibidos acima do nome (visíveis no multiplayer) e ranking online do servidor (Top 10 por nível e XP, gravado no Supabase pela função `submit_score`).
 - Chefe mundial: Azgaroth, o Senhor Demônio, desperta na Arena (norte das Terras de Pedra) por 12 minutos a cada meia hora (relógio igual para todos); recompensa todos que ajudarem.

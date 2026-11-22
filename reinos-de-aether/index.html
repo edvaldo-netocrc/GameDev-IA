@@ -119,6 +119,8 @@ body.touch #chat{width:230px}body.touch #log{height:80px}
 #detail .btns{display:flex;gap:6px;margin-top:10px;flex-wrap:wrap}
 #detail .req{color:#ff6a6a;font-size:11px;margin-top:4px}
 #shop{position:fixed;left:12px;top:150px;width:300px;max-height:calc(100vh - 250px);min-height:180px;overflow-y:auto}
+.stabs{display:flex;gap:6px;margin-bottom:6px}.stabs .mini{flex:1;padding:6px 4px}.stabs .mini.on{background:#6b5630;color:#ffe9b0;border-color:#f2d38a}
+.srow.sel{background:#3a2e1a;outline:1px solid #f2d38a88;border-radius:6px}.srow .chk{width:18px;text-align:center;font-size:14px;color:#f2d38a}.srow .tag{font-size:10px;color:#7dff9a;margin-left:4px}.sellbar{position:sticky;bottom:0;background:#1a1510ee;padding:6px 0 2px;display:flex;flex-direction:column;gap:5px}.sellq{display:flex;gap:4px;flex-wrap:wrap}.sellq .mini{flex:1;min-width:80px;font-size:11px}
 .ph2{font-family:Cinzel,serif;color:#f2d38a;font-size:12px;margin:8px 0 4px;border-bottom:1px solid #6b563066;padding-bottom:3px}
 .srow{display:flex;align-items:center;gap:10px;padding:8px 12px;border-bottom:1px solid #2a2114}
 .srow .cell{width:40px;height:40px;font-size:20px}
@@ -294,8 +296,9 @@ body.touch #detail{z-index:31}
   </div>
   <div id="shop" class="panel hidden">
     <div class="ph">⚒️ Ferreiro Borin <span class="x" data-close="shop">✕</span></div>
+    <div class="stabs"><button class="mini on" data-stab="buy">🛒 Comprar</button><button class="mini" data-stab="sell">💰 Vender <span id="sellN"></span></button></div>
     <div id="shopList"></div>
-    <div class="hint">Para vender, clique num item da sua mochila.</div>
+    <div id="sellList" class="hidden"></div>
   </div>
 
   <div id="dead" class="hidden">Você caiu em batalha…<small>Renascendo na Vila de Aether</small></div>
@@ -1216,6 +1219,7 @@ function updHUD(){
 let selItem=null,shopOpen=false;
 function cellHTML(it,attr){return `<div class="cell" ${attr} style="border-color:${RAR[it.rar].c};box-shadow:inset 0 0 12px ${RAR[it.rar].c}44">${icoOf(it)}${it.ref?`<span class="rf">+${it.ref}</span>`:''}<span class="lv">${it.lvl}</span></div>`}
 function renderInv(){
+  if(shopOpen)try{renderSell()}catch(e){}
   if($('inv').classList.contains('hidden'))return;
   const ph={weapon:P.cls==='mago'?'🪄':P.cls==='barbaro'?'🪓':'🗡️',armor:'🛡️',helm:'⛑️',ring:'💍'};
   $('eqSlots').innerHTML=Object.keys(SLOTN).map(s=>{const it=P.eq[s];return `<div class="eqrow">${it?cellHTML(it,`data-eq="${s}"`):`<div class="cell empty">${ph[s]}</div>`}<span>${SLOTN[s]}</span></div>`}).join('');
@@ -1249,7 +1253,7 @@ function showDetail(it,where){
   selItem={it,where};const D=$('detail');D.classList.remove('hidden');
   const cmp=where==='bag'?P.eq[it.slot]:null;
   let btns='';
-  if(where==='bag'){btns+=`<button class="mini" data-do="equip">Equipar</button>`;if(shopOpen)btns+=`<button class="mini" data-do="sell">Vender (${it.val} 🪙)</button>`;btns+=`<button class="mini" data-do="drop">Descartar</button>`}
+  if(where==='bag'){btns+=`<button class="mini" data-do="equip">Equipar</button>`;if(shopOpen)btns+=`<button class="mini" data-do="sell">Vender (${sellVal(it)} 🪙)</button>`;btns+=`<button class="mini" data-do="drop">Descartar</button>`}
   else if(where==='eq')btns+=`<button class="mini" data-do="unequip">Remover</button>`;
   else if(where==='shop')btns+=`<button class="mini" data-do="buy" ${P.gold<it.val*3?'disabled':''}>Comprar (${it.val*3} 🪙)</button>`;
   D.innerHTML=`<h3 style="color:${RAR[it.rar].c}">${esc(itName(it))}</h3><div class="meta">${RAR[it.rar].n} · ${SLOTN[it.slot]} · Nível ${it.lvl}${where==='eq'?' · equipado':''}</div>
@@ -1264,7 +1268,37 @@ function equip(it){
   recalc();refreshLook();logItem('Equipado:',it);emit(P.pos.clone().setY(P.pos.y+1.2),RAR[it.rar].h,25,3,2,0.8,4);save();
 }
 function unequip(s){if(P.inv.length>=BAG_MAX){log('Mochila cheia.','bad');return}P.inv.push(P.eq[s]);P.eq[s]=null;recalc();refreshLook();save()}
-function sellItem(it){const i=P.inv.indexOf(it);if(i<0)return;P.inv.splice(i,1);P.gold+=it.val;log(`Vendido por ${it.val} ouro.`,'loot');save()}
+const sellVal=it=>Math.round(it.val*(1+(it.ref||0)*0.5)); // refino aumenta o valor de venda
+function sellItem(it){const i=P.inv.indexOf(it);if(i<0)return;P.inv.splice(i,1);const v=sellVal(it);P.gold+=v;SFX.play('coin');log(`Vendido por ${v} ouro.`,'loot');SELL.sel.delete(it);save();renderSell()}
+/* ---- aba Vender do Ferreiro ---- */
+const SELL={tab:'buy',sel:new Set(),confirm:false};
+const itPow=it=>{const t=stOf(it);return (t.atk||0)*2+(t.def||0)*2+(t.hp||0)*0.2+(t.mp||0)*0.1+(t.crit||0)*3};
+const isUpgrade=it=>{if(it.lvl>P.lvl)return false;const e=P.eq[it.slot],p=itPow(it);if(e&&p<=itPow(e))return false; // só o mais forte de cada tipo na mochila
+  return !P.inv.some(o=>o!==it&&o.slot===it.slot&&o.lvl<=P.lvl&&(itPow(o)>p||(itPow(o)===p&&P.inv.indexOf(o)<P.inv.indexOf(it))))};
+const keepIt=it=>isUpgrade(it)||(it.ref||0)>0; // protegido na venda em massa
+function setShopTab(t){SELL.tab=t;SELL.confirm=false;document.querySelectorAll('[data-stab]').forEach(b=>b.classList.toggle('on',b.dataset.stab===t));
+  $('shopList').classList.toggle('hidden',t!=='buy');$('sellList').classList.toggle('hidden',t!=='sell');if(t==='sell')renderSell();else renderShop()}
+function renderSell(){
+  if(!shopOpen)return;$('sellN').textContent=P.inv.length?`(${P.inv.length})`:'';if(SELL.tab!=='sell')return;
+  for(const it of [...SELL.sel])if(!P.inv.includes(it))SELL.sel.delete(it);
+  const items=[...P.inv].sort((a,b)=>a.rar-b.rar||a.lvl-b.lvl);
+  if(!items.length){$('sellList').innerHTML='<div class="hint">Sua mochila está vazia. Volte com itens das caçadas para vender.</div>';return}
+  let h=`<div class="hint">Toque nos itens para marcar. <span style="color:#7dff9a">⬆</span> = melhor que o equipado (fica fora da venda rápida, junto dos refinados).</div>`;
+  for(const it of items){const i=P.inv.indexOf(it),on=SELL.sel.has(it);
+    h+=`<div class="srow${on?' sel':''}" data-sitem="${i}" style="cursor:pointer"><div class="chk">${on?'☑':'☐'}</div>${cellHTML(it,'')}<div class="nm" style="color:${RAR[it.rar].c}">${esc(itName(it))}${isUpgrade(it)?'<span class="tag">⬆ melhor</span>':''}<small>${RAR[it.rar].n} · ${SLOTN[it.slot]} · Nv ${it.lvl}</small></div><b style="color:#f2d38a;font-size:12px;white-space:nowrap">${sellVal(it)} 🪙</b></div>`}
+  const selG=[...SELL.sel].reduce((a,it)=>a+sellVal(it),0),risky=[...SELL.sel].some(it=>it.rar>=3||(it.ref||0)>0||isUpgrade(it));
+  let q='';for(let r=0;r<3;r++){const l=P.inv.filter(it=>it.rar===r&&!keepIt(it));if(l.length)q+=`<button class="mini" data-sellr="${r}" style="color:${RAR[r].c}">${['Comuns','Incomuns','Raros'][r]} (${l.length}) · ${l.reduce((a,it)=>a+sellVal(it),0)} 🪙</button>`}
+  h+=`<div class="sellbar">${q?`<div class="sellq">${q}</div>`:''}<div class="sellq"><button class="mini" data-sall="1">Marcar todos</button><button class="mini" data-sall="0" ${SELL.sel.size?'':'disabled'}>Limpar</button></div>
+    <button class="mini" id="sellGo" style="padding:8px;font-weight:bold;${SELL.confirm?'background:#8a2a1a;color:#fff':''}" ${SELL.sel.size?'':'disabled'}>${SELL.confirm?`⚠️ Confirmar: vender ${SELL.sel.size} (inclui itens valiosos)`:`Vender selecionados (${SELL.sel.size}) · ${selG} 🪙`}</button></div>`;
+  $('sellList').innerHTML=h;SELL.risky=risky}
+function sellMany(list,what){if(!list.length)return;let g=0;for(const it of list){const i=P.inv.indexOf(it);if(i<0)continue;P.inv.splice(i,1);g+=sellVal(it);SELL.sel.delete(it)}
+  P.gold+=g;SFX.play('coin');log(`💰 Você vendeu ${list.length} ${what} por ${g} ouro.`,'loot');SELL.confirm=false;hideDetail();renderInv();renderShop();renderSell();save()}
+$('shop').addEventListener('click',e=>{const t=e.target.closest('[data-stab]');if(t)setShopTab(t.dataset.stab)});
+$('sellList').addEventListener('click',e=>{
+  const r=e.target.closest('[data-sellr]');if(r){const k=+r.dataset.sellr;sellMany(P.inv.filter(it=>it.rar===k&&!keepIt(it)),'itens '+['comuns','incomuns','raros'][k]);return}
+  const a=e.target.closest('[data-sall]');if(a){SELL.confirm=false;if(a.dataset.sall==='1')P.inv.forEach(it=>SELL.sel.add(it));else SELL.sel.clear();renderSell();return}
+  if(e.target.closest('#sellGo')){if(SELL.risky&&!SELL.confirm){SELL.confirm=true;renderSell();return}sellMany([...SELL.sel],SELL.sel.size===1?'item':'itens');return}
+  const row=e.target.closest('[data-sitem]');if(row){const it=P.inv[+row.dataset.sitem];if(!it)return;SELL.confirm=false;SELL.sel.has(it)?SELL.sel.delete(it):SELL.sel.add(it);renderSell()}});
 $('detail').addEventListener('click',e=>{
   const b=e.target.closest('[data-do]');if(!b||!selItem)return;const {it,where}=selItem,a=b.dataset.do;
   if(a==='equip')equip(it);else if(a==='unequip')unequip(it.slot);else if(a==='sell')sellItem(it);
@@ -1275,7 +1309,7 @@ $('detail').addEventListener('click',e=>{
 $('inv').addEventListener('click',e=>{
   const c=e.target.closest('[data-bag],[data-eq]');if(c){if(c.dataset.bag!==undefined)showDetail(P.inv[+c.dataset.bag],'bag');else showDetail(P.eq[c.dataset.eq],'eq');return}
 });
-$('sellCommon').addEventListener('click',()=>{const c=P.inv.filter(i=>i.rar===0);if(!c.length){log('Nenhum item Comum na mochila.','sys');return}let g=0;for(const it of c)g+=it.val;P.inv=P.inv.filter(i=>i.rar!==0);P.gold+=g;log(`Você vendeu ${c.length} itens Comuns por ${g} ouro.`,'loot');hideDetail();renderInv();save()});
+$('sellCommon').addEventListener('click',()=>{const c=P.inv.filter(i=>i.rar===0);if(!c.length){log('Nenhum item Comum na mochila.','sys');return}let g=0;for(const it of c)g+=sellVal(it);P.inv=P.inv.filter(i=>i.rar!==0);P.gold+=g;log(`Você vendeu ${c.length} itens Comuns por ${g} ouro.`,'loot');hideDetail();renderInv();save()});
 $('prof').addEventListener('click',e=>{const t=e.target.closest('.tab');if(t){profTab=t.dataset.tab;renderProfile();if(profTab==='rank'){fetchRank();submitRank(true)}return}
   const iv=e.target.closest('[data-inv]');if(iv){ptyInvite(iv.dataset.inv);return}
   if(e.target.id==='ptyLeave'){ptyLeave();return}
@@ -1340,7 +1374,7 @@ $('shopList').addEventListener('click',e=>{
 });
 function buyItem(it){const c=it.val*3;if(P.gold<c){log('Ouro insuficiente.','bad');return}if(P.inv.length>=BAG_MAX){log('Mochila cheia.','bad');return}
   P.gold-=c;const i=shopStock.indexOf(it);if(i>=0)shopStock[i]=null;P.inv.push(it);logItem('Comprou',it);save()}
-function openShop(){if(P.lvl!==shopLvl||!shopStock.length)genShop();shopOpen=true;$('shop').classList.remove('hidden');toggleInv(true);renderShop();renderInv()}
+function openShop(tab){if(P.lvl!==shopLvl||!shopStock.length)genShop();shopOpen=true;SELL.sel.clear();$('shop').classList.remove('hidden');toggleInv(true);setShopTab(tab||'buy');renderSell();renderInv()}
 
 /* ============ efeitos ============ */
 const effects=[];
