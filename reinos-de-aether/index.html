@@ -1554,7 +1554,9 @@ const myKey=()=>myId||'me';
 function applyDamage(m,dmg,by){ // só no anfitrião
   if(m.dead)return;
   m.hp-=dmg;m.contrib[by]=1;
+  m.hitT=now; // levou golpe agora: não cura enquanto apanha
   if(m.state!=='return'){if(m.state!=='chase')m.tgtId=by;m.state='chase'}
+  else if(Math.hypot(m.g.position.x-m.home.x,m.g.position.z-m.home.z)<leashOf(m.T)*0.85){m.tgtId=by;m.state='chase'} // atacado enquanto voltava: revida
   if(m.hp<=0){const who=Object.keys(m.contrib);m.contrib={};killMon(m,who.includes(myKey()));if(netShared)netEmit('kill',{m:m.id,w:who})}
 }
 function killMon(m,rewarded){
@@ -2490,6 +2492,7 @@ function monsterStrike(m,tgt,dmg){ // anfitrião: o monstro ataca um jogador (lo
   if(tgt.me){if(m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)}
   else netEmit('mh',{t:tgt.id,m:m.id,d:Math.round(dmg)});
 }
+const leashOf=T=>T.boss||T.world||T.epic?70:45; // chefes perseguem mais longe
 function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pular
   const g=m.g,T=m.T;
   if(T.world&&m.dead&&!(m.respawnT<=0))return null;
@@ -2500,8 +2503,9 @@ function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pula
   const dHome=Math.hypot(g.position.x-m.home.x,g.position.z-m.home.z);
   let tgt=m.state==='chase'?plist.find(p=>p.id===m.tgtId)||null:null;
   if(m.state==='idle'&&T.aggro){const p=nearestPlayer(g,T.aggro,plist,area);if(p){m.state='chase';m.tgtId=p.id;tgt=p}}
-  if(m.state==='chase'&&(!tgt||tgt.safe||tgt.inD!==area||dHome>45||Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z)>32)){
-    const p=dHome<=45?nearestPlayer(g,Math.max(T.aggro,10),plist,area):null; // troca de alvo ou volta para casa
+  const LS=leashOf(T);
+  if(m.state==='chase'&&(!tgt||tgt.safe||tgt.inD!==area||dHome>LS||Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z)>32)){
+    const p=dHome<=LS?nearestPlayer(g,Math.max(T.aggro,10),plist,area):null; // troca de alvo ou volta para casa
     if(p){m.tgtId=p.id;tgt=p}else{m.state='return';tgt=null}
   }
   let mvx=0,mvz=0,spd=T.spd;
@@ -2525,8 +2529,8 @@ function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pula
       const spots=[[tgt.x,tgt.z]];if(rnd()<0.5){const a=rnd()*6.28;spots.push([tgt.x+Math.cos(a)*6,tgt.z+Math.sin(a)*6])}
       for(const [x,z] of spots){telegraph(new THREE.Vector3(x,0,z),4.5,T.atk*1.3,0x7dff9a);netEmit('tl',{x:Math.round(x*10)/10,z:Math.round(z*10)/10})}}}
   }else if(m.state==='return'){
-    mvx=m.home.x-g.position.x;mvz=m.home.z-g.position.z;spd*=1.4;m.hp=Math.min(m.max,m.hp+m.max*0.3*dt);
-    if(dHome<1.5){m.state='idle';m.hp=m.max;m.contrib={}}
+    mvx=m.home.x-g.position.x;mvz=m.home.z-g.position.z;spd*=1.4;if(now-(m.hitT||-99)>3)m.hp=Math.min(m.max,m.hp+m.max*0.06*dt);
+    if(dHome<1.5){m.state='idle';if(now-(m.hitT||-99)>5){m.hp=m.max;m.contrib={}}}
   }else{
     m.wait-=dt;
     if(m.wander){mvx=m.wander.x-g.position.x;mvz=m.wander.z-g.position.z;spd*=0.4;if(Math.hypot(mvx,mvz)<0.6){m.wander=null;m.wait=2+rnd()*4}}
