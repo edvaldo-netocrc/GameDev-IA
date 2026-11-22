@@ -17,7 +17,8 @@ html,body{width:100%;height:100%;overflow:hidden;background:#0d0f14;font-family:
 .lbl{position:absolute;transform:translate(-50%,-100%);text-align:center;font-size:11px;font-weight:700;text-shadow:0 1px 2px #000,0 0 3px #000;white-space:nowrap}
 .lbl .hb{width:54px;height:5px;background:#300;border:1px solid #000;margin:2px auto 0;border-radius:2px;overflow:hidden}
 .lbl .hb i{display:block;height:100%;background:#e33}
-.lbl.sel{color:#ffd76a}.lbl.npc{color:#c9a6ff}.lbl.me{color:#8fe3ff}.lbl.elite{color:#ffd76a;text-shadow:0 0 6px rgba(255,190,60,.8),0 1px 2px #000}
+.lbl.sel{color:#ffd76a}.lbl.npc{color:#c9a6ff}.lbl.me{color:#8fe3ff}#fpsBox{position:fixed;left:8px;bottom:6px;z-index:7;font:600 11px Inter,sans-serif;color:#9fe6a0;background:rgba(0,0,0,.45);padding:2px 6px;border-radius:4px;pointer-events:none}
+.lbl.elite{color:#ffd76a;text-shadow:0 0 6px rgba(255,190,60,.8),0 1px 2px #000}
 .lbl.boss{color:#ff8b5c;font-size:13px}.lbl.loot{font-size:11px}.lbl.portal{color:#d9a8ff}
 .ft{position:absolute;font-weight:800;font-size:18px;text-shadow:0 2px 3px #000;pointer-events:none;animation:up 1s ease-out forwards;transform:translate(-50%,-50%)}
 .ft.dmg{color:#fff}.ft.crit{color:#ffcf3a;font-size:24px}.ft.hurt{color:#ff5050}.ft.heal{color:#5dff7a}.ft.xp{color:#c58bff;font-size:15px}.ft.gold{color:#ffd76a;font-size:14px}
@@ -285,6 +286,7 @@ body.touch #detail{z-index:31}
   </div>
   <div id="detail" class="panel hidden"></div>
   <div id="autoBadge" class="hidden">🤖 AUTO-CAÇA</div>
+  <div id="fpsBox" class="hidden"></div>
   <div id="autoPanel" class="panel hidden">
     <div class="ph">⚙️ Caça automática <span class="x" data-close="autoPanel">✕</span></div>
     <div class="arow"><label><input type="checkbox" id="optAuto"> Auto-caça <em>(H)</em></label></div>
@@ -295,6 +297,10 @@ body.touch #detail{z-index:31}
     <div class="arow"><label><input type="checkbox" id="optSkill"> Usar habilidade automaticamente</label></div>
     <div class="arow"><label><input type="checkbox" id="optStrong"> Atacar monstros bem mais fortes</label></div>
     <div class="arow">🔊 Som <em>(N liga/desliga)</em> <select id="optVol"><option value="0">desligado</option><option value="0.3">baixo</option><option value="0.6">médio</option><option value="1">alto</option></select></div>
+    <div class="ph2">📱 Desempenho</div>
+    <div class="arow">Qualidade gráfica <select id="optGfx"><option value="alto">Alto</option><option value="medio">Médio</option><option value="baixo">Baixo</option></select></div>
+    <div class="arow"><label><input type="checkbox" id="optAutoRes"> Resolução automática (deixa mais fluido no celular)</label></div>
+    <div class="arow"><label><input type="checkbox" id="optFps"> Mostrar FPS</label></div>
     <div class="hint">A auto-caça ataca monstros perto de onde foi ligada e para se você andar manualmente. Itens abaixo da raridade escolhida são deixados no chão.</div>
     <div class="ph2">☁️ Seu herói em outro aparelho</div>
     <div class="hint" id="cloudSt">☁️ Ainda não salvo na nuvem</div>
@@ -2572,7 +2578,9 @@ function updateOthers(dt){
     const moving=d>0.08&&d<=25;o.walk=moving?o.walk+dt*11:o.walk*0.85;
     const u=g.userData;o.atkAnim=Math.max(0,o.atkAnim-dt*3.5);
     updMount(o,g,o.mt&&!o.dead,moving,dt);updPet(o,o.dead?'':o.pt,g.position,g.rotation.y,false,dt);
-    if(u.model){driveHero(g,moving&&!o.mt,o.atkTrig,o.dead,dt);o.atkTrig=null}
+    {const fx=g.position.x-P.pos.x,fz=g.position.z-P.pos.z,lim=GFX.lo?90:GFX.hi?180:130;g.visible=areaId(g.position.x)===areaId(P.pos.x)&&fx*fx+fz*fz<lim*lim} // outros jogadores longe não são desenhados
+    if(u.model&&g.visible){driveHero(g,moving&&!o.mt,o.atkTrig,o.dead,dt);o.atkTrig=null}
+    else if(u.model)o.atkTrig=null;
     else{const sw=Math.sin(o.walk)*0.7*(o.walk>0.01?1:0);
       u.legL.rotation.x=sw;u.legR.rotation.x=-sw;u.armL.rotation.x=-sw*0.6;
       u.armR.rotation.x=o.atkAnim>0?-Math.sin(o.atkAnim*Math.PI)*2.2:sw*0.6;
@@ -2912,12 +2920,17 @@ function update(dt){
   const plist=[];
   if(!P.dead)plist.push({id:myKey(),me:true,x:P.pos.x,z:P.pos.z,inD:areaId(P.pos.x),safe:!!zone.safe});
   if(amHost)for(const [k,o] of others)if(!o.dead){const z0=zoneOf(o.tx,o.tz);plist.push({id:k,x:o.tx,z:o.tz,inD:areaId(o.tx),safe:!!z0.safe})}
+  const CULL=Math.min(scene.fog.far*0.9,GFX.lo?75:GFX.hi?160:110),CULL2=CULL*CULL,myArea=areaId(P.pos.x);let nVis=0;
   for(const m of monsters){
-    const g=m.g;let walking=false;
-    if(amHost){const r=hostMonster(m,dt,plist);if(r===null)continue;walking=r}
-    else{const r=followMonster(m,dt);if(r===null)continue;walking=r}
+    const g=m.g;let walking=false,skip=false;
+    if(amHost){const r=hostMonster(m,dt,plist);if(r===null)skip=true;else walking=r}
+    else{const r=followMonster(m,dt);if(r===null)skip=true;else walking=r}
+    // só desenha e anima o que está perto e no mesmo mapa (economiza muito no celular)
+    const dx=g.position.x-P.pos.x,dz=g.position.z-P.pos.z,near=areaId(g.position.x)===myArea&&dx*dx+dz*dz<CULL2;
+    g.visible=near&&!(m.dead&&m.dyingT<=0);if(!g.visible){m.culled=true;continue}m.culled=false;nVis++;if(skip)continue;
     animMonster(m,walking,dt);
   }
+  PERF.mon=nVis;
   updDying(dt);
   // projéteis do jogador
   for(let i=bolts.length-1;i>=0;i--){
@@ -3018,13 +3031,27 @@ function update(dt){
   saveT-=dt;if(saveT<=0){saveT=10;save()}
   updHUD();
 }
+const PERF={mon:0,ft:16,pr:renderer.getPixelRatio(),base:renderer.getPixelRatio(),auto:localStorage.getItem('aether_autores')!=='0',t:0,lin:0,nObj:0};
+function autoRes(dt){ // resolução automática: baixa a nitidez quando o aparelho não acompanha e devolve quando sobra fôlego
+  PERF.ft+=(dt*1000-PERF.ft)*0.05;PERF.t+=dt;if(!PERF.auto||!started||PERF.t<2.5)return;PERF.t=0;
+  const min=Math.max(0.5,PERF.base*0.55);let pr=PERF.pr;
+  if(PERF.ft>30&&pr>min)pr=Math.max(min,pr-0.1);else if(PERF.ft<19&&pr<PERF.base)pr=Math.min(PERF.base,pr+0.05);
+  if(Math.abs(pr-PERF.pr)>0.001){PERF.pr=pr;renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight)}}
+{const g=$('optGfx'),a=$('optAutoRes'),f=$('optFps');g.value=GFX.q;a.checked=PERF.auto;f.checked=localStorage.getItem('aether_fps')==='1';$('fpsBox').classList.toggle('hidden',!f.checked);
+  g.addEventListener('change',()=>{try{localStorage.setItem('aether_gfx',g.value)}catch(e){}log('Qualidade alterada. O jogo vai recarregar…','sys');save();setTimeout(()=>location.reload(),600)});
+  a.addEventListener('change',()=>{PERF.auto=a.checked;try{localStorage.setItem('aether_autores',a.checked?'1':'0')}catch(e){}if(!a.checked){PERF.pr=PERF.base;renderer.setPixelRatio(PERF.base);renderer.setSize(innerWidth,innerHeight)}});
+  f.addEventListener('change',()=>{try{localStorage.setItem('aether_fps',f.checked?'1':'0')}catch(e){}$('fpsBox').classList.toggle('hidden',!f.checked)});}
+let fpsT=0;
 function frame(){
   requestAnimationFrame(frame);lastFrameWall=performance.now();
+  if((fpsT+=1)%20===0&&!$('fpsBox').classList.contains('hidden'))$('fpsBox').textContent=`${Math.round(1000/PERF.ft)} FPS · ${PERF.mon} monstros · res ${Math.round(PERF.pr*100)}%`;
   const dt=Math.min(0.05,clock.getDelta());
   WIND.value+=dt;
   if(started)update(dt);
   else{now+=dt;camera.position.set(Math.sin(now*0.05)*40,22,Math.cos(now*0.05)*40);camera.lookAt(0,2,0);updSky(dt*0.2,false);updParticles(dt)}
-  linearize(scene);
+  autoRes(dt);
+  // corrige cores dos materiais novos: só quando a cena muda (ou a cada 20 quadros), não a cena inteira todo quadro
+  {let n=0;for(const c of scene.children)n+=c.children.length+1;if(n!==PERF.nObj||++PERF.lin>=20){PERF.nObj=n;PERF.lin=0;linearize(scene)}}
   renderer.render(scene,camera);
 }
 addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight)});
@@ -3063,7 +3090,10 @@ function envPlace(k,x,z,yaw,s,solidR,y){const g=envClone(k,s);if(!g)return null;
 const _em=new THREE.Matrix4(),_eq=new THREE.Quaternion(),_ev=new THREE.Vector3(),_es=new THREE.Vector3(),_eup=new THREE.Vector3(0,1,0);
 function envInst(k,list,shadow){ // list: [{x,y,z,yaw,s}] → um InstancedMesh por material (poucas chamadas de desenho)
   const ps=envParts(k);if(!ps||!list.length)return null;const g=new THREE.Group();
-  for(const p of ps){const im=new THREE.InstancedMesh(p.geo,p.mat,list.length);im.frustumCulled=false;im.castShadow=!!shadow&&!p.glow;im.receiveShadow=GFX.hi;
+  let cx=0,cz=0,maxS=0;for(const t of list){cx+=t.x;cz+=t.z;maxS=Math.max(maxS,t.s||1)}cx/=list.length;cz/=list.length;
+  let rr=0;for(const t of list)rr=Math.max(rr,Math.hypot(t.x-cx,t.z-cz));
+  for(const p of ps){if(!p.geo.boundingSphere)p.geo.computeBoundingSphere();const geo=p.geo.clone();geo.boundingSphere=new THREE.Sphere(new THREE.Vector3(cx,H(cx,cz),cz),rr+p.geo.boundingSphere.radius*maxS+6);
+    const im=new THREE.InstancedMesh(geo,p.mat,list.length);im.frustumCulled=true;im.castShadow=!!shadow&&!p.glow;im.receiveShadow=GFX.hi;
     list.forEach((t,i)=>{_ev.set(t.x,t.y!=null?t.y:H(t.x,t.z),t.z);_eq.setFromAxisAngle(_eup,t.yaw||0);_es.setScalar(t.s||1);_em.compose(_ev,_eq,_es);im.setMatrixAt(i,_em)});g.add(im)}
   scene.add(g);return g}
 function buildEnv(){
