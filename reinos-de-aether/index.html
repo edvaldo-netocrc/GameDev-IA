@@ -468,6 +468,7 @@ const occluders=[],solids=[]; // objetos que bloqueiam a câmera / o caminho
 const tmpC=new THREE.Color(),tmpC2=new THREE.Color();
 
 const tmpOrc=new THREE.Color();
+const FIELD={}; // terreno e vegetação do campo (o visual moderno troca)
 /* terreno */
 {
   const g=new THREE.PlaneGeometry(460,460,200,200);g.rotateX(-Math.PI/2);
@@ -493,7 +494,7 @@ const tmpOrc=new THREE.Color();
     :new THREE.MeshLambertMaterial({vertexColors:true,map:mkTex(det,110,true)});
   LIN.add(tm);
   const t=new THREE.Mesh(g,tm);
-  t.receiveShadow=true;scene.add(t);
+  t.receiveShadow=true;scene.add(t);FIELD.terrain=t;
 }
 
 /* lago */
@@ -598,7 +599,7 @@ const obstacles=solids;
   const NF=600,flowers=new THREE.InstancedMesh(fG,new THREE.MeshLambertMaterial({color:0xffffff}),NF);const fc=[0xff5d6c,0xffd84a,0xffffff,0xb98cff,0xff9a3a];let fi=0;
   while(fi<NF){const a=R()*6.283,d=26+R()*44,x=Math.cos(a)*d,z=Math.sin(a)*d;if(lakeMask(x,z)>0.1)continue;
     p.set(x,H(x,z),z);s.set(1,1,1);q.identity();m.compose(p,q,s);flowers.setMatrixAt(fi,m);flowers.setColorAt(fi,lin(c.setHex(fc[Math.floor(R()*fc.length)])));fi++}
-  scene.add(flowers);
+  scene.add(flowers);Object.assign(FIELD,{trunks,pines,oaks,rocks,grass,flowers});
 }
 
 /* céu: estrelas e nuvens */
@@ -805,7 +806,7 @@ const MOD_ANIM={Idle:'Idle_Loop',Walking_A:'Walk_Loop',Running_A:'Jog_Fwd_Loop',
   PickUp:'PickUp_Table',Lie_StandUp:'LayToIdle',Sit_Chair_Idle:'Sitting_Idle_Loop',Idle_A:'Idle_FoldArms_Loop',Idle_B:'Idle_Talking_Loop',Cheer:'Yes',Dance:'Dance_Loop',Interact:'Interact'};
 const MOD_SKIN=/Regular_|Superhero|Eye|Hair|Knight_/; // pele, olhos, cabelo e armadura não recebem a cor da classe
 function loadModern(){if(MODERN.ready||MODERN.loading||!THREE.GLTFLoader)return;MODERN.loading=true;const L=new THREE.GLTFLoader();
-  Promise.all([...MOD_FILES.map(f=>[MOD_DIR+f+'.glb','mod_'+f]),[MOD_ENV+'aether_kit.glb','mod_kit']].map(([u,k])=>new Promise(r=>L.load(u,g=>{g.scene.traverse(o=>{if(o.isMesh){LIN.add(o.material);const m=o.material;if(m.transparent&&!m.alphaTest){m.alphaTest=0.5;m.transparent=false}}});MODELS[k]=g;r(1)},undefined,()=>r(0)))))
+  Promise.all([...MOD_FILES.map(f=>[MOD_DIR+f+'.glb','mod_'+f]),[MOD_ENV+'aether_kit.glb','mod_kit'],[MOD_ENV+'aether_nature.glb','mod_nat']].map(([u,k])=>new Promise(r=>L.load(u,g=>{g.scene.traverse(o=>{if(o.isMesh){LIN.add(o.material);const m=o.material;if(m.transparent&&!m.alphaTest){m.alphaTest=0.5;m.transparent=false}}});MODELS[k]=g;r(1)},undefined,()=>r(0)))))
    .then(rs=>{MODERN.loading=false;if(rs.every(Boolean)){MODERN.ready=true;if(MODERN.on&&modelsOK){rebuildHeroes();modernVillage(true)}}else log('Não foi possível carregar os personagens modernos (internet?). Usando os clássicos.','sys')})}
 function modBind(m,host,k,out){const src=MODELS['mod_'+k];if(!src||!host)return;const c=THREE.SkeletonUtils.clone(src.scene);const list=[];c.traverse(o=>{if(o.isSkinnedMesh)list.push(o)});
   for(const o of list){const bones=o.skeleton.bones.map(b=>m.getObjectByName(b.name));if(bones.some(b=>!b))continue;o.material=o.material.clone();LIN.add(o.material);
@@ -882,7 +883,7 @@ function buildModernVillage(){if(MV.g||!MODELS.mod_kit||!town.userData.built)ret
     MV.stone=[];{const st=new THREE.MeshStandardMaterial({map:T('ph_cobblestone_floor_001_diff_1k.jpg',1),roughness:0.9,metalness:0,color:0xd8d2c8});st.map.repeat.set(3,1);LIN.add(st);
       for(const o of town.children)if(o.isMesh&&o.geometry.type==='CylinderGeometry'&&[3.2,0.35].includes(o.geometry.parameters.radiusTop))MV.stone.push([o,o.material,st])}
     MV.plaza=plaza;MV.plazaOld=plaza.material;MV.plazaMat=new THREE.MeshStandardMaterial({map:T('ph_cobblestone_floor_001_diff_1k.jpg',1),normalMap:GFX.lo?null:T('ph_cobblestone_floor_001_nor_gl_1k.jpg'),roughnessMap:T('ph_cobblestone_floor_001_rough_1k.jpg'),roughness:1,metalness:0});LIN.add(MV.plazaMat)}}
-function modernVillage(on){try{modernNPCs(on)}catch(e){console.warn('npc',e)}if(on)buildModernVillage();if(!MV.g)return;MV.g.visible=on;
+function modernVillage(on){try{modernNPCs(on)}catch(e){console.warn('npc',e)}try{modernField(on)}catch(e){console.warn('campo',e)}if(on)buildModernVillage();if(!MV.g)return;MV.g.visible=on;
   const occ=(o,add)=>o.traverse(m=>{if(!m.isMesh)return;const k=occluders.indexOf(m);if(add&&k<0)occluders.push(m);if(!add&&k>=0)occluders.splice(k,1)});
   for(const {hs,h,r} of MV.houses){if(hs.vb){hs.vb.visible=!on;occ(hs.vb,!on)}occ(h,on);hs.sol.r=on?r:(hs.vr||hs.sol.r)}
   for(const [c,g] of MV.pairs)c.visible=!on;
@@ -899,6 +900,32 @@ function modernNPCs(on){
   for(const e of MNPC.list){const want=on?e.nu:e.oldU;if(e.npc.userData.npc===want)continue;
     for(const c of [...e.npc.children])e.npc.remove(c);if(on)e.npc.add(e.g);else for(const c of e.oldKids)e.npc.add(c);
     e.npc.userData.npc=want;const k=npcAnims.indexOf(on?e.oldU:e.nu);if(k>=0)npcAnims[k]=want;else npcAnims.push(want)}}
+/* ===== campo moderno (V3): árvores, pinheiros, pedras, capim, flores e arbustos do Stylized Nature MegaKit (CC0) nas MESMAS posições e colisões; chão com grama PBR (Poly Haven) ===== */
+const MF={built:false,meshes:[],terrOld:null,terrNew:null};
+function natInst(name,mats,scale){const k=MODELS.mod_nat;const src=k&&k.scene.getObjectByName(name);if(!src||!mats.length)return;src.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(src.matrixWorld).invert();
+  const S=new THREE.Matrix4().makeScale(scale,scale,scale);
+  src.traverse(o=>{if(!o.isMesh)return;const local=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld),m=o.material;if(m.transparent&&!m.alphaTest){m.alphaTest=0.5;m.transparent=false}
+    const im=new THREE.InstancedMesh(o.geometry,m,mats.length);const big=/Tree|Pine|Rock/.test(name);im.castShadow=big;im.receiveShadow=GFX.hi;
+    const T=new THREE.Matrix4();mats.forEach((M,i)=>{T.copy(M).multiply(S).multiply(local);im.setMatrixAt(i,T)});im.frustumCulled=false;im.visible=false;scene.add(im);MF.meshes.push(im)})}
+function buildModernField(){if(MF.built||!MODELS.mod_nat||!FIELD.oaks)return;MF.built=true;
+  // só perto da vila (o resto continua com a vegetação simples, mais leve): Alto 75 m, Médio 58 m, Baixo 42 m
+  const RAD=GFX.hi?72:GFX.lo?40:50,P0=new THREE.Vector3(),Z=new THREE.Matrix4().makeScale(0,0,0);MF.hidden=[];
+  const near=M=>{P0.setFromMatrixPosition(M);return Math.hypot(P0.x,P0.z)<RAD};
+  const get=(im,every,off,hide)=>{const out=[];for(let i=off||0;i<im.count;i+=every||1){const M=new THREE.Matrix4();im.getMatrixAt(i,M);if(!near(M))continue;out.push(M);if(hide)MF.hidden.push([im,i,M])}return out};
+  for(let i=0;i<FIELD.trunks.count;i++){const M=new THREE.Matrix4();FIELD.trunks.getMatrixAt(i,M);if(near(M))MF.hidden.push([FIELD.trunks,i,M])}
+  const split=(list,n)=>{const r=[];for(let i=0;i<n;i++)r.push(list.filter((_,j)=>j%n===i));return r};
+  const oak=split(get(FIELD.oaks,1,0,1),3);natInst('CommonTree_1',oak[0],0.95);natInst('CommonTree_3',oak[1],0.8);natInst('CommonTree_4',oak[2],0.8);
+  const pin=split(get(FIELD.pines,1,0,1),2);natInst('Pine_2',pin[0],1.0);natInst('Pine_3',pin[1],1.05);
+  const rk=split(get(FIELD.rocks,1,0,1),2);natInst('Rock_Medium_1',rk[0],0.8);natInst('Rock_Medium_2',rk[1],0.85);
+  const gE=GFX.hi?8:GFX.lo?24:16;natInst('Grass_Common_Tall',get(FIELD.grass,gE,0),0.45);natInst('Grass_Wispy_Tall',get(FIELD.grass,gE*3,3),0.5);
+  natInst('Bush_Common',get(FIELD.grass,GFX.lo?120:60,7),0.9);natInst('Bush_Common_Flowers',get(FIELD.grass,GFX.lo?200:90,11),0.85);natInst('Fern_1',get(FIELD.grass,GFX.lo?160:70,5),0.7);
+  if(!GFX.lo){natInst('Flower_3_Group',get(FIELD.flowers,6,0),0.35);natInst('Flower_4_Group',get(FIELD.flowers,10,2),0.32);for(let i=0;i<FIELD.flowers.count;i++){const M=new THREE.Matrix4();FIELD.flowers.getMatrixAt(i,M);if(near(M))MF.hidden.push([FIELD.flowers,i,M])}}
+  const t=FIELD.terrain;if(t){const TL=new THREE.TextureLoader(),T=(f,srgb)=>{const x=TL.load(MOD_ENV+f);x.wrapS=x.wrapT=THREE.RepeatWrapping;x.repeat.set(70,70);if(srgb)x.encoding=THREE.sRGBEncoding;x.anisotropy=GFX.hi?8:2;return x};
+    MF.terrOld=t.material;MF.terrNew=new THREE.MeshStandardMaterial({vertexColors:true,map:T('ph_aerial_grass_rock_diff_1k.jpg',1),normalMap:GFX.lo?null:T('ph_aerial_grass_rock_nor_gl_1k.jpg'),roughness:0.95,metalness:0,color:new THREE.Color(1.9,1.9,1.9)});LIN.add(MF.terrNew)}}
+function modernField(on){if(on)buildModernField();if(!MF.built)return;for(const m of MF.meshes)m.visible=on;
+  const Z0=new THREE.Matrix4().makeScale(0,0,0),touched=new Set();for(const [im,i,M] of MF.hidden){im.setMatrixAt(i,on?Z0:M);touched.add(im)}for(const im of touched)im.instanceMatrix.needsUpdate=true;
+  if(FIELD.grass){FIELD.grass.visible=true;FIELD.grass.material.color.setScalar(on?0.85:1)} // o capim simples fica por baixo, dá volume
+  if(FIELD.terrain&&MF.terrNew)FIELD.terrain.material=on?MF.terrNew:MF.terrOld}
 function rebuildHeroes(){if(!modelsOK)return;const mk=(cls,old)=>{const n=makeHero(cls);n.position.copy(old.position);n.rotation.y=old.rotation.y;scene.remove(old);scene.add(n);return n};
   for(const o of others.values()){o.mesh=mk(o.cls,o.mesh);if(o.lk)applyLook(o.mesh.userData,o.cls,o.lk);else if(o.eqR)applyLook(o.mesh.userData,o.cls,...o.eqR)}
   if(P.mesh){P.mesh=mk(P.cls,P.mesh);refreshLook()}}

@@ -54,3 +54,5 @@ Para jogar localmente, basta abrir `index.html` num servidor estático.
 
 ## Visual moderno (beta)
 Em Opções → Desempenho → "Visual moderno (beta)". Troca também as 6 casas da Vila de Aether por casas modulares de pedra e enxaimel e a praça por calçamento de pedra (mesmas posições e colisões). Troca os heróis chibi por personagens com proporção humana (Universal Base Characters + roupas Fantasy, animações UAL, armadura de placas feita no Blender), mantendo todas as armas do jogo, cores por raridade, montaria, habilidades e morte. Desligado por padrão; os arquivos (~16 MB) só baixam quando o jogador liga.
+
+O visual moderno também troca a vegetação e o chão do campo em volta da vila (raio de 40 a 72 m conforme a qualidade), nas mesmas posições e colisões.
