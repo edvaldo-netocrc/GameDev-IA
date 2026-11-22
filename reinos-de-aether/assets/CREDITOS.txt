@@ -76,3 +76,5 @@ Todos CC0 (domínio público), conferidos nas páginas oficiais antes do uso:
 - Quaternius — Fantasy Props MegaKit: barraca, barris, tocha, bigorna, estandarte, caixas, lanterna, suporte de armas, banco, caldeirão, espada, machado, escudo
 - Quaternius — Stylized Nature MegaKit: árvores, pinheiros, arbustos, pedras, gramas, flores, samambaias
 - Poly Haven — texturas PBR cobblestone_floor_001, aerial_grass_rock, forest_ground_04
+- Quaternius — Universal Base Characters: cabeças, olhos, sobrancelhas, cabelos (Simple Parted, Long, Beard)
+- shyr — Stan the Golem (https://shyr.itch.io/stan-the-golem), CC0: convertido de FBX para glb com FBXLoader/GLTFExporter do three.js, texturas reduzidas para 1024 px
