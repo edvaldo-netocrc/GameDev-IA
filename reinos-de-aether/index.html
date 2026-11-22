@@ -2298,7 +2298,10 @@ function autoTick(dt){ // chamado a cada quadro com o jogador vivo e sem comando
   // travado indo até o alvo? troca de alvo
   if(P.auto&&t&&!t.dead){
     const d=d2(t.g.position,P.pos);
-    if(d>C.range+t.T.size*0.6+0.3&&Math.abs(d-AUTO.lastD)<0.02*dt*60){AUTO.stuckT+=dt;if(AUTO.stuckT>2.5){AUTO.ban.set(t,now+15);setTarget(null);P.auto=false;AUTO.stuckT=0}}else AUTO.stuckT=0;
+    if(AUTO.stT!==t){AUTO.stT=t;AUTO.bestD=d;AUTO.stuckT=0}
+    if(d>C.range+t.T.size*0.6+0.3){const mv=AUTO.lp?Math.hypot(P.pos.x-AUTO.lp.x,P.pos.z-AUTO.lp.z)/Math.max(dt,1e-3):0;AUTO.lp=P.pos.clone();AUTO.mvS=(AUTO.mvS||0)+(mv-(AUTO.mvS||0))*Math.min(1,dt*2);
+      if(d<AUTO.bestD-0.5){AUTO.bestD=d;AUTO.stuckT=0}else{AUTO.stuckT+=dt;if(AUTO.stuckT>(AUTO.mvS>1.5?10:4)){ // parado de verdade: 4 s; contornando obstáculo: até 10 s
+        AUTO.ban.set(t,now+20);setTarget(null);P.auto=false;AUTO.stuckT=0;AUTO.stT=null}}}else{AUTO.stuckT=0;AUTO.bestD=d}
     AUTO.lastD=d;return;
   }
   AUTO.tick-=dt;if(AUTO.tick>0)return;AUTO.tick=0.25;
@@ -2849,6 +2852,40 @@ function animMonster(m,walking,dt){
   else if(ud.float){g.position.y+=0.6+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}
   if(m.flash>0){m.flash-=dt;g.scale.setScalar((m.sc||1)*(1+m.flash*0.6))}else g.scale.setScalar(m.sc||1);
 }
+// ===== desvio de obstáculos (bot e clique para andar): olha à frente e contorna árvores, pedras e paredes
+const NAV={side:1,sideT:0,dirT:0,dx:0,dz:0,tx:NaN,tz:NaN,path:null,pg:null,bestD:1e9,noProg:0,cool:0};
+// rota por A* numa grade de 1 m ao redor do herói — usada quando o desvio simples não resolve (bolsões em "U", cantos)
+function planPath(sx,sz,tx,tz){const R=24,N=R*2+1,ox=Math.round(sx)-R,oz=Math.round(sz)-R,idx=(i,j)=>i*N+j;
+  const tgi=clamp(Math.round(tx)-ox,0,N-1),tgj=clamp(Math.round(tz)-oz,0,N-1),bl=new Int8Array(N*N).fill(-1);
+  const isB=(i,j)=>{const k=idx(i,j);if(bl[k]<0)bl[k]=blocked(ox+i,oz+j,0.5)?1:0;return bl[k]===1};
+  const si=R,sj=R,g=new Float32Array(N*N).fill(1e9),from=new Int32Array(N*N).fill(-1),open=[[0,si,sj]];g[idx(si,sj)]=0;let best=idx(si,sj),bestH=1e9,iter=0;
+  while(open.length&&iter++<4000){let bi=0;for(let k=1;k<open.length;k++)if(open[k][0]<open[bi][0])bi=k;const [,i,j]=open[bi];open[bi]=open[open.length-1];open.pop();
+    const h=Math.hypot(i-tgi,j-tgj);if(h<bestH){bestH=h;best=idx(i,j)}if(h<1.5)break;
+    for(const [di,dj] of [[1,0],[-1,0],[0,1],[0,-1],[1,1],[1,-1],[-1,1],[-1,-1]]){const ni=i+di,nj=j+dj;if(ni<0||nj<0||ni>=N||nj>=N||isB(ni,nj))continue;
+      if(di&&dj&&(isB(i+di,j)||isB(i,j+dj)))continue;const ng=g[idx(i,j)]+(di&&dj?1.414:1);if(ng<g[idx(ni,nj)]){g[idx(ni,nj)]=ng;from[idx(ni,nj)]=idx(i,j);open.push([ng+Math.hypot(ni-tgi,nj-tgj)*1.1,ni,nj])}}}
+  if(bestH>Math.hypot(si-tgi,sj-tgj)-1)return null; // não achou nada melhor
+  const pts=[];for(let k=best;k>=0&&k!==idx(si,sj);k=from[k])pts.push({x:ox+Math.floor(k/N),z:oz+k%N});pts.reverse();
+  const out=[];for(let k=0;k<pts.length;k+=2)out.push(pts[k]);if(pts.length)out.push(pts[pts.length-1]);return out}
+function pathClear(x,z,dx,dz,len){for(let s=0.7;s<=len;s+=0.7)if(blocked(x+dx*s,z+dz*s,0.45))return false;return true}
+function navMove(tx,tz,spd,dt){
+  let dx=tx-P.pos.x,dz=tz-P.pos.z;const dist=Math.hypot(dx,dz);if(dist<1e-3)return false;dx/=dist;dz/=dist;
+  const look=Math.min(dist,3.2);NAV.sideT-=dt;NAV.dirT-=dt;NAV.cool-=dt;
+  if(Math.abs(tx-NAV.tx)+Math.abs(tz-NAV.tz)>3){NAV.dirT=0;NAV.tx=tx;NAV.tz=tz;NAV.path=null;NAV.bestD=dist;NAV.noProg=0} // destino mudou bastante: recalcula
+  // seguindo uma rota planejada
+  if(NAV.path){const w=NAV.path[0];if(!w){NAV.path=null}else{const wx=w.x-P.pos.x,wz=w.z-P.pos.z;if(Math.hypot(wx,wz)<0.7){NAV.path.shift();if(!NAV.path.length)NAV.path=null}
+    if(NAV.path){const ok=moveP(wx,wz,spd,dt);if(ok)return true;NAV.path=null}}}
+  // sem progresso há ~1 s? planeja uma rota
+  if(dist<NAV.bestD-0.35){NAV.bestD=dist;NAV.noProg=0}else NAV.noProg+=dt;
+  if(NAV.noProg>1.0&&NAV.cool<=0){NAV.cool=1.5;NAV.noProg=0;NAV.bestD=dist;const pth=planPath(P.pos.x,P.pos.z,tx,tz);if(pth&&pth.length){NAV.path=pth;const w=pth[0];return moveP(w.x-P.pos.x,w.z-P.pos.z,spd,dt)}}
+  if(pathClear(P.pos.x,P.pos.z,dx,dz,look)){NAV.dirT=0;return moveP(dx,dz,spd,dt)}
+  if(NAV.dirT>0&&!blocked(P.pos.x+NAV.dx*0.7,P.pos.z+NAV.dz*0.7,0.45))return moveP(NAV.dx,NAV.dz,spd,dt); // segue o desvio escolhido
+  const base=Math.atan2(dx,dz),DEG=[20,40,60,80,100,125,150,175];
+  const firstFree=sg=>{for(const deg of DEG){const a=base+sg*deg*Math.PI/180,ex=Math.sin(a),ez=Math.cos(a);if(pathClear(P.pos.x,P.pos.z,ex,ez,Math.min(look,2.2)))return{deg,ex,ez}}return null};
+  if(NAV.sideT<=0){const L=firstFree(1),R=firstFree(-1);NAV.side=!L?-1:!R?1:L.deg<=R.deg?1:-1} // escolhe o lado mais curto uma vez
+  const c=firstFree(NAV.side)||firstFree(-NAV.side);
+  if(c){NAV.sideT=2.5;NAV.dx=c.ex;NAV.dz=c.ez;NAV.dirT=0.25;return moveP(c.ex,c.ez,spd,dt)} // mantém o mesmo lado enquanto contorna
+  NAV.sideT=0;return moveP(dx,dz,spd,dt); // cercado: escolhe de novo na próxima
+}
 function moveP(dx,dz,spd,dt){const ok=moveEnt(P.pos,dx,dz,spd,dt,0.4);P.rot=angLerp(P.rot,Math.atan2(dx,dz),Math.min(1,dt*12));return ok}
 function update(dt){
   now+=dt;const C=CLS[P.cls];
@@ -2877,7 +2914,7 @@ function update(dt){
       moving=moveP(fx*iz+rx*ix,fz*iz+rz*ix,spd,dt);P.moveTo=null;P.auto=false;
     }else if(P.auto&&P.target&&!P.target.dead){
       const t=P.target,d=Math.hypot(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z),reach=C.range+t.T.size*0.6;
-      if(d>reach){moving=moveP(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z,spd,dt)}
+      if(d>reach){moving=navMove(t.g.position.x,t.g.position.z,spd,dt)}
       else{
         P.rot=angLerp(P.rot,Math.atan2(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z),Math.min(1,dt*12));
         if(P.cd<=0){
@@ -2888,7 +2925,7 @@ function update(dt){
       }
     }else if(P.moveTo){
       const dx=P.moveTo.x-P.pos.x,dz=P.moveTo.z-P.pos.z;
-      if(Math.hypot(dx,dz)<0.5)P.moveTo=null;else{moving=moveP(dx,dz,spd,dt);if(!moving)P.moveTo=null}
+      if(Math.hypot(dx,dz)<0.5)P.moveTo=null;else{moving=navMove(P.moveTo.x,P.moveTo.z,spd,dt);if(!moving){P.mtStuck=(P.mtStuck||0)+dt;if(P.mtStuck>1.5){P.moveTo=null;P.mtStuck=0}}else P.mtStuck=0}
     }
     if(P.auto&&(!P.target||P.target.dead))P.auto=false;
     const ooc=now-P.lastHurt>5;
