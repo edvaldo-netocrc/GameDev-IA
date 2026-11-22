@@ -77,4 +77,4 @@ Todos CC0 (domínio público), conferidos nas páginas oficiais antes do uso:
 - Quaternius — Stylized Nature MegaKit: árvores, pinheiros, arbustos, pedras, gramas, flores, samambaias
 - Poly Haven — texturas PBR cobblestone_floor_001, aerial_grass_rock, forest_ground_04
 - Quaternius — Universal Base Characters: cabeças, olhos, sobrancelhas, cabelos (Simple Parted, Long, Beard)
-- shyr — Stan the Golem (https://shyr.itch.io/stan-the-golem), CC0: convertido de FBX para glb com FBXLoader/GLTFExporter do three.js, texturas reduzidas para 1024 px
+- Armadura de placas do Cavaleiro (knight_plate.glb) e Golem de Pedra (golem_pedra.glb, com 5 animações): modelados no Blender para este projeto (originais). O golem usa a textura rock_face_03 da Poly Haven (CC0).
