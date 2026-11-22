@@ -67,3 +67,12 @@ KayKit Character Animations 1.1 — Kay Lousberg (kaylousberg.itch.io/kaykit-cha
   juntadas num só arquivo sem malhas; carregado depois que o jogo abre.
 
 wolf.glb: reextraído do Quaternius Wolf (CC0) mantendo também Eating e Idle_2_HeadLow (variações de parado).
+
+== Protótipo visual V3 (pasta prototipo/, não usado pelo jogo ainda) ==
+Todos CC0 (domínio público), conferidos nas páginas oficiais antes do uso:
+- Quaternius — Universal Base Characters + Fantasy Outfits (Ranger, Peasant): personagens humanos
+- Quaternius — Universal Animation Library 1 e 2: animações dos personagens novos
+- Quaternius — Medieval Village MegaKit: paredes, telhados, portas, chaminé, cerca, carroça
+- Quaternius — Fantasy Props MegaKit: barraca, barris, tocha, bigorna, estandarte, caixas, lanterna, suporte de armas, banco, caldeirão, espada, machado, escudo
+- Quaternius — Stylized Nature MegaKit: árvores, pinheiros, arbustos, pedras, gramas, flores, samambaias
+- Poly Haven — texturas PBR cobblestone_floor_001, aerial_grass_rock, forest_ground_04

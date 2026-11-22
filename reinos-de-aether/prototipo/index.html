@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,user-scalable=no,viewport-fit=cover">
+<title>Reinos de Aether — Protótipo visual V3</title>
+<style>
+html,body{margin:0;height:100%;overflow:hidden;background:#0d0b08;font-family:system-ui,sans-serif;color:#f3e6c8}
+canvas{display:block;touch-action:none}
+#ui{position:fixed;left:8px;top:8px;background:#1a1510d9;border:1px solid #6b5630;border-radius:8px;padding:8px 10px;font-size:13px;max-width:min(330px,90vw)}
+#ui b{color:#f2d38a}#ui button{background:#3a2c18;color:#f3e6c8;border:1px solid #8a6a3a;border-radius:6px;padding:5px 9px;margin:3px 3px 0 0;font-size:13px}
+#ui button.on{background:#8a6a3a;color:#fff}#fps{position:fixed;right:8px;top:8px;background:#000a;padding:4px 8px;border-radius:6px;font:12px monospace}
+#load{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;background:#0d0b08;font-size:18px}
+#tags{position:fixed;left:0;top:0;pointer-events:none}.tag{position:absolute;transform:translate(-50%,-100%);background:#000a;padding:2px 7px;border-radius:6px;font-size:12px;white-space:nowrap}
+</style></head><body>
+<div id="load">Carregando protótipo… <span id="pct">0%</span></div>
+<div id="ui"><b>Protótipo visual V3</b> — Vila de Aether modernizada (não é o jogo)<br>
+<small>Arraste para girar, pinça/roda para zoom.</small><br>
+Qualidade: <button data-q="baixo">Baixo</button><button data-q="medio">Médio</button><button data-q="alto">Alto</button><br>
+<button id="day">☀️ Dia / 🌙 Noite</button></div>
+<div id="fps">-- FPS</div><div id="tags"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
+<script>
+'use strict';
+// ===== qualidade (mesmos nomes do jogo) =====
+const Q0=(()=>{try{return localStorage.getItem('aether_proto_q')}catch(e){return null}})()||(('ontouchstart' in window)?'medio':'alto');
+const Q={q:Q0,hi:Q0==='alto',lo:Q0==='baixo'};
+const R=new THREE.WebGLRenderer({antialias:!Q.lo,powerPreference:'high-performance'});
+R.setPixelRatio(Math.min(devicePixelRatio||1,Q.hi?2:Q.lo?0.75:1));R.setSize(innerWidth,innerHeight);
+R.outputEncoding=THREE.sRGBEncoding;R.toneMapping=THREE.ACESFilmicToneMapping;R.toneMappingExposure=0.95;
+R.shadowMap.enabled=!Q.lo;R.shadowMap.type=Q.hi?THREE.PCFSoftShadowMap:THREE.PCFShadowMap;document.body.appendChild(R.domElement);
+const S=new THREE.Scene();const C=new THREE.PerspectiveCamera(50,innerWidth/innerHeight,0.1,600);C.position.set(15,9,22);
+const ctl=new THREE.OrbitControls(C,R.domElement);ctl.target.set(0,1.6,0);ctl.maxPolarAngle=1.45;ctl.minDistance=3;ctl.maxDistance=70;ctl.enableDamping=true;
+addEventListener('resize',()=>{C.aspect=innerWidth/innerHeight;C.updateProjectionMatrix();R.setSize(innerWidth,innerHeight)});
+// ===== céu, neblina e luz =====
+const sky=new THREE.Sky();sky.scale.setScalar(4500);S.add(sky);const su=sky.material.uniforms;su.turbidity.value=4;su.rayleigh.value=1.4;su.mieCoefficient.value=0.004;su.mieDirectionalG.value=0.8;
+const hemi=new THREE.HemisphereLight(0xdfeaff,0x5a4a32,0.75);S.add(hemi);
+const sun=new THREE.DirectionalLight(0xfff0d8,2.4);sun.castShadow=!Q.lo;sun.shadow.mapSize.set(Q.hi?2048:1024,Q.hi?2048:1024);
+Object.assign(sun.shadow.camera,{left:-38,right:38,top:38,bottom:-38,near:1,far:160});sun.shadow.bias=-0.0006;sun.shadow.normalBias=0.03;S.add(sun);S.add(sun.target);
+S.fog=new THREE.Fog(0xc8d6e4,60,190);
+let night=false;function setSky(){const el=night?-0.12:0.42,az=2.4;const v=new THREE.Vector3().setFromSphericalCoords(1,Math.PI/2-el,az);su.sunPosition.value.copy(v);
+  sun.position.set(v.x*80,Math.max(12,v.y*80),v.z*80);sun.intensity=night?0.35:2.4;sun.color.setHex(night?0x9fb4ff:0xfff0d8);hemi.intensity=night?0.28:0.75;hemi.color.setHex(night?0x7f95c8:0xdfeaff);
+  S.fog.color.setHex(night?0x1b2433:0xc8d6e4);R.toneMappingExposure=night?1.25:0.95;for(const l of lights)l.intensity=night?l.userData.i:l.userData.i*0.15;for(const e of glows)e.material.emissiveIntensity=night?2.2:0.6}
+// ===== chão PBR (Poly Haven, CC0) =====
+const TL=new THREE.TextureLoader();const tex=(f,rep,srgb)=>{const t=TL.load('assets/'+f);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(rep,rep);if(srgb)t.encoding=THREE.sRGBEncoding;t.anisotropy=Q.hi?8:2;return t};
+const pbr=(n,rep)=>new THREE.MeshStandardMaterial({map:tex(`ph_${n}_diff_1k.jpg`,rep,true),normalMap:Q.lo?null:tex(`ph_${n}_nor_gl_1k.jpg`,rep),roughnessMap:tex(`ph_${n}_rough_1k.jpg`,rep),roughness:1,metalness:0});
+const ground=new THREE.Mesh(new THREE.PlaneGeometry(400,400,1,1),pbr('aerial_grass_rock',70));ground.rotation.x=-Math.PI/2;ground.receiveShadow=true;S.add(ground);
+const forest=new THREE.Mesh(new THREE.RingGeometry(34,200,64,1),pbr('forest_ground_04',60));forest.rotation.x=-Math.PI/2;forest.position.y=0.01;forest.receiveShadow=true;S.add(forest);
+{const g=new THREE.CircleGeometry(13,64);const uv=g.attributes.uv;for(let i=0;i<uv.count;i++)uv.setXY(i,uv.getX(i)*5,uv.getY(i)*5);
+ const plaza=new THREE.Mesh(g,pbr('cobblestone_floor_001',1));plaza.material.map.repeat.set(1,1);plaza.rotation.x=-Math.PI/2;plaza.position.y=0.02;plaza.receiveShadow=true;S.add(plaza);
+ // caminho de pedra até a borda
+ const pg=new THREE.PlaneGeometry(3.2,26);const puv=pg.attributes.uv;for(let i=0;i<puv.count;i++)puv.setXY(i,puv.getX(i)*1.2,puv.getY(i)*9);
+ for(const a of [0,Math.PI*0.5,Math.PI]){const p=new THREE.Mesh(pg,plaza.material);p.rotation.set(-Math.PI/2,0,a);p.position.set(Math.sin(a)*24,0.021,Math.cos(a)*24);p.receiveShadow=true;S.add(p)}}
+// ===== carregamento =====
+const L=new THREE.GLTFLoader();let nDone=0;const FILES=['aether_kit','aether_wpn','ual_lib','male_ranger','female_ranger','male_peasant','female_peasant','wolf'];const M={};
+const lights=[],glows=[],mixers=[],tags=[];
+Promise.all(FILES.map(f=>new Promise(res=>L.load('assets/'+f+'.glb',g=>{M[f]=g;document.getElementById('pct').textContent=Math.round(++nDone/FILES.length*100)+'%';res()},undefined,e=>{console.error(f,e);res()})))).then(build);
+function piece(name){const n=M.aether_kit.scene.getObjectByName(name);if(!n)return null;const c=n.clone(true);c.position.set(0,0,0);c.rotation.set(0,0,0);c.scale.set(1,1,1);
+  c.traverse(o=>{if(o.isMesh){o.castShadow=!Q.lo;o.receiveShadow=true;const m=o.material;if(m.alphaTest===0&&m.transparent){m.alphaTest=0.5;m.transparent=false}}});return c}
+function put(name,x,y,z,ry,s,parent){const c=piece(name);if(!c)return null;c.position.set(x,y,z);c.rotation.y=ry||0;if(s)c.scale.setScalar(s);(parent||S).add(c);return c}
+// casas montadas com as peças modulares (paredes de 2 m, 2 andares, telhado 6×8)
+function house(x,z,ry,o){const g=new THREE.Group();g.position.set(x,0,z);g.rotation.y=ry;S.add(g);o=o||{};
+  const F=[['Wall_UnevenBrick_Window_Wide_Round','Wall_UnevenBrick_Door_Round','Wall_UnevenBrick_Window_Wide_Round'],['Wall_UnevenBrick_Straight','Wall_UnevenBrick_Window_Wide_Round','Wall_UnevenBrick_Straight']];
+  const U=['Wall_Plaster_WoodGrid','Wall_Plaster_Window_Wide_Flat','Wall_Plaster_WoodGrid','Wall_Plaster_Window_Wide_Flat'];
+  for(let fl=0;fl<2;fl++){const y=fl*3.12;
+    for(let i=0;i<3;i++){put(fl?U[i]:F[0][i],-2+i*2,y,4,0,0,g);put(fl?U[i+1]:F[1][i],2-i*2,y,-4,Math.PI,0,g)}
+    for(let i=0;i<4;i++){put(fl?U[i]:(i===1?'Wall_UnevenBrick_Window_Wide_Round':'Wall_UnevenBrick_Straight'),3,y,-3+i*2,Math.PI/2,0,g);put(fl?U[3-i]:(i===2?'Wall_UnevenBrick_Window_Wide_Round':'Wall_UnevenBrick_Straight'),-3,y,3-i*2,-Math.PI/2,0,g)}}
+  put('Door_1_Round',-0.53,0,4.02,0,0,g);
+  put('Roof_Front_Brick6',0,6.24,4,0,0,g);put('Roof_Front_Brick6',0,6.24,-4,Math.PI,0,g);
+  put('Roof_RoundTiles_6x8',0,6.24+(o.roofY||0),0,0,0,g);put('Prop_Chimney',1.6,7.6,-1.6,0,0,g);
+  const lw=put('Lantern_Wall',1.25,2.3,4.05,0,0,g);if(lw)addLight(lw,1.2,2.6);
+  return g}
+function addLight(obj,i,h){obj.traverse(o=>{if(o.isMesh&&o.material&&/glass|light|fire|flame/i.test(o.material.name)){o.material=o.material.clone();o.material.emissive=new THREE.Color(0xffa040);glows.push(o)}});
+  if(lights.length<(Q.hi?6:Q.lo?0:3)){const l=new THREE.PointLight(0xffa850,i,14,1.8);l.userData.i=i;l.position.set(0,-0.3,0.35);obj.add(l);lights.push(l)}}
+// vegetação instanciada a partir das peças do kit
+function instance(name,list){const src=M.aether_kit.scene.getObjectByName(name);if(!src)return;src.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(src.matrixWorld).invert();
+  src.traverse(o=>{if(!o.isMesh)return;const local=new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld);const m=o.material;if(m.transparent&&!m.alphaTest){m.alphaTest=0.5;m.transparent=false}
+    const im=new THREE.InstancedMesh(o.geometry,m,list.length);im.castShadow=!Q.lo&&!/Grass|Flower|Fern|Plant/.test(name);im.receiveShadow=true;const T=new THREE.Matrix4(),q=new THREE.Quaternion(),sc=new THREE.Vector3();
+    list.forEach((p,i)=>{q.setFromAxisAngle(new THREE.Vector3(0,1,0),p.r);sc.setScalar(p.s);T.compose(new THREE.Vector3(p.x,0,p.z),q,sc).multiply(local);im.setMatrixAt(i,T)});S.add(im)})}
+let seed=7;const rnd=()=>(seed=(seed*16807)%2147483647)/2147483647;
+function scatter(n,r0,r1,smin,smax,avoid){const out=[];let t=0;while(out.length<n&&t++<n*30){const a=rnd()*Math.PI*2,d=r0+rnd()*(r1-r0),x=Math.cos(a)*d,z=Math.sin(a)*d;
+  if(avoid&&avoid(x,z))continue;out.push({x,z,r:rnd()*6.28,s:smin+rnd()*(smax-smin)})}return out}
+const onPath=(x,z)=>(Math.abs(x)<2.6&&z>10)||(Math.abs(z)<2.6&&x>10)||(Math.abs(x)<2.6&&z<-10);
+const nearHouse=(x,z)=>HOUSES.some(h=>Math.hypot(x-h[0],z-h[1])<8);
+const HOUSES=[[-18,-6,Math.PI/2+0.2],[-6,-19,0.1],[9,-18,-0.25],[19,6,-Math.PI/2-0.15]];
+function character(file,x,z,ry,clip,label,wpn){const src=M[file];if(!src)return null;const m=THREE.SkeletonUtils.clone(src.scene);m.position.set(x,0,z);m.rotation.y=ry;
+  m.traverse(o=>{if(o.isMesh){o.castShadow=!Q.lo;o.receiveShadow=true;o.frustumCulled=false}});S.add(m);
+  const mx=new THREE.AnimationMixer(m),acts={};for(const c of M.ual_lib.animations)acts[c.name]=mx.clipAction(c);mixers.push(mx);
+  const u={m,mx,acts,cur:null,label};const play=(n,once)=>{const a=acts[n];if(!a)return 0;a.reset();a.setLoop(once?THREE.LoopOnce:THREE.LoopRepeat,Infinity);a.clampWhenFinished=true;a.play();if(u.cur&&u.cur!==a)a.crossFadeFrom(u.cur,0.25,false);u.cur=a;return a.getClip().duration};
+  u.play=play;play(clip);
+  if(wpn)for(const [name,bone,pos,rot,s] of wpn){const b=m.getObjectByName(bone),p=M.aether_wpn.scene.getObjectByName(name);if(!b||!p)continue;const c=p.clone(true);c.position.set(...pos);c.rotation.set(rot[0],rot[1],rot[2],rot[3]||'XYZ');c.scale.setScalar(s||1);
+    c.traverse(o=>{if(o.isMesh)o.castShadow=!Q.lo});b.add(c)}
+  if(label)tags.push({o:m,el:mkTag(label),h:2.1});return u}
+function mkTag(t){const d=document.createElement('div');d.className='tag';d.textContent=t;document.getElementById('tags').appendChild(d);return d}
+let walker=null,knight=null,warrior=null,wolf=null;
+function build(){
+  document.getElementById('load').remove();
+  HOUSES.forEach(([x,z,r])=>house(x,z,r));
+  // ferraria e mercado na praça
+  put('Stall_Empty',6.5,0,3.5,-2.2);put('Anvil',4.6,0,6.2,0.6);put('WeaponStand',3.2,0,7.4,0.3);put('Barrel',7.9,0,1.6,0);put('Barrel_Apples',8.6,0,2.6,0.4);put('Crate_Wooden',7.4,0,0.4,0.2);
+  put('Cauldron',-5.2,0,5.8,0);put('FarmCrate_Apple',-6.4,0,4.6,0.5);put('Bench',-4,0,-6,0.2);put('Prop_Wagon',-9,0,8,0.9);put('Banner_1',0,0,-9.5,0);
+  for(const [x,z,r] of [[-11,11,0.5],[11,-11,0.2],[-11,-11,1],[11,11,0.8]]){const t=put('Torch_Metal',x,1.6,z,r);if(t){const pole=new THREE.Mesh(new THREE.CylinderGeometry(0.07,0.09,1.6,6),new THREE.MeshStandardMaterial({color:0x3a2a1a,roughness:0.9}));pole.position.set(x,0.8,z);pole.castShadow=true;S.add(pole);addLight(t,1.6,2)}}
+  for(let i=0;i<10;i++){const a=-1.2+i*0.16;put('Prop_WoodenFence_Single',Math.cos(a)*30,0,Math.sin(a)*30,-a)}
+  // natureza
+  const out=(x,z)=>onPath(x,z)||nearHouse(x,z);const N=Q.lo?0.35:Q.hi?1:0.6;
+  instance('CommonTree_1',scatter(Math.round(18*N),36,95,0.9,1.3,out));instance('CommonTree_3',scatter(Math.round(14*N),38,100,0.8,1.2,out));instance('CommonTree_4',scatter(Math.round(10*N),30,90,0.9,1.2,out));
+  instance('Pine_2',scatter(Math.round(16*N),45,110,0.9,1.4,out));instance('Pine_3',scatter(Math.round(12*N),50,110,0.9,1.4,out));instance('TwistedTree_1',scatter(Q.lo?0:2,40,80,0.7,0.9,out));
+  instance('Bush_Common',scatter(Math.round(30*N),15,70,0.8,1.3,out));instance('Bush_Common_Flowers',scatter(Math.round(14*N),15,60,0.8,1.2,out));
+  instance('Rock_Medium_1',scatter(Math.round(18*N),16,80,0.6,1.4,out));instance('Rock_Medium_2',scatter(Math.round(14*N),16,80,0.6,1.4,out));
+  instance('Grass_Common_Tall',scatter(Math.round(150*N),14,55,0.7,1.2,out));instance('Grass_Wispy_Tall',scatter(Math.round(90*N),14,55,0.7,1.2,out));
+  instance('Flower_3_Group',scatter(Math.round(35*N),14,50,0.8,1.2,out));instance('Flower_4_Group',scatter(Math.round(18*N),14,50,0.8,1.2,out));instance('Fern_1',scatter(Math.round(60*N),30,90,0.8,1.3,out));
+  // personagens (Universal Base Characters + roupas Fantasy, animações UAL)
+  // encaixe calculado pelos ossos: lâmina sai do punho pelo lado do polegar; escudo nas costas do antebraço
+  const SW=[['Sword_Bronze','hand_r',[0,0.08,0.1],[Math.PI/2,-0.66,0,'YXZ'],1]],SH=[['Shield_Wooden','lowerarm_l',[-0.05,0.13,0],[0,-Math.PI/2,0],1]];
+  knight=character('male_peasant',-1.5,3,0.4,'Idle_Shield_Loop','Cavaleiro (protótipo)',[...SW,...SH]);
+  warrior=character('male_ranger',2.5,2.4,-0.5,'Sword_Idle','Guerreiro (protótipo)',[['Axe_Bronze','hand_r',[0,0.08,0.06],[Math.PI/2,-0.66,0,'YXZ'],1.3]]);
+  character('female_ranger',-3.2,-1.5,0.9,'Idle_Loop','Arqueira / Atalanta (protótipo)');
+  character('female_peasant',1.2,-2.8,-0.3,'Idle_Talking_Loop','Sacerdotisa (protótipo)');
+  walker=character('male_ranger',0,0,0,'Jog_Fwd_Loop','Herói correndo');
+  if(M.wolf){const w=THREE.SkeletonUtils.clone(M.wolf.scene);const b=new THREE.Box3().setFromObject(w);w.scale.setScalar(1.25/(b.max.y-b.min.y));w.position.set(8,0,-3);w.rotation.y=-2;w.traverse(o=>{if(o.isMesh){o.castShadow=!Q.lo}});S.add(w);
+    const mx=new THREE.AnimationMixer(w);const c=M.wolf.animations.find(a=>/Idle$/.test(a.name))||M.wolf.animations[0];mx.clipAction(c).play();mixers.push(mx);tags.push({o:w,el:mkTag('Lobo Sombrio (modelo atual)'),h:1.5})}
+  setSky();loop();
+  setInterval(()=>{if(knight)knight.play('Sword_Regular_Combo',true);setTimeout(()=>knight&&knight.play('Idle_Shield_Loop'),2600);
+    if(warrior)warrior.play('Sword_Heavy_Combo',true);setTimeout(()=>warrior&&warrior.play('Sword_Idle'),3200)},6000);
+  window.__P={S,C,R,ctl,M,step:n=>{for(let i=0;i<n;i++)tick(0.033)},setNight:v=>{night=v;setSky()},render:()=>R.render(S,C)};window.__ready=1;
+}
+// ===== laço =====
+const clock=new THREE.Clock();let t=0,fA=0,fN=0;const fpsEl=document.getElementById('fps'),tv=new THREE.Vector3();
+function tick(dt){t+=dt;for(const m of mixers)m.update(dt);
+  if(walker){const a=t*0.35,r=9;walker.m.position.set(Math.cos(a)*r,0,Math.sin(a)*r);walker.m.rotation.y=-a+Math.PI;}
+  for(const e of glows)e.material.emissiveIntensity*=1;ctl.update()}
+function loop(){requestAnimationFrame(loop);const dt=Math.min(0.05,clock.getDelta());tick(dt);R.render(S,C);
+  for(const g of tags){tv.setFromMatrixPosition(g.o.matrixWorld);tv.y+=g.h;tv.project(C);const vis=tv.z<1&&Math.abs(tv.x)<1.1&&Math.abs(tv.y)<1.1;g.el.style.display=vis?'':'none';if(vis){g.el.style.left=((tv.x+1)/2*innerWidth)+'px';g.el.style.top=((1-tv.y)/2*innerHeight)+'px'}}
+  fA+=dt;fN++;if(fA>=0.5){fpsEl.textContent=Math.round(fN/fA)+' FPS · '+R.info.render.calls+' desenhos · '+Math.round(R.info.render.triangles/1000)+' mil triângulos';fA=0;fN=0}}
+document.querySelectorAll('[data-q]').forEach(b=>{b.classList.toggle('on',b.dataset.q===Q.q);b.onclick=()=>{try{localStorage.setItem('aether_proto_q',b.dataset.q)}catch(e){}location.reload()}});
+document.getElementById('day').onclick=()=>{night=!night;setSky()};
+</script></body></html>

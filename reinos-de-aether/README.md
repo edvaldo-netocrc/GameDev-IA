@@ -48,3 +48,6 @@ Para jogar localmente, basta abrir `index.html` num servidor estático.
 - Animações (ciclo 2): cada classe tem movimento próprio na habilidade (2) e na suprema (3), com o efeito saindo no momento do golpe e visível para os outros jogadores; combos de 2 a 3 golpes alternados; Cavaleiro e Mecânico defendem com o escudo ao apanhar; a cabeça do herói acompanha o alvo; a capa balança ao correr (qualidade Alto).
 - Animações (ciclo 3): sentado no lobo com o corpo acompanhando o galope; esquiva automática quando o golpe do monstro erra; crítico atordoa monstros comuns por 0,7 s (estrelas na cabeça); esqueletos rugem ao perceber o jogador e levantam do chão ao renascer; lobos comem e farejam quando parados; monstros distantes animam em meia taxa no Baixo/Médio.
 - Animações (ciclo 4, fechamento do Prompt V2): monstros comuns "investigam" quem passa perto da borda do alcance (viram, mostram "?" e dão alguns passos); efeitos de golpe, projéteis, áreas de perigo e baús reaproveitam geometrias e liberam materiais — a memória de vídeo para de crescer durante a caça (antes subia sem parar).
+
+## Protótipo visual V3
+`prototipo/` é uma página separada (não altera o jogo) com a Vila de Aether modernizada: casas modulares, chão PBR, vegetação instanciada, iluminação nova, personagens com animações novas e seletor de qualidade. Créditos em `assets/CREDITOS.txt`.
