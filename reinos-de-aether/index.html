@@ -172,6 +172,12 @@ body.touch #bar{left:auto;right:calc(8px + env(safe-area-inset-right));bottom:ca
 body.touch #bar .slot{width:60px;height:56px}body.touch #bar .slot b{font-size:24px}body.touch #bar .slot small{font-size:8px}
 body.touch #menu{position:fixed;top:calc(6px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);display:flex;gap:4px;padding:4px;z-index:6}
 body.touch #menu .slot{width:40px;height:40px}body.touch #menu .slot b{font-size:19px}body.touch #menu .slot small{display:none}
+/* deitado: o menu fica entre o quadro do herói e o minimapa (nunca por cima do nível) */
+@media (orientation:landscape){
+  body.touch #menu{left:calc(204px + env(safe-area-inset-left));right:calc(110px + env(safe-area-inset-right));transform:none;width:fit-content;margin:0 auto;justify-content:center}
+  body.touch #menu .slot{--ms:min(40px,calc((100vw - 330px - env(safe-area-inset-left) - env(safe-area-inset-right)) / 10 - 5px));flex:0 0 auto;width:var(--ms);height:var(--ms);min-width:26px;min-height:26px}
+  body.touch #chat{top:calc(62px + env(safe-area-inset-top))!important}
+}
 body.touch #joy{left:calc(18px + env(safe-area-inset-left));bottom:calc(18px + env(safe-area-inset-bottom));top:auto;width:124px;height:124px}
 body.touch #knob{left:36px;top:36px;width:52px;height:52px}
 body.touch #pframe{transform:scale(.72);transform-origin:top left;left:calc(6px + env(safe-area-inset-left));top:6px}
@@ -204,8 +210,8 @@ body.touch #detail{z-index:31}
   body.touch #pframe{transform:scale(.6)}body.touch #quest{top:84px}body.touch #party{top:136px}
   body.touch #mini{width:80px!important;height:80px!important}body.touch #zone{top:88px;width:90px;font-size:9px}
   body.touch #bar .slot{width:52px;height:48px}body.touch #bar .slot b{font-size:21px}
-  body.touch #menu .slot{width:36px;height:36px}body.touch #menu .slot b{font-size:17px}
-  body.touch #chat{top:46px}body.touch #log{height:28px}
+  body.touch #menu .slot{--ms:min(36px,calc((100vw - 280px - env(safe-area-inset-left) - env(safe-area-inset-right)) / 10 - 5px))}body.touch #menu .slot b{font-size:17px}body.touch #menu{left:calc(172px + env(safe-area-inset-left));right:calc(92px + env(safe-area-inset-right))}
+  body.touch #chat{top:56px!important}body.touch #log{height:28px}
   body.touch #joy{width:108px;height:108px;bottom:10px}body.touch #knob{left:30px;top:30px;width:48px;height:48px}
 }
 @media (max-height:430px){
