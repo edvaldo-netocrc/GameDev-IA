@@ -793,8 +793,9 @@ function splitClip(c){let s=SPLIT.get(c);if(s)return s;const lo=[],up=[];
 const WALK_REF=2.4,RUN_REF=6.6; // m/s em que Walking_A e Running_A não deslizam (escala 1)
 function clipOf(name){const L=[MODELS.rogue,MODELS.anim_extra];for(const g of L){if(!g)continue;const c=g.animations.find(a=>a.name===name);if(c)return c}return null}
 const IMPACT={'1H_Melee_Attack_Chop':0.42,'1H_Melee_Attack_Slice_Diagonal':0.38,'1H_Melee_Attack_Stab':0.4,'2H_Melee_Attack_Chop':0.45,'2H_Melee_Attack_Slice':0.4,'2H_Melee_Attack_Stab':0.38,'2H_Melee_Attack_Spin':0.5,
-  '1H_Ranged_Shoot':0.32,'2H_Ranged_Shoot':0.35,Spellcast_Shoot:0.38,Throw:0.45,Spellcast_Raise:0.5,Spellcast_Long:0.55,Melee_1H_Attack_Slice_Horizontal:0.4,Melee_1H_Attack_Jump_Chop:0.55,Melee_Unarmed_Attack_Kick:0.4,Ranged_Bow_Release:0.15,Ranged_Magic_Summon:0.5};
+  '1H_Ranged_Shoot':0.32,'2H_Ranged_Shoot':0.35,Spellcast_Shoot:0.38,Throw:0.45,Spellcast_Raise:0.5,Spellcast_Long:0.55,Melee_1H_Attack_Slice_Horizontal:0.4,Melee_1H_Attack_Jump_Chop:0.55,Melee_Unarmed_Attack_Kick:0.4,Ranged_Bow_Release:0.15,Ranged_Bow_Draw:0.55,Ranged_Magic_Summon:0.5};
 function impactDelay(name,sp){const c=clipOf(name);if(!c)return 0.25;return Math.min(0.45,c.duration*(IMPACT[name]||0.42)/(sp||1))}
+const CHAIN={Ranged_Bow_Draw:'Ranged_Bow_Release'}; // puxa a corda e, no ponto de soltar, emenda a soltura
 function haInit(u){if(u.ha)return u.ha;const ha=u.ha={L:{},U:{},vs:0,one:null,oneW:0,oneEnd:0,hold:false,up:null,upW:0,upEnd:0,fade:[],idleT:0,lean:0,pitch:0,vy:null};
   u.mixer.stopAllAction();
   for(const [k,n] of [['idle','Idle'],['walk','Walking_A'],['run','Running_A']]){const a=u.actions[n];if(!a)continue;const sp=splitClip(a.getClip());
@@ -839,8 +840,10 @@ function driveHero(g,moving,trig,dead,dt){
       if(!(ha.one&&u.t<ha.oneEnd&&ha.oneKind!=='emo')&&u.actions[n]){if(ha.vs>1.2)haUp(u,n,1.5);else{haOne(u,n,trig==='pick'?1.8:1.4);ha.oneKind=trig}}trig=null}
     if(trig&&trig.startsWith('emo:')){const E=EMOTES[trig.slice(4)];if(E&&u.actions[E.a]){const d=haOne(u,E.a,E.sp,0,E.loop);ha.oneEnd=u.t+(E.hold||d*(E.rep||1));ha.oneKind='emo'}trig=null}
     if(trig){const D=CDEF[u.cls]||CDEF.guerreiro;let n,sp;const k=trig.split(':');
-      if(k[0]==='skill'){n=k[1]||D.sk;sp=D.ssp}else{n=k[1]||D.atk[Math.floor(Math.random()*D.atk.length)];sp=D.asp}
-      if(ha.vs>1.2)haUp(u,n,sp);else{haOne(u,n,sp);ha.oneKind='atk'}}
+      if(k[0]==='skill'){n=k[1]||D.sk;sp=D.ssp}else{n=k[1]||D.atk[Math.floor(Math.random()*D.atk.length)];sp=D.asp;if(!u.actions[n]&&D.atkFb)n=D.atkFb[0]}
+      if(ha.vs>1.2)haUp(u,n,sp);else{haOne(u,n,sp);ha.oneKind='atk'}
+      ha.chain=CHAIN[n]&&u.actions[CHAIN[n]]?{at:u.t+impactDelay(n,sp),next:CHAIN[n],sp}:null}
+    if(ha.chain&&u.t>=ha.chain.at){const c=ha.chain;ha.chain=null;if(ha.up&&u.t<ha.upEnd)haUp(u,c.next,c.sp);else if(ha.one&&u.t<ha.oneEnd+0.3){haOne(u,c.next,c.sp);ha.oneKind='atk'}}
     // começou a andar no meio de um golpe/emote: o golpe passa só para o tronco e as pernas andam
     if(moving&&ha.vs>1.2&&ha.one&&!ha.hold&&u.t<ha.oneEnd){if(ha.oneKind==='atk'||ha.oneKind==='hit'||ha.oneKind==='pick'){const nm=ha.one.getClip().name;haUp(u,nm,ha.one.timeScale,ha.one.time)}ha.oneEnd=u.t}
     // variações de parado
@@ -1311,7 +1314,7 @@ const CDEF={
   mago:{n:'Mago',en:'Magician',ico:'🔮',model:'mage',look:'mage',lh:3.3,ranged:true,bolt:'arcane',atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Long',ssp:1.7,d:'Magia à distância, muita mana'},
   mecanico:{n:'Mecânico',en:'Mechanician',ico:'⚙️',model:'knight',look:'knight',lh:2.8,ranged:false,gw:'hammer',sh:true,tint:0xd9a868,atk:['1H_Melee_Attack_Chop'],asp:1.4,sk:'2H_Melee_Attack_Chop',ssp:1.5,d:'Martelo, escudo e bombas'},
   pikeman:{n:'Pikeman',en:'Pikeman',ico:'🔱',model:'barbarian',look:'barbarian',lh:3.0,h:1.05,ranged:false,gw:'spear',tint:0x8fb0d8,atk:['2H_Melee_Attack_Stab','2H_Melee_Attack_Slice'],asp:1.4,sk:'2H_Melee_Attack_Spin',ssp:1.3,d:'Lança longa, ataques em área'},
-  arqueira:{n:'Arqueira',en:'Archer',ico:'🏹',model:'rogue',look:'rogue',lh:2.8,ranged:true,bolt:'arrow',gw:'bow',atk:['1H_Ranged_Shoot'],asp:1.6,sk:'2H_Ranged_Shoot',ssp:1.6,d:'Arco de longo alcance'},
+  arqueira:{n:'Arqueira',en:'Archer',ico:'🏹',model:'rogue',look:'rogue',lh:2.8,ranged:true,bolt:'arrow',gw:'bow',atk:['Ranged_Bow_Draw'],atkFb:['1H_Ranged_Shoot'],asp:1.6,sk:'2H_Ranged_Shoot',ssp:1.6,d:'Arco de longo alcance'},
   atalanta:{n:'Atalanta',en:'Atalanta',ico:'🎯',model:'rogue_hooded',look:'rogue',lh:2.8,ranged:true,bolt:'javelin',gw:'javelin',tint:0xc8d8a0,atk:['Throw'],asp:1.5,sk:'Throw',ssp:1.8,d:'Arremessa azagaias'},
   sacerdotisa:{n:'Sacerdotisa',en:'Priestess',ico:'✨',model:'rogue_hooded',look:'rogue',lh:2.9,ranged:true,bolt:'holy',gw:'scepter',holy:true,atk:['Spellcast_Shoot'],asp:1.4,sk:'Spellcast_Raise',ssp:1.4,d:'Cura e luz sagrada'}};
 const CLSICO=Object.fromEntries(Object.entries(CDEF).map(([k,v])=>[k,v.ico]));
@@ -1684,7 +1687,8 @@ function shootBolt(target,dmg,crit,kind){kind=kind||'arcane';const B=BOLT[kind]|
   if(kind==='arrow'||kind==='javelin'){m=new THREE.Group();const L=kind==='arrow'?1.1:1.6,sh=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,L,5),new THREE.MeshBasicMaterial({color:kind==='arrow'?0x8a6a3a:0x6a4a2a}));sh.rotation.x=Math.PI/2;m.add(sh);
     const tip=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.25,4),new THREE.MeshBasicMaterial({color:0xdde4ee}));tip.rotation.x=Math.PI/2;tip.position.z=L/2;m.add(tip);m.add(glowSprite(B.c,0.9,0.6))}
   else{m=new THREE.Mesh(new THREE.SphereGeometry(kind==='holy'?0.24:0.28,10,8),new THREE.MeshBasicMaterial({color:B.c}));m.add(glowSprite(B.c,kind==='holy'?2.8:2.2,0.9))}
-  m.position.copy(P.pos);m.position.y+=1.8;scene.add(m);bolts.push({m,target,dmg,crit,c:B.c,spd:B.spd});
+  {const u=P.mesh&&P.mesh.userData,w=u&&u.model&&u.wpnOrb;if(w&&w!==u.root){w.getWorldPosition(m.position);if(kind==='arrow')m.position.y+=0.15}else{m.position.copy(P.pos);m.position.y+=1.8}}
+  scene.add(m);if(target&&target.g){tmp.copy(target.g.position);tmp.y+=1+(target.T?target.T.size*0.4:0);m.lookAt(tmp)}bolts.push({m,target,dmg,crit,c:B.c,spd:B.spd});
 }
 function enemyBolt(m,dmg){SFX.play('zap',m.g.position,0.1);
   const big=m.T.lich||m.T.dragon;const b=new THREE.Mesh(new THREE.SphereGeometry(m.T.dragon?0.7:big?0.45:0.2,8,6),new THREE.MeshBasicMaterial({color:m.T.ranged}));
@@ -3049,7 +3053,7 @@ function update(dt){
         if(P.cd<=0){
           if(zone.safe){if(AUTO.on)moving=moveP(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z,spd,dt);else{log('Não é possível atacar dentro da vila.','sys');P.auto=false}}
           else{dismount();P.cd=C.cd*(P.bloodT>0?0.65:1);P.atkAnim=1;const cr=rnd()<P.crit/100,dmg=Math.round(P.atk*(0.85+rnd()*0.3)*(cr?1.8:1));
-            const CD=CDEF[P.cls]||CDEF.guerreiro,an=CD.atk[(P.atkI=(P.atkI||0)+1)%CD.atk.length];P.trig='atk:'+an; // golpes alternados
+            const CD=CDEF[P.cls]||CDEF.guerreiro;let an=CD.atk[(P.atkI=(P.atkI||0)+1)%CD.atk.length];if(!clipOf(an)&&CD.atkFb)an=CD.atkFb[0];P.trig='atk:'+an; // golpes alternados
             P.pend={at:now+impactDelay(an,CD.asp),t,dmg,cr,ranged:CD.ranged,bolt:CD.bolt};if(!CD.ranged)SFX.play('swing',null,0.5)}
         }
       }
