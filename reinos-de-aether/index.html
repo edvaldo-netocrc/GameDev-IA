@@ -847,13 +847,15 @@ function driveHero(g,moving,trig,dead,dt){
     if(u.wOff!=null&&u.weapon){if(u.t>=u.wOn){u.weapon.visible=true;u.wOff=null}else if(u.t>=u.wOff)u.weapon.visible=false}
     if(ha.chain&&u.t>=ha.chain.at){const c=ha.chain;ha.chain=null;if(ha.up&&u.t<ha.upEnd)haUp(u,c.next,c.sp);else if(ha.one&&u.t<ha.oneEnd+0.3){haOne(u,c.next,c.sp);ha.oneKind='atk'}}
     // começou a andar no meio de um golpe/emote: o golpe passa só para o tronco e as pernas andam
-    if(moving&&ha.vs>1.2&&ha.one&&!ha.hold&&u.t<ha.oneEnd){if(ha.oneKind==='atk'||ha.oneKind==='hit'||ha.oneKind==='pick'){const nm=ha.one.getClip().name;haUp(u,nm,ha.one.timeScale,ha.one.time)}ha.oneEnd=u.t}
+    if(moving&&ha.vs>1.2&&ha.one&&!ha.hold&&u.t<ha.oneEnd&&ha.oneKind!=='ride'){if(ha.oneKind==='atk'||ha.oneKind==='hit'||ha.oneKind==='pick'){const nm=ha.one.getClip().name;haUp(u,nm,ha.one.timeScale,ha.one.time)}ha.oneEnd=u.t}
+    // montado: sentado no lobo
+    if(u.ride){if(ha.oneKind!=='ride'&&u.actions.Sit_Chair_Idle){haOne(u,'Sit_Chair_Idle',1,0,true);ha.oneKind='ride';ha.oneEnd=1e12}}else if(ha.oneKind==='ride'){ha.oneEnd=u.t;ha.oneKind=null}
     // variações de parado
     if(!moving&&!ha.one&&!ha.up){ha.idleT+=dt;if(ha.idleT>9){ha.idleT=-Math.random()*6;const n=['Idle_A','Idle_B'][Math.random()*2|0];if(u.actions[n]){haOne(u,n,1);ha.oneKind='idle'}}}else ha.idleT=0;
   }
   const v=haUpdate(u,dt,vel,dead);
   // inclinação: para frente com a velocidade, para dentro nas curvas
-  if(u.root){const lean=dead?0:clamp(-dYaw*v*0.05,-0.2,0.2),pit=dead?0:clamp(v/9,0,1)*0.09;ha.lean+=(lean-ha.lean)*Math.min(1,dt*7);ha.pitch+=(pit-ha.pitch)*Math.min(1,dt*6);
+  if(u.root&&!u.ride){const lean=dead?0:clamp(-dYaw*v*0.05,-0.2,0.2),pit=dead?0:clamp(v/9,0,1)*0.09;ha.lean+=(lean-ha.lean)*Math.min(1,dt*7);ha.pitch+=(pit-ha.pitch)*Math.min(1,dt*6);
     u.root.rotation.z=ha.lean;u.root.rotation.x=ha.pitch}
   if(u.halo){u.halo.material.opacity=0.7+Math.sin(u.t*2.4)*0.2;u.halo.visible=!dead}
   if(u.gem){const a=u.t*1.5;u.gem.position.set(Math.cos(a)*0.8,1.15+Math.sin(u.t*2.3)*0.1,Math.sin(a)*0.8);u.gem.rotation.y=u.t*2.5}
@@ -869,7 +871,7 @@ function driveHero(g,moving,trig,dead,dt){
 const MON_MODEL={glub:['glub',1.7],armabee:['armabee',1.9],dino:['dino',2.7],wizard:['wizard',2.3],bluedemon:['bluedemon',3.6],greenblob:['greenblob',1.6],squidle:['squidle',2.6],hywirl:['hywirl',2.8],spikyblob:['spikyblob',1.9],dragonevo:['dragonevo',5.2],ghost:['ghost',3.0],skullf:['skullf',3.0],mushking:['mushking',6.6],demon:['demon',6.8],orc:['orc',3.1],troll:['troll',4.2],dragon:['dragon',3.4],skel:['skel',2.35],archer:['archer',2.3],lich:['lich',4.4],wolf:['wolfm',1.55],spider:['spiderm',1.15],slime:['slimem',1.25]};
 const SK={idle:'Idle_Combat',walk:'Walking_D_Skeletons',run:'Running_A',death:'Death_C_Skeletons',hit:'Hit_A'};
 const MON_ANIM={skel:{...SK,atk:'1H_Melee_Attack_Chop'},archer:{...SK,atk:'Throw'},lich:{...SK,atk:'Spellcast_Shoot'},
-  wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death',hit:'Idle_HitReact_Left'},
+  wolf:{idle:'Idle',walk:'Walk',run:'Gallop',atk:'Attack',death:'Death',hit:'Idle_HitReact_Left',idle2:['Eating','Idle_2_HeadLow']},
   spider:{idle:'Spider_Idle',walk:'Spider_Walk',run:'Spider_Walk',runSpeed:1.8,atk:'Spider_Attack',death:'Spider_Death'},
   slime:{idle:'Idle',walk:'Walk',run:'Walk',runSpeed:1.6,atk:'Bite_Front',death:'Death',hit:'HitRecieve'},
   orc:{idle:'Idle',walk:'Walk',run:'Run',atk:'Weapon',death:'Death',hit:'HitReact'},
@@ -1809,8 +1811,8 @@ function damageMon(m,dmg,crit){
   const at=m.g.position.clone().setY(m.g.position.y+1+m.T.size*0.5);
   floatText(at.clone().setY(at.y+1+m.T.size*0.5),dmg,crit?'crit':'dmg');SFX.play(crit?'crit':'hit',m.g.position);
   emit(at,crit?0xffd040:0xffffff,crit?18:8,5,1.5,0.4,6);
-  if(amHost)applyDamage(m,dmg,myKey());
-  else{m.hp=Math.max(1,m.hp-dmg);netEmit('hit',{m:m.id,d:Math.round(dmg)})} // previsão até o anfitrião confirmar
+  if(amHost)applyDamage(m,dmg,myKey(),crit);
+  else{m.hp=Math.max(1,m.hp-dmg);netEmit('hit',{m:m.id,d:Math.round(dmg),c:crit?1:0})} // previsão até o anfitrião confirmar
 }
 const myKey=()=>myId||'me';
 // ===== impacto: o dano só aparece no quadro em que o golpe acerta (o anfitrião continua aplicando o dano)
@@ -1831,8 +1833,8 @@ function impactFx(t,crit){ // pausa de impacto, tremor, rastro e clarão — só
   const C=CLS[P.cls]||CLS.guerreiro;slashFx(P.pos.clone().setY(P.pos.y+1.25),P.rot,crit?0xffd860:(C.fx||0xffffff),crit);
   if(t.g){const dir=Math.atan2(t.g.position.x-P.pos.x,t.g.position.z-P.pos.z);knock(t,dir,crit?0.5:0.28);
     if(!GFX.lo)emit(t.g.position.clone().setY(t.g.position.y+0.15),0xb8a890,crit?10:5,2.5,1.2,0.5,3,0.8)}} // poeira
-function applyDamage(m,dmg,by){ // só no anfitrião
-  if(m.dead)return;
+function applyDamage(m,dmg,by,crit){ // só no anfitrião
+  if(m.dead)return;if(crit&&!m.T.boss&&!m.T.world&&m.hp>dmg){m.stunT=0.7;m.wind=null;netEmit('stn',{m:m.id})}
   m.hp-=dmg;m.contrib[by]=1;
   m.hitT=now; // levou golpe agora: não cura enquanto apanha
   if(m.state!=='return'){if(m.state!=='chase')m.tgtId=by;m.state='chase'}
@@ -2107,7 +2109,12 @@ function makeMount(){let g,u=null;
 function updMount(h,mesh,mounted,moving,dt){
   if(mounted&&!h.mount)h.mount=makeMount();
   if(!mounted&&h.mount){scene.remove(h.mount.g);h.mount=null}
-  if(!h.mount)return;const M=h.mount;M.g.position.copy(mesh.position);M.g.rotation.y=mesh.rotation.y;mesh.position.y+=RIDE_Y;
+  if(mesh.userData)mesh.userData.ride=!!h.mount&&mounted;
+  if(!h.mount)return;const M=h.mount;M.g.position.copy(mesh.position);M.g.rotation.y=mesh.rotation.y;
+  M.ph=(M.ph||0)+dt*(moving?11:2.2);M.amp=(M.amp||0)+((moving?1:0)-(M.amp||0))*Math.min(1,dt*5); // sobe e desce com o galope
+  const sit=mesh.userData&&mesh.userData.ha&&mesh.userData.ha.oneKind==='ride'?0.02:0;
+  mesh.position.y+=RIDE_Y+sit+Math.abs(Math.sin(M.ph))*0.16*M.amp+Math.sin(M.ph*0.5)*0.02*(1-M.amp);
+  if(mesh.userData&&mesh.userData.root){mesh.userData.root.rotation.x=Math.cos(M.ph)*0.06*M.amp}
   if(M.u){playAnim(M.u,moving?'Gallop':'Idle');M.u.mixer.update(dt)}}
 function setMount(on,why){if(on===P.mounted)return;P.mounted=on;netForce=true;
   emit(P.pos.clone().setY(P.pos.y+1),0xe8f0ff,24,3,2,0.6,3);SFX.play(on?'portal':'click',null,0.25);
@@ -2594,7 +2601,8 @@ const NET={
   pxp(d,from){if(!d||d.to!==myId||!inParty(from)||P.dead)return;const x=clamp(Math.floor(num(d.x,0)),0,20000),t=String(d.t||''),mid=num(d.mid,-1);
     setTimeout(()=>{if(recentRew[mid]&&performance.now()-recentRew[mid]<6000)return; // já ganhou recompensa própria por esse monstro
       if(x>0){floatText(P.pos.clone().setY(P.pos.y+3),'+'+x+' XP 👥','xp');gainXp(x)}if(TYPES[t])qKill(t)},1500)}, // mensagens recebidas de outros jogadores (tudo validado: vem da rede)
-  hit(d,from){if(!amHost||!others.has(from))return;const m=monsters[d&&d.m];if(!m)return;const dmg=clamp(num(d.d,0),0,5000);m.flash=0.15;applyDamage(m,dmg,from)},
+  hit(d,from){if(!amHost||!others.has(from))return;const m=monsters[d&&d.m];if(!m)return;const dmg=clamp(num(d.d,0),0,5000);m.flash=0.15;applyDamage(m,dmg,from,!!(d&&d.c))},
+  stn(d){const m=d&&monsters[d.m|0];if(m&&!m.dead)m.stunFx=0.7},
   an(d,from){const o=others.get(from);if(!o||!d||typeof d.n!=='string'||!clipOf(d.n))return;o.atkTrig='skill:'+d.n+':'+clamp(num(d.sp,1),0.3,3)},
   al(d){const m=d&&monsters[d.m|0];if(m&&!m.dead)monAlert(m)},
   mh(d){if(!d||d.t!==myId||P.dead)return;const m=monsters[d.m];const dmg=clamp(num(d.d,0),0,2000);if(m&&m.T.ranged)enemyBolt(m,dmg);else hurtPlayer(dmg)},
@@ -2883,9 +2891,10 @@ function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pula
   let mvx=0,mvz=0,spd=T.spd;
   if(m.state==='chase'&&tgt){
     const dP=Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z);
-    if(m.alertT>0){m.alertT-=dt;g.rotation.y=angLerp(g.rotation.y,Math.atan2(tgt.x-g.position.x,tgt.z-g.position.z),dt*8)} // percebeu o jogador: para e encara
+    if(m.stunT>0){m.stunT-=dt;m.stunFx=m.stunT} // atordoado pelo crítico: não anda nem ataca
+    else if(m.alertT>0){m.alertT-=dt;g.rotation.y=angLerp(g.rotation.y,Math.atan2(tgt.x-g.position.x,tgt.z-g.position.z),dt*8)} // percebeu o jogador: para e encara
     else if(m.wind){m.wind.t-=dt;g.rotation.y=angLerp(g.rotation.y,Math.atan2(tgt.x-g.position.x,tgt.z-g.position.z),dt*5);
-      if(m.wind.t<=0){m.wind=null;if(Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z)<=T.range+T.size*0.3+(T.ranged?4:1.6))monsterStrike(m,tgt,T.atk*(0.85+rnd()*0.3)); // golpe chega no impacto; quem saiu do alcance escapa
+      if(m.wind.t<=0){m.wind=null;if(Math.hypot(tgt.x-g.position.x,tgt.z-g.position.z)<=T.range+T.size*0.3+(T.ranged?4:1.6))monsterStrike(m,tgt,T.atk*(0.85+rnd()*0.3));else if(tgt.me&&!T.ranged)dodgeFx(m); // golpe chega no impacto; quem saiu do alcance escapa
         if(m.type==='boss'&&rnd()<0.3){ringFx(g.position,8,0xff6a3a);emit(g.position.clone().setY(g.position.y+0.5),0xb0a090,40,8,2,0.8,8,4);
           for(const p of plist)if(p.inD===area&&Math.hypot(p.x-g.position.x,p.z-g.position.z)<7)monsterStrike({T:{},id:m.id},p,T.atk*0.6)}}}
     else if(dP>T.range+T.size*0.3){mvx=tgt.x-g.position.x;mvz=tgt.z-g.position.z;sepMon(m,area);if(m.sep){mvx=mvx/(dP||1)+m.sep.x;mvz=mvz/(dP||1)+m.sep.z}}
@@ -2940,7 +2949,7 @@ function followMonster(m,dt){ // não-anfitrião: segue o estado recebido
   g.position.y=H(g.position.x,g.position.z);
   return d>0.05;
 }
-function spawnFx(m){{const ch=m.g.children[0];if(ch&&m.g.userData.model){ch.position.set(0,0,0);ch.rotation.z=0}m.kick=null;m.hop=0;m.teleT=0;m.dust=0}emit(m.g.position.clone().setY(m.g.position.y+0.4),m.T.pc,18,2.5,2,0.7,3,m.T.size);if(m.g.userData.model)playAnim(m.g.userData,MON_ANIM[m.type].idle)}
+function spawnFx(m){monExtra(m);{const ud=m.g.userData;if(ud&&ud.actions&&ud.actions.Skeletons_Awaken_Floor){const d=playAnim(ud,'Skeletons_Awaken_Floor',true,1.4);ud.lock=ud.t+d*0.92;m.alertT=d*0.9;emit(m.g.position.clone().setY(m.g.position.y+0.2),0x9a8f7a,14,2,1.5,0.8,3,1);return}}{const ch=m.g.children[0];if(ch&&m.g.userData.model){ch.position.set(0,0,0);ch.rotation.z=0}m.kick=null;m.hop=0;m.teleT=0;m.dust=0}emit(m.g.position.clone().setY(m.g.position.y+0.4),m.T.pc,18,2.5,2,0.7,3,m.T.size);if(m.g.userData.model)playAnim(m.g.userData,MON_ANIM[m.type].idle)}
 function updDying(dt){ // monstros derrotados: animação de queda antes de sumir
   for(const m of monsters){if(!(m.dyingT>0))continue;m.dyingT-=dt;const g=m.g,ud=g.userData,k=Math.max(0,m.dyingT/m.dyingMax);
     if(ud.model){if(m.dyingT>m.dyingMax-1.6)ud.mixer.update(dt); // cai, fica no chão um pouco e afunda com poeira
@@ -2954,6 +2963,7 @@ function knock(m,dir,amt){if(!m||!m.g)return;m.kick=m.kick||{x:0,z:0,v:0};m.kick
 function monFx(m,dt){const g=m.g,ud=g.userData,ch=g.children[0];if(!ch)return;
   if(m.kick){const k=Math.exp(-dt*14);m.kick.x*=k;m.kick.z*=k;ch.position.x=m.kick.x;ch.position.z=m.kick.z;if(Math.abs(m.kick.x)+Math.abs(m.kick.z)<0.005){ch.position.x=ch.position.z=0;m.kick=null}}
   if(m.squash>0){if(ud.bs==null)ud.bs=ch.scale.x;m.squash-=dt;const q=Math.max(0,m.squash/0.18),b=ud.bs;ch.scale.set(b*(1+q*0.12),b*(1-q*0.16),b*(1+q*0.12));ch.position.x+=(Math.random()-0.5)*q*0.12;if(m.squash<=0)ch.scale.setScalar(b)}
+  if(m.stunFx>0){m.stunFx-=dt;if(Math.random()<0.6){const a=now*7+Math.random();emit(g.position.clone().add(new THREE.Vector3(Math.cos(a)*0.6,(m.T.lh||2.5)-0.2,Math.sin(a)*0.6)),0xffe060,1,0.3,0.2,0.4,0,0.5)}}
   if(m.teleT>0){m.teleT-=dt;if(!(m.flashE>0))m.flashE=0.0001;m.tele=Math.min(1,m.teleT*3)}
   if(m.hop>0){m.hop-=dt;ch.position.y=Math.sin((0.3-m.hop)/0.3*Math.PI)*0.35}
   if(m.flashE>0||ud.fl||m.tele>0){if(!ud.mats){ud.mats=[];g.traverse(o=>{if(o.isMesh&&o.material&&o.material.emissive&&!o.material.userData.shared)ud.mats.push({m:o.material,e:o.material.emissive.clone()})})}
@@ -2966,7 +2976,12 @@ function monWind(m){ // tempo até o golpe acertar = ~45% da animação de ataqu
   if(MWIND[m.type]!=null)return MWIND[m.type];const A=MON_ANIM[m.type],key=MON_MODEL[m.type]&&MON_MODEL[m.type][0],M=key&&(MODELS[key]||MODELS[key+'m']);let d=0.6;
   if(A&&M){const c=M.animations.find(a=>a.name===A.atk||a.name.split('|').pop()===A.atk);if(c)d=c.duration}
   return MWIND[m.type]=clamp(d*0.45/atkSpd(m),0.25,m.T.boss?0.85:0.55)}
-function monAlert(m){if(!m.g.visible)return;floatText(m.g.position.clone().setY(m.g.position.y+(m.T.lh||2.5)+0.4),'!','crit');if(m.T.boss)SFX.play('boom',m.g.position,0.05);m.hop=0.3}
+const SKELS={skel:1,archer:1,lich:1};
+function monExtra(m){const ud=m.g.userData;if(!ud||!ud.model||ud.xLib||!MODELS.anim_extra||!SKELS[m.type])return;ud.xLib=1;for(const c of MODELS.anim_extra.animations)if(/^Skeletons_/.test(c.name))ud.actions[c.name]=ud.mixer.clipAction(c)}
+function dodgeFx(m){if(P.dead)return;floatText(P.pos.clone().setY(P.pos.y+2.6),'Esquivou!','xp');const u=P.mesh&&P.mesh.userData;if(!u||!u.ha||!u.actions)return;
+  const a=Math.atan2(m.g.position.x-P.pos.x,m.g.position.z-P.pos.z),rel=Math.atan2(Math.sin(a-P.rot),Math.cos(a-P.rot)),n=Math.abs(rel)>2.2?'Dodge_Forward':rel>0?'Dodge_Right':'Dodge_Left';
+  if(u.actions[n]&&!(u.ha.one&&u.t<u.ha.oneEnd)){if(u.ha.vs>1.2)haUp(u,n,1.6);else{haOne(u,n,1.6);u.ha.oneKind='hit'}}}
+function monAlert(m){const ud=m.g.userData;if(ud&&ud.model){monExtra(m);if(ud.actions.Skeletons_Taunt&&!m.T.boss)ud.lock=ud.t+playAnim(ud,'Skeletons_Taunt',true,1.6)*0.7}if(!m.g.visible)return;floatText(m.g.position.clone().setY(m.g.position.y+(m.T.lh||2.5)+0.4),'!','crit');if(m.T.boss)SFX.play('boom',m.g.position,0.05);m.hop=0.3}
 function sepMon(m,area){ // monstros do mesmo bando se afastam um do outro e cercam o alvo
   let sx=0,sz=0;const g=m.g,r=m.T.size*1.4+0.6;for(const o of monsters){if(o===m||o.dead||o.state!=='chase')continue;const dx=g.position.x-o.g.position.x;if(dx>r||dx<-r)continue;const dz=g.position.z-o.g.position.z;if(dz>r||dz<-r)continue;
     const d=Math.hypot(dx,dz);if(d<r&&d>0.01){const k=(r-d)/r;sx+=dx/d*k;sz+=dz/d*k}}
@@ -2979,8 +2994,11 @@ function animMonster(m,walking,dt){
     ud.t+=dt;const v=Math.hypot(g.position.x-ud.px,g.position.z-ud.pz)/Math.max(dt,1e-3);ud.px=g.position.x;ud.pz=g.position.z;ud.spd+=(v-ud.spd)*Math.min(1,dt*6);
     const A=MON_ANIM[m.type];
     if(m.atkN!==ud.lastAtk){ud.lastAtk=m.atkN;ud.lock=ud.t+playAnim(ud,A.atk,true,atkSpd(m))*0.85;if(m.T.boss)m.teleT=monWind(m)}
-    if(ud.t>=ud.lock){const run=ud.spd>3,base=ud.spd<0.4||m.type==='lich'?A.idle:run?A.run:A.walk;if(ud.curName!==base)playAnim(ud,base,false,run?(A.runSpeed||1):1)}
-    if(d2(g.position,P.pos)<90)ud.mixer.update(now<(ud.hs||0)?dt*0.04:dt);
+    if(ud.t>=ud.lock){const run=ud.spd>3,base=ud.spd<0.4||m.type==='lich'?A.idle:run?A.run:A.walk;
+      if(base===A.idle&&A.idle2&&!m.dead){ud.idleT=(ud.idleT||0)+dt;if(ud.idleT>7){ud.idleT=-Math.random()*6;const n=A.idle2[Math.random()*A.idle2.length|0];if(ud.actions[n]){ud.lock=ud.t+playAnim(ud,n,true,1)*0.95;return monFx(m,dt)}}}else ud.idleT=0;
+      if(ud.curName!==base)playAnim(ud,base,false,run?(A.runSpeed||1):1)}
+    {const dd=d2(g.position,P.pos);if(dd<90){const st=now<(ud.hs||0)?dt*0.04:dt; // longe: anima em meia taxa (Baixo/Médio)
+      if(!GFX.hi&&dd>45){ud.acc=(ud.acc||0)+st;if((ud.flip=!ud.flip)){ud.mixer.update(ud.acc);ud.acc=0}}else ud.mixer.update(st)}}
     if(ud.float){if(FLYERS[m.type]){if(!m.dead||m.dyingT>0.9)g.position.y+=FLYERS[m.type]+Math.sin(m.anim*2)*0.2}else if(m.type==='ghost'||m.type==='skullf'){g.position.y+=0.6+Math.sin(m.anim*1.8)*0.35;if(rnd()<0.2)emit(g.position.clone().setY(g.position.y+1.2),m.T.pc,1,0.8,0.5,0.9,0,1.4)}else if(m.type==='dragon'){if(!m.dead||m.dyingT>0.9){g.position.y+=3.2+Math.sin(m.anim*1.6)*0.5}if(rnd()<0.25)emit(g.position.clone().setY(g.position.y+1.5),0xff8a2a,1,1.2,0.8,1,-1,2.5)}
       else{g.position.y+=0.5+Math.sin(m.anim*2)*0.3;if(rnd()<0.4)emit(g.position.clone().setY(g.position.y+1),0x7dff9a,1,0.8,0.5,1.2,0,1.6)}}
     if(m.flash>0){m.flash-=dt;g.scale.setScalar((m.sc||1)*(1+m.flash*0.4))}else g.scale.setScalar(m.sc||1);

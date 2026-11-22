@@ -62,6 +62,8 @@ pegar item, 2ª morte) reextraídas dos mesmos pacotes CC0 (Quaternius e KayKit 
 Sacerdotisa: corpo Rogue_Hooded (KayKit) com textura recolorida pelo jogo (branco/dourado), saia e auréola feitas no código.
 
 KayKit Character Animations 1.1 — Kay Lousberg (kaylousberg.itch.io/kaykit-character-animations), CC0 1.0 (License.txt do pacote).
-  assets/characters/anim_extra.glb: 30 animações do Rig_Medium escolhidas dos arquivos General, MovementBasic, MovementAdvanced,
+  assets/characters/anim_extra.glb: 33 animações (inclui Sit_Chair_Idle da Simulation e Skeletons_Awaken_Floor/Skeletons_Taunt da Special) do Rig_Medium escolhidas dos arquivos General, MovementBasic, MovementAdvanced,
   CombatMelee e CombatRanged (variações de parado, andar de costas, correr de lado, esquivas, bloqueio, golpes extras, arco e magia),
   juntadas num só arquivo sem malhas; carregado depois que o jogo abre.
+
+wolf.glb: reextraído do Quaternius Wolf (CC0) mantendo também Eating e Idle_2_HeadLow (variações de parado).
