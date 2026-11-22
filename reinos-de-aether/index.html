@@ -1675,39 +1675,44 @@ function openShop(tab){if(P.lvl!==shopLvl||!shopStock.length)genShop();shopOpen=
 
 /* ============ efeitos ============ */
 const effects=[];
+// geometrias e materiais compartilhados pelos efeitos de curta duração (evita criar e vazar memória a cada golpe)
+const SG={},SM={};const sg=(k,f)=>SG[k]||(SG[k]=f()),smB=c=>SM[c]||(SM[c]=new THREE.MeshBasicMaterial({color:c}));
+function glowShared(color,size,op){const k='g'+color+'_'+op;const m=SM[k]||(SM[k]=(()=>{const x=new THREE.SpriteMaterial({map:GLOW,color,transparent:true,opacity:op,blending:THREE.AdditiveBlending,depthWrite:false});LIN.add(x);return x})());const s=new THREE.Sprite(m);s.scale.set(size,size,1);return s}
+function freeFx(o){scene.remove(o);o.traverse(x=>{if(x.material&&!x.material.userData.shared&&!Object.values(SM).includes(x.material))x.material.dispose()})} // geometrias são compartilhadas
 function ringFx(pos,r,color,dur){
-  const m=new THREE.Mesh(new THREE.RingGeometry(0.2,0.6,40),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.9,side:THREE.DoubleSide,depthWrite:false}));
+  const m=new THREE.Mesh(sg('ring',()=>new THREE.RingGeometry(0.2,0.6,40)),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.9,side:THREE.DoubleSide,depthWrite:false}));
   m.rotation.x=-Math.PI/2;m.position.copy(pos);m.position.y+=0.3;scene.add(m);
   effects.push({m,t:0,dur:dur||0.5,upd:(e,k)=>{const s=0.4+k*r;e.m.scale.set(s,s,s);e.m.material.opacity=0.9*(1-k)}});
 }
 function burstFx(pos,color){
-  const m=new THREE.Mesh(new THREE.SphereGeometry(1,16,12),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.7,depthWrite:false}));
+  const m=new THREE.Mesh(sg('burst',()=>new THREE.SphereGeometry(1,16,12)),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.7,depthWrite:false}));
   m.position.copy(pos);m.position.y+=1;scene.add(m);
   effects.push({m,t:0,dur:0.45,upd:(e,k)=>{const s=0.3+k*5;e.m.scale.set(s,s,s);e.m.material.opacity=0.7*(1-k)}});
   emit(m.position,color,40,9,2,0.8,6);
 }
 function pillarFx(pos,color){
-  const m=new THREE.Mesh(new THREE.CylinderGeometry(1,1,12,20,1,true),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.6,side:THREE.DoubleSide,depthWrite:false}));
+  const m=new THREE.Mesh(sg('pillar',()=>new THREE.CylinderGeometry(1,1,12,20,1,true)),new THREE.MeshBasicMaterial({color,transparent:true,opacity:0.6,side:THREE.DoubleSide,depthWrite:false}));
   m.position.copy(pos);m.position.y+=6;scene.add(m);
   effects.push({m,t:0,dur:1.2,upd:(e,k)=>{e.m.scale.set(1-k*0.6,1,1-k*0.6);e.m.material.opacity=0.6*(1-k)}});
   for(let i=0;i<4;i++)setTimeout(()=>emit(pos.clone().setY(pos.y+0.5),color,30,2,6,1.4,1,2),i*150);
 }
 const bolts=[],ebolts=[],teles=[];
 const BOLT={arcane:{c:0x8fe3ff,spd:28},arrow:{c:0xb8ff7a,spd:40},javelin:{c:0xffd04a,spd:34},holy:{c:0xfff0a0,spd:30}};
+const BPREV=new THREE.Vector3();
 function shootBolt(target,dmg,crit,kind){kind=kind||'arcane';const B=BOLT[kind]||BOLT.arcane;let m;
-  if(kind==='arrow'||kind==='javelin'){m=new THREE.Group();const L=kind==='arrow'?1.1:1.6,sh=new THREE.Mesh(new THREE.CylinderGeometry(0.03,0.03,L,5),new THREE.MeshBasicMaterial({color:kind==='arrow'?0x8a6a3a:0x6a4a2a}));sh.rotation.x=Math.PI/2;m.add(sh);
-    const tip=new THREE.Mesh(new THREE.ConeGeometry(0.08,0.25,4),new THREE.MeshBasicMaterial({color:0xdde4ee}));tip.rotation.x=Math.PI/2;tip.position.z=L/2;m.add(tip);if(kind==='javelin'){const g2=new THREE.Mesh(new THREE.CylinderGeometry(0.045,0.045,0.25,5),new THREE.MeshBasicMaterial({color:0x4a3018}));g2.rotation.x=Math.PI/2;g2.position.z=-0.1;m.add(g2)}}
-  else{m=new THREE.Mesh(new THREE.SphereGeometry(kind==='holy'?0.24:0.28,10,8),new THREE.MeshBasicMaterial({color:B.c}));m.add(glowSprite(B.c,kind==='holy'?2.8:2.2,0.9))}
+  if(kind==='arrow'||kind==='javelin'){m=new THREE.Group();const L=kind==='arrow'?1.1:1.6,sh=new THREE.Mesh(sg('shaft'+L,()=>new THREE.CylinderGeometry(0.03,0.03,L,5)),smB(kind==='arrow'?0x8a6a3a:0x6a4a2a));sh.rotation.x=Math.PI/2;m.add(sh);
+    const tip=new THREE.Mesh(sg('tip',()=>new THREE.ConeGeometry(0.08,0.25,4)),smB(0xdde4ee));tip.rotation.x=Math.PI/2;tip.position.z=L/2;m.add(tip);if(kind==='javelin'){const g2=new THREE.Mesh(sg('grip',()=>new THREE.CylinderGeometry(0.045,0.045,0.25,5)),smB(0x4a3018));g2.rotation.x=Math.PI/2;g2.position.z=-0.1;m.add(g2)}}
+  else{m=new THREE.Mesh(sg('orb'+kind,()=>new THREE.SphereGeometry(kind==='holy'?0.24:0.28,10,8)),smB(B.c));m.add(glowShared(B.c,kind==='holy'?2.8:2.2,0.9))}
   {const u=P.mesh&&P.mesh.userData,w=u&&u.model&&u.wpnOrb;if(w&&w!==u.root){w.getWorldPosition(m.position);if(kind==='arrow')m.position.y+=0.15}else{m.position.copy(P.pos);m.position.y+=1.8}}
   scene.add(m);if(target&&target.g){tmp.copy(target.g.position);tmp.y+=1+(target.T?target.T.size*0.4:0);m.lookAt(tmp)}const phys=kind==='arrow'||kind==='javelin';bolts.push({m,target,dmg,crit,c:B.c,spd:B.spd,phys,base:phys?m.position.clone():null,L0:phys&&target&&target.g?Math.max(1,m.position.distanceTo(tmp)):0,arc:kind==='javelin'?0.16:0.07});
 }
 function enemyBolt(m,dmg){SFX.play('zap',m.g.position,0.1);
-  const big=m.T.lich||m.T.dragon;const b=new THREE.Mesh(new THREE.SphereGeometry(m.T.dragon?0.7:big?0.45:0.2,8,6),new THREE.MeshBasicMaterial({color:m.T.ranged}));
-  b.add(glowSprite(m.T.ranged,m.T.dragon?4.5:big?3.2:1.6,0.85));b.position.copy(m.g.position);b.position.y+=m.T.dragon?1.2:big?4.5:2;scene.add(b);ebolts.push({m:b,dmg,col:m.T.ranged,spd:big?16:22});
+  const big=m.T.lich||m.T.dragon,sz=m.T.dragon?0.7:big?0.45:0.2;const b=new THREE.Mesh(sg('eb'+sz,()=>new THREE.SphereGeometry(sz,8,6)),smB(m.T.ranged));
+  b.add(glowShared(m.T.ranged,m.T.dragon?4.5:big?3.2:1.6,0.85));b.position.copy(m.g.position);b.position.y+=m.T.dragon?1.2:big?4.5:2;scene.add(b);ebolts.push({m:b,dmg,col:m.T.ranged,spd:big?16:22});
 }
 function telegraph(pos,r,dmg,col){
-  const m=new THREE.Mesh(new THREE.CircleGeometry(r,40),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.25,depthWrite:false}));
-  m.rotation.x=-Math.PI/2;m.position.set(pos.x,H(pos.x,pos.z)+0.15,pos.z);scene.add(m);teles.push({m,t:1.4,r,dmg,col,pos:pos.clone()});
+  const m=new THREE.Mesh(sg('tele',()=>new THREE.CircleGeometry(1,40)),new THREE.MeshBasicMaterial({color:col,transparent:true,opacity:0.25,depthWrite:false}));
+  m.scale.set(r,r,1);m.rotation.x=-Math.PI/2;m.position.set(pos.x,H(pos.x,pos.z)+0.15,pos.z);scene.add(m);teles.push({m,t:1.4,r,dmg,col,pos:pos.clone()});
 }
 
 /* loot no chão */
@@ -1716,7 +1721,7 @@ function dropItem(it,pos){
   const g=new THREE.Group();g.position.set(pos.x+(rnd()-0.5)*2,0,pos.z+(rnd()-0.5)*2);g.position.y=H(g.position.x,g.position.z);
   const chest=envClone('loot_chest',0.6)||propClone('dungeon',it.rar>=3?'chest_gold':'chest',0.5);
   if(chest){chest.rotation.y=rnd()*6.28;g.add(chest)}else{g.add(part(0.7,0.5,0.5,0x7a4a20,0,0.25,0));g.add(part(0.74,0.12,0.54,0xd9a84a,0,0.52,0))}
-  const beam=new THREE.Mesh(new THREE.CylinderGeometry(0.18,0.35,6,8,1,true),new THREE.MeshBasicMaterial({color:RAR[it.rar].h,transparent:true,opacity:0.35+it.rar*0.1,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
+  const beam=new THREE.Mesh(sg('beam',()=>new THREE.CylinderGeometry(0.18,0.35,6,8,1,true)),new THREE.MeshBasicMaterial({color:RAR[it.rar].h,transparent:true,opacity:0.35+it.rar*0.1,depthWrite:false,blending:THREE.AdditiveBlending,side:THREE.DoubleSide}));
   beam.position.y=3;g.add(beam);scene.add(g);
   const lbl=mkLabel(`<span style="color:${RAR[it.rar].c}">${esc(it.name)}</span>`,'loot');
   drops.push({it,g,lbl,t:120,beam});
@@ -2245,7 +2250,7 @@ function updPet(h,key,op,orot,mine,dt){
     if(!pt.carry&&(pt.fetchT-=dt)<=0){pt.fetchT=0.5;if(P.inv.length<BAG_MAX){let best=null,bd=14;for(const d of drops){if(AUTO.loot&&!lootOK(d))continue;if(areaId(d.g.position.x)!==areaId(op.x))continue;const dd=Math.hypot(d.g.position.x-op.x,d.g.position.z-op.z);if(dd<bd){bd=dd;best=d}}pt.carry=best}}
     if(pt.carry){const c=pt.carry.g.position;tx=c.x;tz=c.z;spd=10;
       if(Math.hypot(c.x-pt.x,c.z-pt.z)<1.2){const d=pt.carry,i=drops.indexOf(d);pt.carry=null;
-        if(i>=0&&P.inv.length<BAG_MAX){if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);drops.splice(i,1);scene.remove(d.g);d.lbl.remove();
+        if(i>=0&&P.inv.length<BAG_MAX){if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);drops.splice(i,1);scene.remove(d.g);d.beam&&d.beam.material.dispose();d.lbl.remove();
           log(`${D.ico} ${D.n} trouxe: ${itName(d.it)}`,'loot');SFX.play(d.it.rar>=3?'epic':'loot',null,0.6);emit(c.clone().setY(c.y+1),RAR[d.it.rar].h,18,2,2,0.7,3);renderInv();save()}}}}
   const dx=tx-pt.x,dz=tz-pt.z,dist=Math.hypot(dx,dz);
   if(dist>30){pt.x=tx;pt.z=tz}else if(dist>0.3){const st=Math.min(dist,spd*dt*(dist>6?1.6:1));pt.x+=dx/dist*st;pt.z+=dz/dist*st;pt.ry=angLerp(pt.ry,Math.atan2(dx,dz),dt*8)}
@@ -2925,7 +2930,11 @@ function hostMonster(m,dt,plist){ // retorna se está andando, ou null para pula
     if(dHome<1.5){m.state='idle';if(now-(m.hitT||-99)>5){m.hp=m.max;m.contrib={}}}
   }else{
     m.wait-=dt;
-    if(m.wander){mvx=m.wander.x-g.position.x;mvz=m.wander.z-g.position.z;spd*=0.4;if(Math.hypot(mvx,mvz)<0.6){m.wander=null;m.wait=2+rnd()*4}}
+    // investigação: alguém perto da borda do alcance — vira, mostra "?" e dá alguns passos na direção
+    if(T.aggro&&!T.boss){const p=nearestPlayer(g,T.aggro*1.7,plist,area);if(p){if(!m.susT){m.susT=2.2;m.wander=null;if(g.visible)floatText(g.position.clone().setY(g.position.y+(T.lh||2.5)+0.3),'?','xp')}
+      if(m.susT>0){m.susT-=dt;g.rotation.y=angLerp(g.rotation.y,Math.atan2(p.x-g.position.x,p.z-g.position.z),dt*5);if(m.susT<1.6&&Math.hypot(g.position.x-m.home.x,g.position.z-m.home.z)<6){mvx=p.x-g.position.x;mvz=p.z-g.position.z;spd*=0.3}m.wait=Math.max(m.wait,1.5)}}
+     else if(m.susT>0)m.susT=-4;else if(m.susT<0)m.susT=Math.min(0,m.susT+dt)}
+    if(mvx||mvz){}else if(m.wander){mvx=m.wander.x-g.position.x;mvz=m.wander.z-g.position.z;spd*=0.4;if(Math.hypot(mvx,mvz)<0.6){m.wander=null;m.wait=2+rnd()*4}}
     else if(m.wait<=0){const a=rnd()*Math.PI*2,r=rnd()*8;m.wander={x:m.home.x+Math.cos(a)*r,z:m.home.z+Math.sin(a)*r};if(blocked(m.wander.x,m.wander.z,T.size*0.4))m.wander=null,m.wait=1}
   }
   let walking=false;
@@ -3160,7 +3169,7 @@ function update(dt){
     if(!b.phys&&rnd()<0.6)emit(b.m.position,b.c||0x8fe3ff,1,0.5,0,0.3,0,0.2);
     if(b.phys){const dd=tmp.clone().sub(b.base),ll=dd.length(); // lança e flecha: voo em arco, a ponta segue a trajetória
       if(ll<0.8){damageMon(t,b.dmg,b.crit);emit(b.m.position,0xb8a890,6,2.5,1.2,0.4,3,0.6);scene.remove(b.m);bolts.splice(i,1);continue}
-      b.base.addScaledVector(dd,Math.min(1,(b.spd||28)*dt/ll));const k=clamp(1-ll/b.L0,0,1),prev=b.m.position.clone();
+      b.base.addScaledVector(dd,Math.min(1,(b.spd||28)*dt/ll));const k=clamp(1-ll/b.L0,0,1),prev=BPREV.copy(b.m.position);
       b.m.position.copy(b.base);b.m.position.y+=Math.sin(k*Math.PI)*b.L0*b.arc;tmp.copy(b.m.position).multiplyScalar(2).sub(prev);if(prev.distanceToSquared(b.m.position)>1e-6)b.m.lookAt(tmp);continue}
     if(l<0.8){damageMon(t,b.dmg,b.crit);burstFx(b.m.position.clone().setY(b.m.position.y-1),b.c||0x8fe3ff);scene.remove(b.m);bolts.splice(i,1)}
     else{b.m.lookAt(tmp);b.m.position.addScaledVector(d,Math.min(1,(b.spd||28)*dt/l))}
@@ -3179,22 +3188,22 @@ function update(dt){
   for(let i=teles.length-1;i>=0;i--){
     const t=teles[i];t.t-=dt;t.m.material.opacity=0.2+0.35*(1-t.t/1.4)+Math.sin(now*20)*0.05;
     if(t.t<=0){SFX.play('boom',t.pos,0.1);if(!P.dead&&Math.hypot(P.pos.x-t.pos.x,P.pos.z-t.pos.z)<t.r)hurtPlayer(t.dmg);
-      emit(t.m.position.clone().setY(t.m.position.y+0.5),t.col,50,6,5,1,6,t.r);ringFx(t.m.position,t.r*1.2,t.col);scene.remove(t.m);teles.splice(i,1)}
+      emit(t.m.position.clone().setY(t.m.position.y+0.5),t.col,50,6,5,1,6,t.r);ringFx(t.m.position,t.r*1.2,t.col);freeFx(t.m);teles.splice(i,1)}
   }
   // loot no chão
   for(let i=drops.length-1;i>=0;i--){
     const d=drops[i];d.t-=dt;d.g.rotation.y+=dt;d.beam.material.opacity=(0.3+d.it.rar*0.1)*(0.75+Math.sin(now*3)*0.25);
-    if(d.t<=0){scene.remove(d.g);d.lbl.remove();drops.splice(i,1);continue}
+    if(d.t<=0){scene.remove(d.g);d.beam&&d.beam.material.dispose();d.lbl.remove();drops.splice(i,1);continue}
     const pd=Math.hypot(d.g.position.x-P.pos.x,d.g.position.z-P.pos.z);
     if(AUTO.loot&&!P.dead&&pd<6&&pd>=1.2&&lootOK(d)&&P.inv.length<BAG_MAX){ // ímã: o baú vem até você
       d.g.position.x+=(P.pos.x-d.g.position.x)*Math.min(1,dt*6);d.g.position.z+=(P.pos.z-d.g.position.z)*Math.min(1,dt*6);d.g.position.y=H(d.g.position.x,d.g.position.z)}
     if(AUTO.loot&&!lootOK(d))continue; // abaixo da raridade escolhida: fica no chão
     if(!P.dead&&pd<2){
       if(P.inv.length>=BAG_MAX){if(now>fullWarnT){fullWarnT=now+(AUTO.on?20:4);log('Mochila cheia! Venda ou descarte itens (tecla I)'+(AUTO.loot?' — o auto-loot vai ignorar itens até liberar espaço.':'.'),'bad')}}
-      else{if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);if(!P.trig)P.trig='pick';logItem('Você pegou',d.it);SFX.play(d.it.rar>=3?'epic':'loot');emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.lbl.remove();drops.splice(i,1);renderInv();save()}
+      else{if(AUTO.lootDrop===d)AUTO.lootDrop=null;P.inv.push(d.it);if(!P.trig)P.trig='pick';logItem('Você pegou',d.it);SFX.play(d.it.rar>=3?'epic':'loot');emit(d.g.position.clone().setY(d.g.position.y+1),RAR[d.it.rar].h,25,3,3,0.8,4);scene.remove(d.g);d.beam&&d.beam.material.dispose();d.lbl.remove();drops.splice(i,1);renderInv();save()}
     }
   }
-  for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.t+=dt;const k=e.t/e.dur;if(k>=1){scene.remove(e.m);effects.splice(i,1)}else e.upd(e,k)}
+  for(let i=effects.length-1;i>=0;i--){const e=effects[i];e.t+=dt;const k=e.t/e.dur;if(k>=1){freeFx(e.m);effects.splice(i,1)}else e.upd(e,k)}
   // ambiente
   town.userData.crystal.rotation.y+=dt;town.userData.crystal.position.y=3.9+Math.sin(now*2)*0.2;
   if(!town.userData.built&&rnd()<0.3)emit(new THREE.Vector3(-9.5,1.4,6.5),0xff8a30,1,0.6,2,0.8,0,0.8);
