@@ -83,3 +83,4 @@ Todos CC0 (domínio público), conferidos nas páginas oficiais antes do uso:
 - Quaternius — Universal Base Characters, Modular Character Outfits Fantasy (Ranger, Peasant), Universal Animation Library 1 e 2 (CC0)
 - knight_plate.glb — armadura de placas do Cavaleiro, modelada no Blender para este projeto (original)
 - Versões _lod: simplificadas automaticamente (meshoptimizer) a partir das originais
+- assets/environment/modern/: Quaternius Medieval Village MegaKit + Fantasy Props MegaKit (CC0, peças da Vila de Aether moderna) e Poly Haven cobblestone_floor_001 (CC0)

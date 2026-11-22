@@ -303,7 +303,7 @@ body.touch #detail{z-index:31}
     <div class="arow"><label><input type="checkbox" id="optAutoRes"> Resolução automática (deixa mais fluido no celular)</label></div>
     <div class="arow"><label><input type="checkbox" id="optFps"> Mostrar FPS</label></div>
     <div class="arow"><label><input type="checkbox" id="optShake"> Tremor da câmera nos golpes</label></div>
-    <div class="arow"><label><input type="checkbox" id="optModern"> Personagens modernos (beta — mais bonitos, mais pesados)</label></div>
+    <div class="arow"><label><input type="checkbox" id="optModern"> Visual moderno (beta — personagens e Vila de Aether novos, mais pesado)</label></div>
     <div class="hint">A auto-caça ataca monstros perto de onde foi ligada e para se você andar manualmente. Itens abaixo da raridade escolhida são deixados no chão.</div>
     <div class="ph2">☁️ Seu herói em outro aparelho</div>
     <div class="hint" id="cloudSt">☁️ Ainda não salvo na nuvem</div>
@@ -351,6 +351,7 @@ body.touch #detail{z-index:31}
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/loaders/GLTFLoader.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/SkeletonUtils.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/utils/BufferGeometryUtils.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/objects/Sky.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.45.4/dist/umd/supabase.js"></script>
 <script>
@@ -785,7 +786,7 @@ function makeHeroModel(cls){
 /* ===== Personagens modernos (beta, Prompt V3): Universal Base Characters + roupas Fantasy (Quaternius, CC0),
    armadura de placas feita no Blender, animações da Universal Animation Library. Ligado em Opções → "Personagens modernos". */
 const MODERN={on:(()=>{try{return localStorage.getItem('aether_modern')==='1'}catch(e){return false}})(),ready:false,loading:false};
-const MOD_DIR='assets/characters/modern/',UBC_H=1.87;
+const MOD_DIR='assets/characters/modern/',MOD_ENV='assets/environment/modern/',UBC_H=1.87;
 const MOD_FILES=['male_ranger','female_ranger','male_peasant','female_peasant','male_ranger_lod','female_ranger_lod','male_peasant_lod','female_peasant_lod','head_male','head_female','hair_long','hair_beard','hair_simpleparted','knight_plate','ual_game'];
 const MOD_CLS={guerreiro:{b:'male_peasant',p:['head_male','hair_beard','knight_plate']},
   barbaro:{b:'male_ranger',p:['head_male'],tint:0xc49a78},
@@ -804,8 +805,8 @@ const MOD_ANIM={Idle:'Idle_Loop',Walking_A:'Walk_Loop',Running_A:'Jog_Fwd_Loop',
   PickUp:'PickUp_Table',Lie_StandUp:'LayToIdle',Sit_Chair_Idle:'Sitting_Idle_Loop',Idle_A:'Idle_FoldArms_Loop',Idle_B:'Idle_Talking_Loop',Cheer:'Yes',Dance:'Dance_Loop',Interact:'Interact'};
 const MOD_SKIN=/Regular_|Superhero|Eye|Hair|Knight_/; // pele, olhos, cabelo e armadura não recebem a cor da classe
 function loadModern(){if(MODERN.ready||MODERN.loading||!THREE.GLTFLoader)return;MODERN.loading=true;const L=new THREE.GLTFLoader();
-  Promise.all(MOD_FILES.map(f=>new Promise(r=>L.load(MOD_DIR+f+'.glb',g=>{g.scene.traverse(o=>{if(o.isMesh)LIN.add(o.material)});MODELS['mod_'+f]=g;r(1)},undefined,()=>r(0)))))
-   .then(rs=>{MODERN.loading=false;if(rs.every(Boolean)){MODERN.ready=true;if(MODERN.on&&modelsOK)rebuildHeroes()}else log('Não foi possível carregar os personagens modernos (internet?). Usando os clássicos.','sys')})}
+  Promise.all([...MOD_FILES.map(f=>[MOD_DIR+f+'.glb','mod_'+f]),[MOD_ENV+'aether_kit.glb','mod_kit']].map(([u,k])=>new Promise(r=>L.load(u,g=>{g.scene.traverse(o=>{if(o.isMesh){LIN.add(o.material);const m=o.material;if(m.transparent&&!m.alphaTest){m.alphaTest=0.5;m.transparent=false}}});MODELS[k]=g;r(1)},undefined,()=>r(0)))))
+   .then(rs=>{MODERN.loading=false;if(rs.every(Boolean)){MODERN.ready=true;if(MODERN.on&&modelsOK){rebuildHeroes();modernVillage(true)}}else log('Não foi possível carregar os personagens modernos (internet?). Usando os clássicos.','sys')})}
 function modBind(m,host,k,out){const src=MODELS['mod_'+k];if(!src||!host)return;const c=THREE.SkeletonUtils.clone(src.scene);const list=[];c.traverse(o=>{if(o.isSkinnedMesh)list.push(o)});
   for(const o of list){const bones=o.skeleton.bones.map(b=>m.getObjectByName(b.name));if(bones.some(b=>!b))continue;o.material=o.material.clone();LIN.add(o.material);
     o.bind(new THREE.Skeleton(bones,o.skeleton.boneInverses),host.bindMatrix);o.castShadow=true;o.frustumCulled=false;o.userData.part=k;host.parent.add(o);out.push(o)}}
@@ -840,6 +841,50 @@ function applyLookModern(u,cls,L){const key=L.join('|');if(u.lookKey===key)retur
   for(const [name,slot,,,sc] of G.out){const fam=name.replace(/\d+$/,''),isSh=fam==='shield',left=slot==='handslotl';const GR=modGrip(),gp=isSh?GR.SH:left?GR.L:GR.R;
     const ob=grabGear(u,u.root,name,gp[0],gp[1],gp[2],(MOD_WS[fam]||0.5)*(sc||1));if(ob){ob.visible=true;gearGlow(ob,wr,rf);made.push(ob)}}
   u.weapon=made[0]||null;u.wpnOrb=made[0]||u.root;u.refGlow=rf}
+/* ===== Vila de Aether moderna (V3): casas modulares (Medieval Village MegaKit), objetos (Fantasy Props MegaKit) e praça de pedra (Poly Haven), mesmas posições e colisões da vila atual ===== */
+const MV={g:null,pairs:[],houses:[],plazaMat:null,plazaOld:null};
+function kitPiece(name){const k=MODELS.mod_kit;const n=k&&k.scene.getObjectByName(name);if(!n)return null;const c=n.clone(true);c.position.set(0,0,0);c.rotation.set(0,0,0);c.scale.set(1,1,1);return c}
+function kitPut(par,name,x,y,z,ry){const c=kitPiece(name);if(!c)return null;c.position.set(x,y,z);c.rotation.y=ry||0;par.add(c);return c}
+function kitHouse(){const g=new THREE.Group();
+  const F=[['Wall_UnevenBrick_Window_Wide_Round','Wall_UnevenBrick_Door_Round','Wall_UnevenBrick_Window_Wide_Round'],['Wall_UnevenBrick_Straight','Wall_UnevenBrick_Window_Wide_Round','Wall_UnevenBrick_Straight']];
+  const U=['Wall_Plaster_WoodGrid','Wall_Plaster_Window_Wide_Flat','Wall_Plaster_WoodGrid','Wall_Plaster_Window_Wide_Flat'];
+  for(let fl=0;fl<2;fl++){const y=fl*3.12;
+    for(let i=0;i<3;i++){kitPut(g,fl?U[i]:F[0][i],-2+i*2,y,4,0);kitPut(g,fl?U[i+1]:F[1][i],2-i*2,y,-4,Math.PI)}
+    for(let i=0;i<4;i++){kitPut(g,fl?U[i]:(i===1?'Wall_UnevenBrick_Window_Wide_Round':'Wall_UnevenBrick_Straight'),3,y,-3+i*2,Math.PI/2);kitPut(g,fl?U[3-i]:(i===2?'Wall_UnevenBrick_Window_Wide_Round':'Wall_UnevenBrick_Straight'),-3,y,3-i*2,-Math.PI/2)}}
+  kitPut(g,'Door_1_Round',-0.53,0,4.02,0);kitPut(g,'Roof_Front_Brick6',0,6.24,4,0);kitPut(g,'Roof_Front_Brick6',0,6.24,-4,Math.PI);kitPut(g,'Roof_RoundTiles_6x8',0,6.24,0,0);kitPut(g,'Prop_Chimney',1.6,7.6,-1.6,0);kitPut(g,'Lantern_Wall',1.25,2.3,4.05,0);
+  return g}
+function kitMerge(src){ // junta as peças por material: poucas chamadas de desenho por casa
+  src.updateMatrixWorld(true);const inv=new THREE.Matrix4().copy(src.matrixWorld).invert(),groups=new Map();
+  src.traverse(o=>{if(!o.isMesh)return;const k=o.material.uuid;if(!groups.has(k))groups.set(k,{m:o.material,list:[]});groups.get(k).list.push(o)});
+  const out=new THREE.Group();
+  for(const {m,list} of groups.values()){const geos=list.map(o=>{const sg=o.geometry,ix=sg.index,g=new THREE.BufferGeometry(),n=ix?ix.count:sg.attributes.position.count;
+      const want=[['position',3],['normal',3],['uv',2]];if(m.vertexColors)want.push(['color',3]);
+      for(const [a,sz] of want){const at=sg.attributes[a],arr=new Float32Array(n*sz);if(!at&&a==='color')arr.fill(1);
+        if(at){const A=at.array||at.data.array,d=!at.normalized?1:A instanceof Uint16Array?65535:A instanceof Uint8Array?255:A instanceof Int16Array?32767:A instanceof Int8Array?127:1;
+          for(let i=0;i<n;i++){const j=ix?ix.getX(i):i;arr[i*sz]=at.getX(j)/d;arr[i*sz+1]=at.getY(j)/d;if(sz>2)arr[i*sz+2]=at.getZ(j)/d}}
+        g.setAttribute(a,new THREE.BufferAttribute(arr,sz))}
+      if(!sg.attributes.normal)g.computeVertexNormals();g.applyMatrix4(new THREE.Matrix4().multiplyMatrices(inv,o.matrixWorld));return g});
+    const mg=THREE.BufferGeometryUtils?THREE.BufferGeometryUtils.mergeBufferGeometries(geos):null;geos.forEach(x=>x!==mg&&x.dispose());if(!mg)continue;
+    const mesh=new THREE.Mesh(mg,m);mesh.castShadow=true;mesh.receiveShadow=true;out.add(mesh)}
+  return out}
+const MV_PROP={barrel:['Barrel',1.3],crate:['Crate_Wooden',1.25],crate_s:['Crate_Wooden',0.85],weaponrack:['WeaponStand',1.3],tent:['Stall_Empty',1.45],flag:['Banner_1',1.4],wheelbarrow:['Prop_Wagon',0.9]};
+function buildModernVillage(){if(MV.g||!MODELS.mod_kit||!town.userData.built)return;const G=new THREE.Group();G.visible=false;town.add(G);MV.g=G;const HS=0.85;
+  for(const k of ['Lantern_Wall','Torch_Metal'])kitPiece(k); // (aquece o cache)
+  houses.forEach((hs,i)=>{const raw=kitHouse();const extra=[];
+    if(i===2){extra.push(['Anvil',2.2,0,6.2,0.4],['WeaponStand',-2.4,0,6.0,0.2])}else if(i===3){extra.push(['Barrel',3.4,0,5.4,0],['Barrel',3.9,0,4.6,0.5],['Bench',-1.8,0,5.6,0])}else if(i===5){extra.push(['Barrel_Apples',2.6,0,5.6,0.3],['FarmCrate_Apple',-2.6,0,5.5,0.2])}else if(i===0){extra.push(['Banner_1',2.6,0,5.0,0])}
+    for(const e of extra)kitPut(raw,e[0],e[1],e[2],e[3],e[4]);
+    const h=kitMerge(raw);h.scale.setScalar(HS);const rl=Math.hypot(hs.hx,hs.hz)||1;h.position.set(hs.hx*(1+1.4/rl),0,hs.hz*(1+1.4/rl));h.rotation.y=Math.atan2(-hs.hx,-hs.hz);G.add(h);MV.houses.push({hs,h,r:Math.max(hs.vr||3.2,3.4)})});
+  for(const c of [...town.children]){const u=c.userData;if(u.lib!=='village'||!MV_PROP[u.pname])continue;const [nm,sc]=MV_PROP[u.pname];const p=kitPiece(nm);if(!p)continue;
+    const g=new THREE.Group();g.add(p);p.scale.setScalar(sc);g.position.copy(c.position);g.rotation.y=c.rotation.y;g.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true}});G.add(g);MV.pairs.push([c,g])}
+  // praça de pedra
+  const plaza=town.children.find(o=>o.isMesh&&o.geometry.type==='CylinderGeometry'&&o.geometry.parameters.radiusTop===22);
+  if(plaza){const TL=new THREE.TextureLoader(),T=(f,srgb)=>{const t=TL.load(MOD_ENV+f);t.wrapS=t.wrapT=THREE.RepeatWrapping;t.repeat.set(11,11);if(srgb)t.encoding=THREE.sRGBEncoding;t.anisotropy=4;return t};
+    MV.plaza=plaza;MV.plazaOld=plaza.material;MV.plazaMat=new THREE.MeshStandardMaterial({map:T('ph_cobblestone_floor_001_diff_1k.jpg',1),normalMap:GFX.lo?null:T('ph_cobblestone_floor_001_nor_gl_1k.jpg'),roughnessMap:T('ph_cobblestone_floor_001_rough_1k.jpg'),roughness:1,metalness:0});LIN.add(MV.plazaMat)}}
+function modernVillage(on){if(on)buildModernVillage();if(!MV.g)return;MV.g.visible=on;
+  const occ=(o,add)=>o.traverse(m=>{if(!m.isMesh)return;const k=occluders.indexOf(m);if(add&&k<0)occluders.push(m);if(!add&&k>=0)occluders.splice(k,1)});
+  for(const {hs,h,r} of MV.houses){if(hs.vb){hs.vb.visible=!on;occ(hs.vb,!on)}occ(h,on);hs.sol.r=on?r:(hs.vr||hs.sol.r)}
+  for(const [c,g] of MV.pairs)c.visible=!on;
+  if(MV.plaza)MV.plaza.material=on?MV.plazaMat:MV.plazaOld}
 function rebuildHeroes(){if(!modelsOK)return;const mk=(cls,old)=>{const n=makeHero(cls);n.position.copy(old.position);n.rotation.y=old.rotation.y;scene.remove(old);scene.add(n);return n};
   for(const o of others.values()){o.mesh=mk(o.cls,o.mesh);if(o.lk)applyLook(o.mesh.userData,o.cls,o.lk);else if(o.eqR)applyLook(o.mesh.userData,o.cls,...o.eqR)}
   if(P.mesh){P.mesh=mk(P.cls,P.mesh);refreshLook()}}
@@ -3334,7 +3379,7 @@ function autoRes(dt){ // resolução automática: baixa a nitidez quando o apare
   if(PERF.ft>30&&pr>min)pr=Math.max(min,pr-0.1);else if(PERF.ft<19&&pr<PERF.base)pr=Math.min(PERF.base,pr+0.05);
   if(Math.abs(pr-PERF.pr)>0.001){PERF.pr=pr;renderer.setPixelRatio(pr);renderer.setSize(innerWidth,innerHeight)}}
 {const mo=$('optModern');mo.checked=MODERN.on;mo.addEventListener('change',()=>{MODERN.on=mo.checked;try{localStorage.setItem('aether_modern',mo.checked?'1':'0')}catch(e){}
-  if(MODERN.on){if(MODERN.ready)rebuildHeroes();else{log('Carregando personagens modernos…','sys');loadModern()}}else rebuildHeroes()});}
+  if(MODERN.on){if(MODERN.ready){rebuildHeroes();modernVillage(true)}else{log('Carregando visual moderno…','sys');loadModern()}}else{rebuildHeroes();modernVillage(false)}});}
 {const sk=$('optShake');sk.checked=SHAKE.on;sk.addEventListener('change',()=>{SHAKE.on=sk.checked;try{localStorage.setItem('aether_shake',sk.checked?'1':'0')}catch(e){}});}
 {const g=$('optGfx'),a=$('optAutoRes'),f=$('optFps');g.value=GFX.q;a.checked=PERF.auto;f.checked=localStorage.getItem('aether_fps')==='1';$('fpsBox').classList.toggle('hidden',!f.checked);
   g.addEventListener('change',()=>{try{localStorage.setItem('aether_gfx',g.value)}catch(e){}log('Qualidade alterada. O jogo vai recarregar…','sys');save();setTimeout(()=>location.reload(),600)});
@@ -3364,7 +3409,7 @@ function resetStartBtn(){overwriteOk=false;$('err').textContent='';const b=$('go
   const same=$('nameIn').value.trim()===sv.name&&chosen===sv.cls;b.textContent=same?`Continuar (Nv ${sv.lvl})`:'Criar novo personagem'}
 function propClone(lib,name,scale){ // cópia de uma peça estática (construção, baú, barril…)
   const src=MODELS[lib]&&MODELS[lib].scene.getObjectByName(name);if(!src)return null;
-  const o=src.clone(true);o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.setScalar(scale);const g=new THREE.Group();g.add(o);return g}
+  const o=src.clone(true);o.position.set(0,0,0);o.rotation.set(0,0,0);o.scale.setScalar(scale);const g=new THREE.Group();g.add(o);g.userData.lib=lib;g.userData.pname=name;return g}
 const _bx=new THREE.Box3(),_bv=new THREE.Vector3();
 function placeProp(lib,name,scale,x,z,yaw,parent,solidK,occ){
   const g=propClone(lib,name,scale);if(!g)return null;g.position.set(x,inDungeon(x)?0:H(x,z),z);g.rotation.y=yaw||0;(parent||scene).add(g);
@@ -3450,9 +3495,9 @@ function buildVillage(){
   houses.forEach((hs,i)=>{
     const b=propClone('village',set[i],S);if(!b)return;
     hs.g.visible=false;for(const m of [hs.wall,hs.roof]){const k=occluders.indexOf(m);if(k>=0)occluders.splice(k,1)}
-    b.position.set(hs.hx,0,hs.hz);b.rotation.y=hs.g.rotation.y+VILLAGE_FACE;town.add(b);
+    b.position.set(hs.hx,0,hs.hz);b.rotation.y=hs.g.rotation.y+VILLAGE_FACE;town.add(b);hs.vb=b;
     b.updateMatrixWorld(true);_bx.setFromObject(b).getSize(_bv);hs.sol.r=Math.max(_bv.x,_bv.z)/2*0.82;
-    b.traverse(o=>{if(o.isMesh)occluders.push(o)});
+    b.traverse(o=>{if(o.isMesh)occluders.push(o)});hs.vr=hs.sol.r;
   });
   const at=(a,r)=>[Math.cos(a)*r,Math.sin(a)*r],face=(x,z)=>Math.atan2(-x,-z)+VILLAGE_FACE;
   // poço, barracas e objetos espalhados pela praça
@@ -3464,6 +3509,7 @@ function buildVillage(){
   // moinho e torre de vigia fora da vila
   placeProp('village','windmill',6,0,-30.5,0.4,scene,0.6,true);
   placeProp('village','tower',5,-24,-16,0.8,scene,0.6,true);
+  if(MODERN.on&&MODERN.ready)modernVillage(true);
 }
 function decorateDungeon(){
   if(!MODELS.dungeon||dungeon.userData.built)return;dungeon.userData.built=true;
