@@ -60,3 +60,8 @@ Quaternius Ultimate Monsters — Armabee, BlueDemon, Dino, DragonEvolved, Glub, 
 Animação de dano dos monstros antigos (HitReact/HitRecieve) e animações extras do herói (levantar ao renascer,
 pegar item, 2ª morte) reextraídas dos mesmos pacotes CC0 (Quaternius e KayKit Adventurers).
 Sacerdotisa: corpo Rogue_Hooded (KayKit) com textura recolorida pelo jogo (branco/dourado), saia e auréola feitas no código.
+
+KayKit Character Animations 1.1 — Kay Lousberg (kaylousberg.itch.io/kaykit-character-animations), CC0 1.0 (License.txt do pacote).
+  assets/characters/anim_extra.glb: 27 animações do Rig_Medium escolhidas dos arquivos General, MovementBasic, MovementAdvanced,
+  CombatMelee e CombatRanged (variações de parado, andar de costas, correr de lado, esquivas, bloqueio, golpes extras, arco e magia),
+  juntadas num só arquivo sem malhas; carregado depois que o jogo abre.
